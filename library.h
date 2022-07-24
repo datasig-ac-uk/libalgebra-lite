@@ -1,0 +1,6 @@
+#ifndef LIBALGEBRA_LITE_LIBRARY_H
+#define LIBALGEBRA_LITE_LIBRARY_H
+
+void hello();
+
+#endif //LIBALGEBRA_LITE_LIBRARY_H
