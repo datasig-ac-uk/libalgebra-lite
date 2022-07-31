@@ -6,17 +6,15 @@
 #define LIBALGEBRA_LITE_DENSE_VECTOR_H
 
 #include <libalgebra_lite/implementation_types.h>
+#include <libalgebra_lite/basis/traits.h>
+#include <libalgebra_lite/coefficients.h>
+#include "traits.h"
 
 #include <memory>
 #include <type_traits>
 
 namespace alg {
 
-template <typename Basis>
-struct basis_trait;
-
-template <typename Coefficients>
-struct coefficient_trait;
 
 namespace dtl {
 
@@ -34,26 +32,29 @@ class key_range;
 template <typename Basis, typename Coefficients, typename Allocator=typename coefficient_trait<Coefficients>::default_alloc>
 class dense_vector;
 
-template <typename Basis, typename Coefficients>
-class dense_vector_slice
+
+template <typename Basis, typename Coefficients, typename Allocator>
+class dense_vector_view
 {
+
 protected:
     using basis_traits = basis_trait<Basis>;
     using coeff_traits = coefficient_trait<Coefficients>;
 
+    using allocator = Allocator;
 public:
+    using view_vector_type = dense_vector_view;
+    using owned_vector_type = dense_vector<Basis, Coefficients, Allocator>;
 
     using basis_type = Basis;
     using key_type = typename basis_traits::key_type;
 
-    using coefficient_ring = typename coeff_traits::coeffificient_ring;
+    using coefficient_ring = typename coeff_traits::coefficient_ring;
     using scalar_type = typename coeff_traits::scalar_type;
     using rational_type = typename coeff_traits::rational_type;
 
-    using const_iterator = dtl::dense_vector_const_iterator<Basis, scalar_type>;
-    using iterator = dtl::dense_vector_iterator<Basis, scalar_type>;
-
-    using dense_vector = dense_vector<Basis, Coefficients>;
+    using const_iterator = dtl::dense_vector_const_iterator<basis_type, scalar_type>;
+    using iterator = dtl::dense_vector_iterator<basis_type, scalar_type>;
 
 protected:
     scalar_type* p_data;
@@ -61,11 +62,11 @@ protected:
     dimn_t m_dimension;
     deg_t m_degree = 0;
 
-    constexpr dense_vector_slice(scalar_type* data, const basis_type* basis, dimn_t dimension) noexcept
+    constexpr dense_vector_view(scalar_type* data, const basis_type* basis, dimn_t dimension) noexcept
         : p_data(data), p_basis(basis), m_dimension(dimension)
     {}
 
-    constexpr dense_vector_slice(scalar_type* data, const basis_type* basis, dimn_t dimension, deg_t degree) noexcept
+    constexpr dense_vector_view(scalar_type* data, const basis_type* basis, dimn_t dimension, deg_t degree) noexcept
         : p_data(data), p_basis(basis), m_dimension(dimension), m_degree(degree)
     {}
 
@@ -83,7 +84,7 @@ public:
     { return p_data[basis_traits::key_to_index(*p_basis, k)]; }
 
     template <typename KeyType>
-    std::enable_if_t<std::is_constructible<key_range<key_type>, const KeyType&>::value, const dense_vector_slice>
+    std::enable_if_t<std::is_constructible<key_range<key_type>, const KeyType&>::value, const dense_vector_view>
     operator[](const KeyType& k) const noexcept
     {
         if (!p_data) {
@@ -101,7 +102,7 @@ public:
     }
 
     template <typename KeyType>
-    std::enable_if_t<std::is_constructible<key_range<key_type>, const KeyType&>::value, dense_vector_slice>
+    std::enable_if_t<std::is_constructible<key_range<key_type>, const KeyType&>::value, dense_vector_view>
     operator[](const KeyType& k) noexcept
     {
         if (!p_data) {
@@ -169,10 +170,10 @@ public:
     }
 
     template <typename UnaryOp>
-    dense_vector
+    owned_vector_type
     unary_op(UnaryOp op) const noexcept(noexcept(op(std::declval<const scalar_type&>())))
     {
-        dense_vector result(p_basis);
+        owned_vector_type result(p_basis);
         const scalar_type* data = p_data;
         for (idimn_t i=0; i<static_cast<idimn_t>(m_dimension); ++i) {
             construct_in_place(i, op(*(data++)));
@@ -181,7 +182,7 @@ public:
     }
 
     template <typename UnaryOp>
-    dense_vector_slice& inplace_unary_op(UnaryOp op) noexcept(noexcept(op(std::declval<scalar_type&>())))
+    dense_vector_view& inplace_unary_op(UnaryOp op) noexcept(noexcept(op(std::declval<scalar_type&>())))
     {
         update_in_place(m_dimension, op);
         return *this;
@@ -189,10 +190,10 @@ public:
 
 
     template <typename BinOp>
-    dense_vector binary_op(const dense_vector_slice& rhs, BinOp op) const
+    owned_vector_type binary_op(const dense_vector_view& rhs, BinOp op) const
         noexcept(noexcept(op(std::declval<const scalar_type&>(), std::declval<const scalar_type&>())))
     {
-        dense_vector result(p_basis);
+        owned_vector_type result(p_basis);
 
         if (basis_traits::compatible(*p_basis, *rhs.p_basis)) {
             const auto mid = std::min(m_dimension, rhs.m_dimension);
@@ -231,7 +232,7 @@ public:
      */
 
     template <typename BinaryOp>
-    dense_vector_slice& inplace_binop(const dense_vector_slice& rhs, BinaryOp op)
+    dense_vector_view& inplace_binop(const dense_vector_view& rhs, BinaryOp op)
         noexcept(noexcept(op(std::declval<scalar_type&>(), std::declval<const scalar_type&>())))
     {
         if (basis_traits::compatible(*p_basis, rhs.*p_basis)) {
@@ -267,7 +268,7 @@ public:
     }
 
     template <typename TernaryOp>
-    dense_vector_slice& ternary_op(const dense_vector_slice& lhs, const dense_vector_slice& rhs, TernaryOp op)
+    dense_vector_view& ternary_op(const dense_vector_view& lhs, const dense_vector_view& rhs, TernaryOp op)
         noexcept(noexcept(op(
                 std::declval<scalar_type*>(),
                 std::declval<const scalar_type*>(),
@@ -285,13 +286,13 @@ public:
 
 
 template <typename Basis, typename Coefficients, typename Allocator>
-class dense_vector : public dense_vector_slice<Basis, Coefficients>
+class dense_vector : public dense_vector_view<Basis, Coefficients, Allocator>
 {
 protected:
-    using slice_type = dense_vector_slice<Basis, Coefficients>;
+    using slice_type = dense_vector_view<Basis, Coefficients, Allocator>;
+
     using typename slice_type::basis_traits;
     using typename slice_type::coeff_traits;
-
 public:
     using typename slice_type::basis_type;
     using typename slice_type::key_type;
@@ -354,8 +355,22 @@ public:
 
 };
 
+namespace dtl {
+template <typename Basis, typename Coeff, typename Alloc>
+struct vector_base_trait<dense_vector_view<Basis, Coeff, Alloc>>
+{
+    using type = dense_vector_view<Basis, Coeff, Alloc>;
+};
+
+template <typename Basis, typename Coeff, typename Alloc>
+struct vector_base_trait<dense_vector<Basis, Coeff, Alloc>>
+{
+    using type = dense_vector_view<Basis, Coeff, Alloc>;
+};
 
 
+
+} // namespace dtl
 
 
 } // namespace alg
