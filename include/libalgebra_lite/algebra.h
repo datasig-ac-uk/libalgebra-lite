@@ -21,6 +21,8 @@ template <typename Vector, typename Multiplication>
 class algebra : public Vector
 {
     using base_vector = vector_base<Vector>;
+    using owned_vector = typename base_vector::owned_vector_type;
+    using owned_algebra = algebra<owned_vector, Multiplication>;
 
 public:
     using vector_type = Vector;
@@ -70,6 +72,15 @@ public:
 
     const multiplication_type& multiplication() const noexcept { return *p_mult; }
 
+
+    algebra& add_mul(const algebra& lhs, const algebra& rhs);
+    algebra& sub_mul(const algebra& lhs, const algebra& rhs);
+
+    algebra& mul_scal_prod(const algebra& lhs, const scalar_type& scal);
+    algebra& mul_scal_div(const algebra& lhs, const rational_type& scal);
+
+
+
 };
 
 
@@ -91,7 +102,7 @@ public:
 
 template <typename Algebra>
 std::enable_if_t<dtl::is_algebra<Algebra>::value,
-    typename Algebra::vector_type::owned_vector_type>
+    typename Algebra::owned_algebra_type>
 operator*(const Algebra& lhs, const Algebra& rhs)
 {
     using base_t = vector_base<typename Algebra::vector_type>;
@@ -109,8 +120,18 @@ operator*=(Algebra& lhs, const Algebra& rhs)
 {
     const auto& mult = lhs.multiplication();
     mult.multiply_inplace(lhs, rhs);
+    return lhs;
 }
 
+template <typename Algebra>
+std::enable_if_t<dtl::is_algebra<Algebra>::value, typename Algebra::owned_algebra_type>
+commutator(const Algebra& lhs, const Algebra& rhs)
+{
+    owned_algebra result;
+    lhs.p_mult->mulitply_and_add(lhs, rhs);
+    lhs.p_mult->mulitply_and_add(rhs, lhs, [](scalar_type a) { return -a; });
+    return result;
+}
 
 
 
