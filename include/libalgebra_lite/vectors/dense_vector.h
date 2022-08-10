@@ -26,14 +26,14 @@ class dense_vector_iterator;
 
 } // namespace dtl
 
-template <typename Keytype>
+template <typename Basis>
 class key_range;
 
 template <typename Basis, typename Coefficients, typename Allocator=typename coefficient_trait<Coefficients>::default_alloc>
 class dense_vector;
 
 
-template <typename Basis, typename Coefficients, typename Allocator>
+template <typename Basis, typename Coefficients, typename Allocator=typename coefficient_trait<Coefficients>::default_alloc>
 class dense_vector_view
 {
 
@@ -52,6 +52,10 @@ public:
     using coefficient_ring = typename coeff_traits::coefficient_ring;
     using scalar_type = typename coeff_traits::scalar_type;
     using rational_type = typename coeff_traits::rational_type;
+
+
+    using reference = scalar_type&;
+    using const_reference = const scalar_type&;
 
     using const_iterator = dtl::dense_vector_const_iterator<basis_type, scalar_type>;
     using iterator = dtl::dense_vector_iterator<basis_type, scalar_type>;
@@ -72,6 +76,8 @@ protected:
 
 public:
 
+    constexpr dimn_t size() const noexcept { return m_dimension; }
+
     constexpr dimn_t dimension() const noexcept { return m_dimension; }
     constexpr basis_type& basis() const noexcept { return *p_basis; }
     dimn_t capacity() const noexcept { return basis_traits::max_dimension(*p_basis); }
@@ -81,10 +87,13 @@ public:
         return p_data[basis_traits::key_to_index(*p_basis, k)];
     }
     scalar_type& operator[](const key_type& k) noexcept
-    { return p_data[basis_traits::key_to_index(*p_basis, k)]; }
+    {
+        resize(basis_traits::key_to_index(*p_basis, k)+1);
+        return p_data[basis_traits::key_to_index(*p_basis, k)];
+    }
 
     template <typename KeyType>
-    std::enable_if_t<std::is_constructible<key_range<key_type>, const KeyType&>::value, const dense_vector_view>
+    std::enable_if_t<std::is_constructible<key_range<basis_type>, const basis_type*, const KeyType&>::value, const dense_vector_view>
     operator[](const KeyType& k) const noexcept
     {
         if (!p_data) {
@@ -102,7 +111,7 @@ public:
     }
 
     template <typename KeyType>
-    std::enable_if_t<std::is_constructible<key_range<key_type>, const KeyType&>::value, dense_vector_view>
+    std::enable_if_t<std::is_constructible<key_range<basis_type>, const basis_type*, const KeyType&>::value, dense_vector_view>
     operator[](const KeyType& k) noexcept
     {
         if (!p_data) {
@@ -132,11 +141,12 @@ protected:
 
     void resize(dimn_t new_size, deg_t degree_hint=0) noexcept
     {
-        const auto adjusted = basis_traits::get_dimension_degree(*p_basis, new_size, degree_hint);
-        if (adjusted.first > m_dimension) {
-            m_dimension = new_size;
-            m_degree = adjusted.second;
-        }
+        m_dimension = new_size;
+//        const auto adjusted = basis_traits::get_next_dimension(*p_basis, new_size, degree_hint);
+//        if (adjusted.first > m_dimension) {
+//            m_dimension = new_size;
+//            m_degree = adjusted.second;
+//        }
     }
 
     void destroy(dimn_t new_dim) noexcept(std::is_nothrow_destructible<scalar_type>::value)
@@ -279,6 +289,18 @@ public:
     }
 
 
+    dense_vector_view& add_scal_prod(dense_vector_view& rhs, const scalar_type& scal) noexcept
+    {
+        inplace_binop(rhs, [scal](scalar_type val) { return val * scal; });
+        return *this;
+    }
+
+    dense_vector_view& add_scal_prod(const key_type& key, const scalar_type& scal) noexcept
+    {
+        operator[](key) += scal;
+        return *this;
+    }
+
 };
 
 
@@ -309,7 +331,6 @@ protected:
     using allocator_type = Allocator;
     allocator_type m_alloc;
 
-    void resize(dimn_t new_size);
     void alloc_and_copy(const scalar_type* existing, dimn_t count)
     {
         if (p_basis) {
@@ -319,10 +340,15 @@ protected:
             if (existing) {
                 std::uninitialized_copy_n(existing, count, p_data);
             }
+
+            slice_type::resize(count);
         }
     }
 
-    void dealloc();
+    void dealloc()
+    {
+        alloc_traits::deallocate(m_alloc, p_data, m_dimension);
+    }
 
     using slice_type::p_data;
     using slice_type::p_basis;
@@ -344,6 +370,12 @@ public:
         alloc_and_copy(nullptr, 0);
     }
 
+    dense_vector(const basis_type* basis, std::initializer_list<scalar_type> args)
+        : slice_type(nullptr, basis, 0)
+    {
+        alloc_and_copy(begin(args), args.size());
+    }
+
     ~dense_vector()
     {
         slice_type::destroy(0);
@@ -356,6 +388,7 @@ public:
 };
 
 namespace dtl {
+
 template <typename Basis, typename Coeff, typename Alloc>
 struct vector_base_trait<dense_vector_view<Basis, Coeff, Alloc>>
 {
@@ -368,9 +401,136 @@ struct vector_base_trait<dense_vector<Basis, Coeff, Alloc>>
     using type = dense_vector_view<Basis, Coeff, Alloc>;
 };
 
+template <typename KeyRef, typename ScaRef>
+class dense_iterator_item
+{
+    template <typename B, typename C>
+    friend class dense_vector_iterator;
+
+    template <typename B, typename C>
+    friend class dense_vector_const_iterator;
+
+    KeyRef m_key;
+    ScaRef m_sca;
+
+    dense_iterator_item(KeyRef key, ScaRef sca)
+        : m_key(key), m_sca(sca)
+    {}
+
+public:
+    KeyRef key() noexcept { return m_key; }
+    ScaRef value() noexcept { return m_sca; }
+};
+
+template <typename Basis, typename Coefficients>
+class dense_vector_iterator
+{
+    using basis_traits = basis_trait<Basis>;
+    using key_type = typename basis_traits::key_type;
+    using coeff_traits = coefficient_trait<Coefficients>;
+    using scalar_type = typename coeff_traits::scalar_type;
+
+    const Basis* p_basis;
+    scalar_type* p_data;
+    key_type m_key;
+
+
+public:
+
+    using value_type = dtl::dense_iterator_item<const key_type&, scalar_type&>;
+    using reference = value_type;
+    using pointer = value_type;
+    using iterator_category = std::forward_iterator_tag;
+
+    dense_vector_iterator(const Basis* basis, scalar_type* data)
+        : p_basis(basis), p_data(data), m_key()
+    {}
+
+    dense_vector_iterator& operator++()
+    {
+        p_data++;
+        m_key++;
+        return *this;
+    }
+
+    reference operator*() noexcept
+    {
+        return {m_key, *p_data};
+    }
+
+    pointer operator->() noexcept
+    {
+        return {m_key, *p_data};
+    }
+
+    bool operator==(const dense_vector_iterator& other) const noexcept
+    {
+        return p_data == other.p_data;
+    }
+
+    bool operator!=(const dense_vector_iterator& other) const noexcept
+    {
+        return p_data != other.p_data;
+    }
+};
+
+
+
+template <typename Basis, typename Coefficients>
+class dense_vector_const_iterator
+{
+    using basis_traits = basis_trait<Basis>;
+    using key_type = typename basis_traits::key_type;
+    using coeff_traits = coefficient_trait<Coefficients>;
+    using scalar_type = typename coeff_traits::scalar_type;
+
+    const Basis* p_basis;
+    const scalar_type* p_data;
+    key_type m_key;
+
+
+public:
+
+    using value_type = dtl::dense_iterator_item<const key_type&, const scalar_type&>;
+    using reference = value_type;
+    using pointer = value_type;
+    using iterator_category = std::forward_iterator_tag;
+
+    dense_vector_const_iterator(const Basis* basis, scalar_type* data)
+        : p_basis(basis), p_data(data), m_key()
+    {}
+
+    dense_vector_const_iterator& operator++()
+    {
+        p_data++;
+        m_key++;
+        return *this;
+    }
+
+    reference operator*() noexcept
+    {
+        return {m_key, *p_data};
+    }
+
+    pointer operator->() noexcept
+    {
+        return {m_key, *p_data};
+    }
+
+    bool operator==(const dense_vector_const_iterator& other) const noexcept
+    {
+        return p_data == other.p_data;
+    }
+
+    bool operator!=(const dense_vector_const_iterator& other) const noexcept
+    {
+        return p_data != other.p_data;
+    }
+};
 
 
 } // namespace dtl
+
 
 
 } // namespace alg

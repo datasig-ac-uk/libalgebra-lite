@@ -22,6 +22,18 @@ template <template <typename, typename, typename...> class VectorView>
 struct associated_vector_template;
 
 
+template <typename Vector>
+struct vector_traits
+{
+    using owned_vector_type = typename Vector::owned_vector_type;
+    using view_vector_type = typename Vector::view_vector_type;
+    using coefficient_ring = typename Vector::coefficient_ring;
+    using scalar_type = typename Vector::scalar_type;
+    using rational_type = typename Vector::rational_type;
+};
+
+
+
 
 template <typename Vector>
 using associated_view_type = dtl::get_view_type_impl<Vector>;
@@ -52,10 +64,50 @@ public:
     using type = decltype(test<owned_t>(std::declval<Vector&>()));
 };
 
+template <typename Vector>
+struct base_vector_template;
 
 
+template <typename B, typename C, template<typename, typename, typename...> class V, typename... A>
+struct base_vector_template<V<B, C, A...>>
+{
+    template <typename Basis, typename Coeff, typename... Args>
+    using type = V<Basis, Coeff, Args...>;
+};
+
+
+template <typename Vector>
+struct owned_vector_impl
+{
+    using type = typename Vector::owned_vector_type;
+};
+
+template <template <typename> class Derived, typename Vector>
+struct owned_vector_impl<Derived<Vector>>
+{
+    using type = typename owned_vector_impl<Vector>::type;
+};
+
+template <typename Vector>
+struct view_vector_impl
+{
+    using type = typename Vector::view_vector_type;
+};
+
+template <template <typename> class Derived, typename Vector>
+struct view_vector_impl<Derived<Vector>>
+{
+    using type = typename view_vector_impl<Vector>::type;
+};
 
 } // namespace dtl
+
+template <typename Vector>
+using owned_type_of = typename dtl::owned_vector_impl<Vector>::type;
+
+template <typename Vector>
+using view_type_of = typename dtl::view_vector_impl<Vector>::type;
+
 
 template <typename Vector>
 using vector_base = typename dtl::vector_base_trait<Vector>::type;
