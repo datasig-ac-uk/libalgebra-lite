@@ -20,6 +20,30 @@ struct coefficient_trait
     using rational_type = typename Coeff::rational_type;
     using default_alloc = std::allocator<scalar_type>;
 
+
+
+};
+
+
+#define LAL_RING_GENERATE_BINOP(NAME, OP, RET_T, LHS_T, RHS_T)              \
+    template <typename Lhs=LHS_T, typename Rhs=RHS_T>                       \
+    static constexpr RET_T NAME(const Lhs& lhs, const Rhs& rhs) noexcept(noexcept(lhs OP rhs)) \
+    {                                                                       \
+        return lhs OP rhs;                                                  \
+    }                                                                       \
+                                                                            \
+    template <typename Rhs=RHS_T>                                           \
+    static constexpr RET_T NAME##_inplace(RET_T& lhs, const Rhs& rhs) noexcept(noexcept(lhs OP##= rhs)) \
+    {                                                                       \
+        return (lhs OP ## = rhs);                                           \
+    }
+
+template <typename Scalar, typename Rational>
+struct coefficient_ring
+{
+    using scalar_type = Scalar;
+    using rational_type = Rational;
+
     static const scalar_type& zero() noexcept
     {
         static const scalar_type zero;
@@ -36,16 +60,20 @@ struct coefficient_trait
         return mone;
     }
 
+    static constexpr scalar_type uminus(const scalar_type& arg) noexcept(noexcept(-arg))
+    {
+        return -arg;
+    }
+
+    LAL_RING_GENERATE_BINOP(add, +, scalar_type, scalar_type, scalar_type)
+    LAL_RING_GENERATE_BINOP(sub, -, scalar_type, scalar_type, scalar_type)
+    LAL_RING_GENERATE_BINOP(mul, *, scalar_type, scalar_type, scalar_type)
+    LAL_RING_GENERATE_BINOP(div, /, scalar_type, scalar_type, rational_type)
+
 
 };
 
-
-template <typename Scalar, typename Rational>
-struct coefficient_ring
-{
-    using scalar_type = Scalar;
-    using rational_type = Rational;
-};
+#undef LAL_RING_GENERATE_BINOP
 
 template <typename Scalar>
 struct coefficient_field : public coefficient_ring<Scalar, Scalar>

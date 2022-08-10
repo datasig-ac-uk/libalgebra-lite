@@ -90,6 +90,12 @@ public:
     constexpr bool operator>=(const index_key<OtherDegreeDigits, OtherType>& other) const noexcept
     { return degree()>Int(other.degree()) || (degree()==Int(other.degree()) && index()>=Int(other.index())); }
 
+    index_key& operator++() noexcept
+    {
+        ++m_data;
+        return *this;
+    }
+
 };
 
 namespace dtl {
