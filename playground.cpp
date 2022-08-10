@@ -8,6 +8,7 @@
 #include <libalgebra_lite/vector.h>
 
 #include <iostream>
+#include <memory>
 
 template <alg::dimn_t Dimension>
 struct integer_basis
@@ -52,8 +53,8 @@ using vector_type = alg::vector<basis_type, alg::float_field, alg::dense_vector>
 int main()
 {
     using traits = alg::multiplication_traits<alg::base_multiplication<multiplier>>;
-    alg::base_multiplication<multiplier> mult{};
-    auto basis = new basis_type;
+    auto basis = std::make_shared<basis_type>();
+    auto mult = std::make_shared<alg::base_multiplication<multiplier>>();
 
     vector_type lhs (basis, { 1., 2., 3., 4., 5. });
     std::cout << "lhs\n";
@@ -74,6 +75,5 @@ int main()
         std::cout << item.key() << ' ' << item.value() << '\n';
     }
 
-    delete basis;
     return 0;
 }

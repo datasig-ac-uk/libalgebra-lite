@@ -77,6 +77,7 @@ protected:
 public:
 
     constexpr dimn_t size() const noexcept { return m_dimension; }
+    constexpr bool empty() const noexcept { return p_data == nullptr || m_dimension == 0; }
 
     constexpr dimn_t dimension() const noexcept { return m_dimension; }
     constexpr basis_type& basis() const noexcept { return *p_basis; }
@@ -430,8 +431,8 @@ class dense_vector_iterator
     using coeff_traits = coefficient_trait<Coefficients>;
     using scalar_type = typename coeff_traits::scalar_type;
 
-    const Basis* p_basis;
-    scalar_type* p_data;
+    const Basis* p_basis = nullptr;
+    scalar_type* p_data = nullptr;
     key_type m_key;
 
 
@@ -441,6 +442,9 @@ public:
     using reference = value_type;
     using pointer = value_type;
     using iterator_category = std::forward_iterator_tag;
+
+
+    dense_vector_iterator() = default;
 
     dense_vector_iterator(const Basis* basis, scalar_type* data)
         : p_basis(basis), p_data(data), m_key()
@@ -484,8 +488,8 @@ class dense_vector_const_iterator
     using coeff_traits = coefficient_trait<Coefficients>;
     using scalar_type = typename coeff_traits::scalar_type;
 
-    const Basis* p_basis;
-    const scalar_type* p_data;
+    const Basis* p_basis = nullptr;
+    const scalar_type* p_data = nullptr;
     key_type m_key;
 
 

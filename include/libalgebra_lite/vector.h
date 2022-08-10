@@ -33,6 +33,7 @@ template <typename Basis,
 class vector
 {
     using vector_type = VectorType<Basis, Coefficients, Args...>;
+    std::shared_ptr<const Basis> p_basis;
     std::shared_ptr<vector_type> p_impl;
     friend struct dtl::vector_base_access;
 
@@ -42,6 +43,7 @@ protected:
 
 public:
     using basis_type        = Basis;
+    using basis_pointer     = std::shared_ptr<const Basis>;
     using key_type          = typename basis_traits::key_type;
     using coefficient_ring  = typename coeff_traits::coefficient_ring;
     using scalar_type       = typename coeff_traits::scalar_type;
@@ -61,29 +63,50 @@ private:
 
 public:
 
-    template <typename... CArgs>
-    vector(CArgs&&... args)
-        : p_impl(std::make_shared<vector_type>(std::forward<CArgs>(args)...))
+    vector(basis_pointer basis) : p_basis(std::move(basis)), p_impl(nullptr)
     {}
 
-    vector(const basis_type* basis, std::initializer_list<scalar_type> args)
-        : p_impl(std::make_shared<vector_type>(basis, args))
+    vector(basis_pointer basis, std::initializer_list<scalar_type> args)
+        : p_basis(std::move(basis)), p_impl(std::make_shared<vector_type>(p_basis.get(), args))
     {}
+
+    vector(basis_pointer basis, const vector_type& arg)
+        : p_basis(basis), p_impl(std::make_shared<vector_type>(arg))
+    {
+        assert(p_basis.get() == arg.p_basis);
+    }
+
 
     LAL_INLINE_ALWAYS
     dimn_t size() const noexcept
     {
-        return p_impl->size();
+        if (p_impl) {
+            return p_impl->size();
+        }
+        return 0;
     }
     LAL_INLINE_ALWAYS
     dimn_t dimension() const noexcept
     {
-        return p_impl->dimension();
+        if (p_impl) {
+            return p_impl->dimension();
+        }
+        return 0;
     }
     LAL_INLINE_ALWAYS
-    dimn_t basis() const noexcept
+    bool empty() const noexcept
     {
-        return p_impl->basis();
+        if (p_impl) {
+            return p_impl->empty();
+        }
+        return true;
+    }
+
+
+    LAL_INLINE_ALWAYS
+    basis_pointer basis() const noexcept
+    {
+        return p_basis;
     }
     LAL_INLINE_ALWAYS
     reference operator[](const key_type& key) noexcept
@@ -97,31 +120,63 @@ public:
     }
     LAL_INLINE_ALWAYS
     void clear()
-    { p_impl->clear(); }
+    {
+        if (p_impl) {
+            p_impl->clear();
+        }
+    }
     LAL_INLINE_ALWAYS
     iterator begin() noexcept
-    { return p_impl->begin(); }
+    {
+        if (p_impl) {
+            return p_impl->begin();
+        }
+        return iterator();
+    }
     LAL_INLINE_ALWAYS
     iterator end() noexcept
-    { return p_impl->end(); }
+    {
+        if (p_impl) {
+            return p_impl->end();
+        }
+        return iterator();
+    }
     LAL_INLINE_ALWAYS
     const_iterator begin() const noexcept
-    { return p_impl->begin(); }
+    {
+        if (p_impl) {
+            return p_impl->begin();
+        }
+        return const_iterator();
+    }
     LAL_INLINE_ALWAYS
-    const_iterator end() const noexcept { return p_impl->end(); }
+    const_iterator end() const noexcept
+    {
+        if (p_impl) {
+            return p_impl->end();
+        }
+        return const_iterator();
+    }
 
     LAL_INLINE_ALWAYS
-    explicit operator vector_type& ()
-    { return *p_impl;}
-    LAL_INLINE_ALWAYS
-    explicit operator const vector_type& ()
-    { return *p_impl; }
-    LAL_INLINE_ALWAYS
-    vector_type& base_vector() noexcept
-    { return *p_impl; }
+    vector_type& base_vector()
+    {
+        if (!p_impl) {
+            p_impl = std::make_shared<vector_type>(p_basis.get());
+        }
+        return *p_impl;
+    }
     LAL_INLINE_ALWAYS
     const vector_type& base_vector() const noexcept
     { return *p_impl; }
+
+    vector clone() const
+    {
+        if (p_impl) {
+            return vector(p_basis, *p_impl);
+        }
+        return vector(p_basis);
+    }
 
 public:
 
@@ -219,7 +274,10 @@ public:
     operator-(const Vector& arg)
     {
         using coeffs = typename Vector::coefficient_ring;
-        return arg>-unary_op([](const scalar_type& s) { return coeffs::uminus(s); });
+        if (arg.p_impl) {
+            return arg->unary_op([](const scalar_type& s) { return coeffs::uminus(s); });
+        }
+        return Vector(arg.p_basis);
     }
 
     template <typename Vector, typename Scal>
@@ -227,8 +285,11 @@ public:
     operator*(const Vector& arg, const Scal& scalar)
     {
         using coeffs = typename Vector::coefficient_ring;
-        scalar_type multiplier(scalar);
-        return arg->unary_op([multiplier](const scalar_type& s) { return coeffs::mul(s, multiplier); });
+        if (arg.p_impl) {
+            scalar_type multiplier(scalar);
+            return arg->unary_op([multiplier](const scalar_type& s) { return coeffs::mul(s, multiplier); });
+        }
+        return Vector(arg.p_basis);
     };
 
     template <typename Vector, typename Scal>
@@ -236,8 +297,11 @@ public:
     operator*(const Scal& scalar, const Vector& arg)
     {
         using coeffs = typename Vector::coefficient_ring;
-        scalar_type multiplier(scalar);
-        return arg->unary_op([multiplier](const scalar_type& s) { return coeffs::mul(multiplier, s); });
+        if (arg.p_impl) {
+            scalar_type multiplier(scalar);
+            return arg->unary_op([multiplier](const scalar_type& s) { return coeffs::mul(multiplier, s); });
+        }
+        return Vector(arg.p_basis);
     };
 
     template <typename Vector, typename Rat>
@@ -245,8 +309,11 @@ public:
     operator/(const Vector& arg, const Rat& scalar)
     {
         using coeffs = typename Vector::coefficient_ring;
-        scalar_type multiplier(coefficient_ring::one()/scalar);
-        return arg->unary_op([multiplier](const scalar_type& s) { return coeffs::mul(s, multiplier); });
+        if (arg.p_impl) {
+            scalar_type multiplier(coefficient_ring::one()/scalar);
+            return arg->unary_op([multiplier](const scalar_type& s) { return coeffs::mul(s, multiplier); });
+        }
+        return Vector(arg.p_basis);
     }
 
     template <typename LVector>
@@ -254,11 +321,17 @@ public:
     operator+(const LVector& lhs, const vector& rhs)
     {
         using coeffs = typename LVector::coefficient_ring;
-        return lhs->binary_op(rhs, coeffs::add);
+        if (!rhs.p_basis) {
+            return lhs.clone();
+        }
+        if (!lhs.p_basis) {
+            return LVector(rhs.p_basis);
+        }
+        if (lhs.p_impl) {
+            return lhs.p_impl->binary_op(rhs, coeffs::add);
+        }
+        return LVector(rhs.clone());
     }
-
-
-
 
     template <typename LVector,
             typename RCoefficients,
@@ -271,7 +344,73 @@ public:
     operator+(const LVector& lhs, const vector<Basis, RCoefficients, RVecType, RArgs...>& rhs)
     {
         using rscalar_type = typename coefficient_trait<RCoefficients>::scalar_type;
-        return lhs->binary_op(rhs, [](const scalar_type& l, const rscalar_type& r) { return l + scalar_type(r); });
+        if (!rhs.p_basis) {
+            return lhs.clone();
+        }
+        if (!lhs.p_basis) {
+            return LVector(vector(rhs.p_basis));
+        }
+        if (lhs.p_impl) {
+            return lhs.p_impl->binary_op(rhs, [](const scalar_type& l, const rscalar_type& r) { return l + scalar_type(r); });
+        }
+        return LVector(lhs.p_basis);
+
+    }
+
+    template <typename LVector, typename Scal>
+    friend std::enable_if<std::is_base_of<vector, LVector>::value, LVector&>
+    operator*=(LVector& lhs, const Scal& scal)
+    {
+        if (lhs.p_basis && lhs.p_impl) {
+            scalar_type multiplier(scal);
+            lhs.p_impl->unary_op_inplace([multiplier](auto& value) {
+                return coefficient_ring::mul_inplace(value, multiplier);
+            });
+        }
+        return lhs;
+    }
+
+    template <typename LVector, typename Rat>
+    friend std::enable_if<std::is_base_of<vector, LVector>::value, LVector&>
+    operator/=(LVector& lhs, const Rat& scal)
+    {
+        if (lhs.p_basis && lhs.p_impl) {
+            auto multiplier = coefficient_ring::div(coefficient_ring::one(), rational_type(scal));
+            lhs.p_impl->unary_op_inplace([multiplier](auto& value) {
+                return coefficient_ring::mul_inplace(value, multiplier);
+            });
+        }
+        return lhs;
+    }
+
+
+
+    template <typename LVector>
+    friend std::enable_if<std::is_base_of<vector, LVector>::value, LVector&>
+    operator+=(LVector& lhs, const vector& rhs)
+    {
+        if (!rhs.p_basis || !rhs.p_impl) {
+            return lhs;
+        }
+        if (!lhs.p_basis || !lhs.p_impl) {
+            lhs.vector::operator=(rhs);
+            return lhs;
+        }
+        return lhs.p_impl->binary_op_inplace(rhs, LVector::coefficient_ring::add_inplace);
+    }
+
+    template <typename LVector>
+    friend std::enable_if<std::is_base_of<vector, LVector>::value, LVector&>
+    operator-=(LVector& lhs, const vector& rhs)
+    {
+        if (!rhs.p_basis || !rhs.p_impl) {
+            return lhs;
+        }
+        if (!lhs.p_basis || !lhs.p_impl) {
+            lhs.vector::operator=(-rhs);
+            return lhs;
+        }
+        return lhs.p_impl->binary_op_inplace(rhs, LVector::coefficient_ring::sub_inplace);
     }
 
 
@@ -280,23 +419,6 @@ public:
 
 };
 
-namespace dtl {
-
-template <typename B, typename C, template <typename, typename, typename...> class V, typename... A>
-struct owned_vector_impl<vector<B, C, V, A...>>
-{
-    using type = owned_type_of<V<B, C, A...>>;
-};
-
-template <typename B, typename C, template <typename, typename, typename...> class V, typename... A>
-struct view_vector_impl<vector<B, C, V, A...>>
-{
-    using type = view_type_of<V<B, C, A...>>;
-};
-
-
-
-} // namespace dtl
 
 
 
