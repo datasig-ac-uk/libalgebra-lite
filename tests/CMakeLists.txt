@@ -14,3 +14,6 @@ target_sources(lal_testing_common PRIVATE
 target_link_libraries(lal_testing_common PRIVATE
         GTest::gtest_main
         )
+
+
+add_subdirectory(utilities)

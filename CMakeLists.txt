@@ -14,7 +14,12 @@ find_package(Boost CONFIG REQUIRED COMPONENTS headers)
 
 add_library(Libalgebra_lite SHARED
         library.cpp
-        src/basis/hall_set.cpp src/basis/tensor_basis.cpp include/libalgebra_lite/free_tensor.h)
+        src/basis/hall_set.cpp
+        src/basis/tensor_basis.cpp
+        include/libalgebra_lite/free_tensor.h
+        include/libalgebra_lite/lie.h
+        include/libalgebra_lite/maps.h
+        )
 generate_export_header(Libalgebra_lite)
 
 

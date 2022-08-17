@@ -67,7 +67,7 @@ public:
             Fn fn)
     {
         if (lhs.empty() || rhs.empty()) {
-            return result;
+            return;
         }
 
         mult->fma(result.base_vector(),
@@ -134,7 +134,7 @@ public:
     static std::enable_if_t<!has_degree_t<Left>::value && has_fma_inplace<Left, Right, Fn, Mult>::value>
     multiply_and_add_inplace(mult_ptr mult, Left& lhs, const Right& rhs, Fn fn)
     {
-        mult->fma_inplace(lhs.base_vector(), rhs.base_vector(), fn);
+        mult->fma_inplace(lhs.vector_type(), rhs.vector_type(), fn);
     }
 
     template <typename Left, typename Right, typename Fn, typename Mult=Multiplication>
@@ -411,15 +411,17 @@ public:
 
 
 
-template <typename Vector, typename Multiplication>
-class algebra : public Vector
+template <typename Basis,
+        typename Coefficients,
+        typename Multiplication,
+        template <typename, typename> class VectorType,
+        template <typename> class StorageModel
+        >
+class algebra : public vector<Basis, Coefficients, VectorType, StorageModel>
 {
-    using base_vector = vector_base<Vector>;
-    using owned_vector = typename base_vector::owned_vector_type;
-    using owned_algebra = algebra<owned_vector, Multiplication>;
-
 public:
-    using vector_type = Vector;
+
+    using vector_type = vector<Basis, Coefficients, VectorType, StorageModel>;
     using multiplication_type = Multiplication;
 
     using typename vector_type::basis_type;
@@ -432,39 +434,18 @@ private:
     std::shared_ptr<const multiplication_type> p_mult;
 
 public:
-    algebra(const base_vector& base, std::shared_ptr<Multiplication> mult)
-        : Vector(base), p_mult(std::move(mult))
+    algebra(const vector_type& base, std::shared_ptr<Multiplication> mult)
+        : vector_type(base), p_mult(std::move(mult))
     {}
 
-    template <typename OtherVector,
-            typename=typename std::enable_if_t<std::is_base_of<base_vector, OtherVector>::value>>
-    explicit algebra(const algebra<OtherVector, Multiplication>& other)
-        : Vector(static_cast<const OtherVector&>(other)), p_mult(other.p_mult)
+    template <template <typename, typename> class OtherVectorType,
+    template <typename> class OtherStorageModel>
+    explicit algebra(const algebra<Basis, Coefficients, Multiplication, OtherVectorType, OtherStorageModel>& other)
+        : vector_type((other)), p_mult(other.p_mult)
     {}
 
-    template <typename Base=base_vector,
-            typename=typename std::enable_if_t<!std::is_same<Vector, Base>::value>>
-    operator algebra<Base, Multiplication>()
-    {
-        return algebra<Base, Multiplication>(static_cast<base_vector&>(*this), p_mult);
-    }
 
-    template <typename Base=base_vector,
-            typename=typename std::enable_if_t<!std::is_same<Vector, Base>::value>>
-    operator const algebra<Base, Multiplication> () const
-    {
-        return algebra<Base, Multiplication>(static_cast<const base_vector&>(*this), p_mult);
-    }
-
-    template <typename Owned=typename base_vector::owned_vector_type,
-            typename=typename std::enable_if_t<!std::is_same<Vector, Owned>::value>>
-    explicit operator algebra<Owned, Multiplication>() const
-    {
-        using new_alg = algebra<Owned, Multiplication>;
-        return new_alg(static_cast<const base_vector&>(*this), p_mult);
-    }
-
-    const multiplication_type& multiplication() const noexcept { return *p_mult; }
+    std::shared_ptr<multiplication_type> multiplication() const noexcept { return p_mult; }
 
 
     algebra& add_mul(const algebra& lhs, const algebra& rhs);
@@ -483,8 +464,12 @@ namespace dtl {
 template <typename Algebra>
 class is_algebra
 {
-    template <typename Vector, typename Multiplication>
-    static std::true_type test(algebra<Vector, Multiplication>&);
+    template <typename Basis,
+            typename Coefficients,
+            typename Multiplication,
+            template <typename, typename> class VType,
+            template <typename> class SModel>
+    static std::true_type test(algebra<Basis, Coefficients, Multiplication, VType, SModel>&);
 
     static std::false_type test(...);
 
@@ -498,12 +483,16 @@ template <typename Algebra>
 std::enable_if_t<dtl::is_algebra<Algebra>::value, Algebra>
 operator*(const Algebra& lhs, const Algebra& rhs)
 {
-    using base_t = vector_base<typename Algebra::vector_type>;
     using traits = multiplication_traits<typename Algebra::multiplication_type>;
 
     auto multiplication = lhs.multiplication();
+    if (!multiplication) {
+        multiplication = rhs.multiplication();
+    }
     Algebra result(lhs.basis, multiplication);
-    traits::multiply_and_add(*multiplication, lhs, rhs);
+    if (multiplication && !lhs.empty() && !rhs.empty()) {
+        traits::multiply_and_add(std::move(multiplication), lhs, rhs);
+    }
     return result;
 }
 
@@ -512,8 +501,17 @@ std::enable_if_t<dtl::is_algebra<Algebra>::value, Algebra&>
 operator*=(Algebra& lhs, const Algebra& rhs)
 {
     using traits = multiplication_traits<typename Algebra::multiplication_type>;
-    const auto& mult = lhs.multiplication();
-    traits::multiply_inplace(*lhs.multiplication, lhs, rhs);
+    if (rhs.empty()) {
+        lhs.clear();
+    }
+    auto multiplication = lhs.multiplication();
+    if (!multiplication) {
+        multiplication = rhs.multiplication();
+    }
+
+    if (multiplication && !lhs.empty()) {
+        traits::multiply_inplace(lhs.multiplication, lhs, rhs);
+    }
     return lhs;
 }
 
@@ -523,10 +521,15 @@ commutator(const Algebra& lhs, const Algebra& rhs)
 {
     using traits = multiplication_traits<typename Algebra::multiplication_type>;
     auto multiplication = lhs.multiplication();
+    if (!multiplication) {
+        multiplication = rhs.multiplication();
+    }
 
     Algebra result(lhs.basis(), multiplication);
-    traits::mulitply_and_add(*multiplication, result, lhs, rhs);
-    traits::multiply_and_add(*multiplication, result, rhs, lhs, Algebra::coefficient_ring::uminus);
+    if (multiplication && !lhs.empty() && !rhs.empty()) {
+        traits::mulitply_and_add(*multiplication, result, lhs, rhs);
+        traits::multiply_and_add(*multiplication, result, rhs, lhs, Algebra::coefficient_ring::uminus);
+    }
     return result;
 }
 

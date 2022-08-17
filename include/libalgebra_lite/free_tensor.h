@@ -19,7 +19,10 @@
 
 namespace alg {
 
-template<typename, template<typename, typename, typename...> class, typename...>
+template<typename,
+         template<typename, typename, typename...> class,
+         template <typename> class,
+         typename...>
 class free_tensor;
 
 
@@ -404,11 +407,13 @@ public:
 #undef LAL_IS_TENSOR
 
 
-template <typename Coefficients, template <typename, typename, typename...> class VectorType, typename... Args>
-class free_tensor : public algebra<VectorType<tensor_basis, Coefficients, Args...>, free_tensor_multiplication>
+template <typename Coefficients,
+          template <typename, typename, typename...> class VectorType,
+          template <typename> class StorageModel,
+          typename... Args>
+class free_tensor : public algebra<tensor_basis, Coefficients, free_tensor_multiplication, VectorType, StorageModel>
 {
-    using vector_type = VectorType<tensor_basis, Coefficients, Args...>;
-    using algebra_type = algebra<vector_type, free_tensor_multiplication>;
+    using algebra_type = algebra<tensor_basis, Coefficients, free_tensor_multiplication, VectorType, StorageModel>;
 
     using algebra_type::algebra_type;
 

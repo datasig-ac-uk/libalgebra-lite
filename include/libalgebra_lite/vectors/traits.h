@@ -25,6 +25,8 @@ struct associated_vector_template;
 template <typename Vector>
 struct vector_traits
 {
+    using basis_type = typename Vector::basis_type;
+
     using owned_vector_type = typename Vector::owned_vector_type;
     using view_vector_type = typename Vector::view_vector_type;
     using coefficient_ring = typename Vector::coefficient_ring;
@@ -34,12 +36,6 @@ struct vector_traits
 
 
 
-
-template <typename Vector>
-using associated_view_type = dtl::get_view_type_impl<Vector>;
-
-template <typename VectorView>
-using associated_vec_type = dtl::get_vector_type_impl<VectorView>;
 
 namespace dtl {
 template<typename Vector>

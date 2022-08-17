@@ -74,6 +74,7 @@ protected:
         : p_data(data), p_basis(basis), m_dimension(dimension), m_degree(degree)
     {}
 
+
 public:
 
     constexpr dimn_t size() const noexcept { return m_dimension; }
@@ -371,10 +372,40 @@ public:
         alloc_and_copy(nullptr, 0);
     }
 
+    dense_vector(const dense_vector& arg)
+        : slice_type(nullptr, arg.basis, 0), m_alloc()
+    {
+        alloc_and_copy(arg.p_data, arg.m_dimension);
+    }
+
+    dense_vector(dense_vector&& arg)
+        : slice_type(arg.p_data, arg.p_basis, arg.m_dimension),
+          m_alloc(std::move(arg.m_alloc))
+    {
+        arg.p_data = nullptr;
+        arg.p_basis = nullptr;
+        arg.m_dimension = 0;
+    }
+
     dense_vector(const basis_type* basis, std::initializer_list<scalar_type> args)
         : slice_type(nullptr, basis, 0)
     {
         alloc_and_copy(begin(args), args.size());
+    }
+
+    template <typename InputIt,
+            typename=std::enable_if_t<
+                    std::is_same<
+                            typename std::iterator_traits<InputIt>::value_type,
+                            scalar_type
+                            >::value
+                    >
+            >
+    explicit dense_vector(const basis_type* basis, InputIt begin, InputIt end)
+        : slice_type(nullptr, basis, 0)
+    {
+        alloc_and_copy(nullptr, basis, 0);
+        std::copy(begin, end, p_data);
     }
 
     ~dense_vector()

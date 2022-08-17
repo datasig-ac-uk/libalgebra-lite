@@ -9,6 +9,7 @@
 
 #include <functional>
 #include <utility>
+#include <memory>
 
 namespace alg {
 
@@ -64,6 +65,13 @@ struct basis_trait {
 
     using key_ordering = std::less<key_type>;
     using kv_ordering = dtl::key_value_ordering<key_type, key_ordering>;
+
+    template <typename... Args>
+    static std::shared_ptr<const Basis> basis_factory(Args... args)
+    {
+        return { nullptr };
+    }
+
 
 };
 

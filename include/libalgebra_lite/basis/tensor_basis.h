@@ -19,7 +19,7 @@ namespace alg {
 
 
 
-class LIBALGEBRA_LITE_EXPORT tensor_basis
+class  tensor_basis
 {
     deg_t m_width;
     deg_t m_depth;
@@ -89,19 +89,5 @@ public:
 } // namespace alg
 
 
-alg::tensor_basis::tensor_basis(deg_t width, deg_t depth) :
-    m_width (width), m_depth(depth)
-{
-    m_powers.reserve(depth+1);
-    m_sizes.reserve(depth+2);
-    m_powers.push_back(1);
-    m_sizes.push_back(1);
-
-    for (dimn_t d = 1; d<=depth; ++d) {
-        m_powers.push_back(m_powers.back()*width);
-        m_sizes.push_back(1+width*m_sizes.back());
-    }
-    m_sizes.push_back(1+width*m_sizes.back());
-}
 
 #endif //LIBALGEBRA_LITE_TENSOR_BASIS_H
