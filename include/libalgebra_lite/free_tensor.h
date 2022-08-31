@@ -17,7 +17,7 @@
 #include <utility>
 #include <vector>
 
-namespace alg {
+namespace lal {
 
 template<typename,
          template<typename, typename, typename...> class,
@@ -422,7 +422,7 @@ class free_tensor : public algebra<tensor_basis, Coefficients, free_tensor_multi
 
 };
 
-}
+} // namespace lal
 
 
 #endif //LIBALGEBRA_LITE_FREE_TENSOR_H

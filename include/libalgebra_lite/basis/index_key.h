@@ -10,7 +10,7 @@
 #include <limits>
 #include <unordered_map>
 
-namespace alg {
+namespace lal {
 
 namespace dtl {
 struct index_key_access;
@@ -45,7 +45,7 @@ public:
 
     template <typename DegreeInt, typename IndexInt>
     explicit constexpr index_key(DegreeInt degree, IndexInt index)
-        : m_data(Int(degree) << index_bits + Int(index))
+        : m_data((Int(degree) << index_bits) + Int(index))
     {}
 
     constexpr Int index() const noexcept
@@ -94,6 +94,11 @@ public:
     {
         ++m_data;
         return *this;
+    }
+
+    friend std::size_t hash_value(const index_key& arg) noexcept
+    {
+        return arg.m_data;
     }
 
 };

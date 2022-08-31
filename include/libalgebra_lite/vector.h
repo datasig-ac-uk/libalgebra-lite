@@ -17,7 +17,7 @@
 #define LAL_INLINE_ALWAYS __attribute__((always_inline))
 
 
-namespace alg {
+namespace lal {
 
 namespace dtl {
 
@@ -291,8 +291,6 @@ protected:
     using base_type::p_basis;
     using base_type::p_impl;
 
-private:
-
     vector(basis_pointer basis, vector_type&& arg)
         : base_type(basis, std::make_shared<vector_type>(std::move(arg)))
     {}
@@ -319,7 +317,7 @@ public:
         return vector(p_basis);
     }
 
-
+    using base_type::basis;
     using base_type::size;
     using base_type::dimension;
     using base_type::empty;
@@ -653,13 +651,6 @@ public:
 
 };
 
-
-
-template <typename Vector>
-using vector_t = vector<typename Vector::basis_type,
-                      typename Vector::coefficient_ring,
-                      dtl::base_vector_template<Vector>::template type,
-                      dtl::standard_storage>;
 
 
 

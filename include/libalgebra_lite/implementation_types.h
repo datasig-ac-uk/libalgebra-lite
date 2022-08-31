@@ -8,7 +8,7 @@
 #include <cstddef>
 #include <cstdint>
 
-namespace alg {
+namespace lal {
 
 using dimn_t = std::size_t;
 using idimn_t = std::ptrdiff_t;
@@ -16,7 +16,7 @@ using deg_t = std::int32_t;
 
 using let_t = std::size_t;
 
-} // namespace alg
+} // namespace lal
 
 
 #endif //LIBALGEBRA_LITE_IMPLEMENTATION_TYPES_H

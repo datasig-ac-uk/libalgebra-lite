@@ -11,7 +11,7 @@
 #include <utility>
 #include <memory>
 
-namespace alg {
+namespace lal {
 
 struct with_degree_tag {
     deg_t degree;

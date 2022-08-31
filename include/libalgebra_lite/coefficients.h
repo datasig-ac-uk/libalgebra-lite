@@ -9,7 +9,7 @@
 
 #include <memory>
 
-namespace alg {
+namespace lal {
 
 
 template <typename Coeff>
@@ -102,6 +102,6 @@ struct coefficient_trait<double>
 };
 
 
-}
+} // namespace lal
 
 #endif //LIBALGEBRA_LITE_COEFFICIENTS_H

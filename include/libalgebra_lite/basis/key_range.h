@@ -8,7 +8,7 @@
 #include <libalgebra_lite/implementation_types.h>
 #include <libalgebra_lite/basis/traits.h>
 
-namespace alg {
+namespace lal {
 
 template <typename Basis>
 class key_range
@@ -33,7 +33,7 @@ public:
 
 };
 
-} // namespace alg
+} // namespace lal
 
 
 #endif //LIBALGEBRA_LITE_KEY_RANGE_H

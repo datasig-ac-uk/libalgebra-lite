@@ -19,7 +19,7 @@ add_library(Libalgebra_lite SHARED
         include/libalgebra_lite/free_tensor.h
         include/libalgebra_lite/lie.h
         include/libalgebra_lite/maps.h
-        )
+        include/libalgebra_lite/vector_bundle.h src/lie_multiplier.cpp include/libalgebra_lite/basis/polynomial_basis.h include/libalgebra_lite/polynomial.h src/polynomial_multiplier.cpp src/polynomial.cpp)
 generate_export_header(Libalgebra_lite)
 
 
@@ -28,6 +28,7 @@ target_include_directories(Libalgebra_lite PRIVATE
         ${CMAKE_CURRENT_BINARY_DIR})
 target_include_directories(Libalgebra_lite PUBLIC
         "$<BUILD_INTERFACE:${CMAKE_CURRENT_LIST_DIR}/include/>"
+        "$<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}>"
         "$<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>")
 
 target_link_libraries(Libalgebra_lite PRIVATE Boost::boost)

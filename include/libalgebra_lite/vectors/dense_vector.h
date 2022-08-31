@@ -13,7 +13,7 @@
 #include <memory>
 #include <type_traits>
 
-namespace alg {
+namespace lal {
 
 
 namespace dtl {
@@ -52,7 +52,6 @@ public:
     using coefficient_ring = typename coeff_traits::coefficient_ring;
     using scalar_type = typename coeff_traits::scalar_type;
     using rational_type = typename coeff_traits::rational_type;
-
 
     using reference = scalar_type&;
     using const_reference = const scalar_type&;
@@ -421,17 +420,7 @@ public:
 
 namespace dtl {
 
-template <typename Basis, typename Coeff, typename Alloc>
-struct vector_base_trait<dense_vector_view<Basis, Coeff, Alloc>>
-{
-    using type = dense_vector_view<Basis, Coeff, Alloc>;
-};
 
-template <typename Basis, typename Coeff, typename Alloc>
-struct vector_base_trait<dense_vector<Basis, Coeff, Alloc>>
-{
-    using type = dense_vector_view<Basis, Coeff, Alloc>;
-};
 
 template <typename KeyRef, typename ScaRef>
 class dense_iterator_item
@@ -568,6 +557,6 @@ public:
 
 
 
-} // namespace alg
+} // namespace lal
 
 #endif //LIBALGEBRA_LITE_DENSE_VECTOR_H

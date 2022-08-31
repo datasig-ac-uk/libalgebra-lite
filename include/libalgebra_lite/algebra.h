@@ -20,7 +20,7 @@
 
 #include <boost/tti/has_template.hpp>
 
-namespace alg {
+namespace lal {
 
 
 template <typename Multiplication>
@@ -350,6 +350,13 @@ class base_multiplication
         }
     }
 
+protected:
+
+    template <typename... Args>
+    explicit base_multiplication(Args&&... args)
+        : m_mult(std::forward<Args>(args)...)
+    {}
+
 
 public:
 
@@ -447,7 +454,6 @@ public:
 
     std::shared_ptr<multiplication_type> multiplication() const noexcept { return p_mult; }
 
-
     algebra& add_mul(const algebra& lhs, const algebra& rhs);
     algebra& sub_mul(const algebra& lhs, const algebra& rhs);
 
@@ -535,6 +541,6 @@ commutator(const Algebra& lhs, const Algebra& rhs)
 
 
 
-} // namespace alg
+} // namespace lal
 
 #endif //LIBALGEBRA_LITE_ALGEBRA_H

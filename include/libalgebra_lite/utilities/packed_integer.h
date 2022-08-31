@@ -8,7 +8,7 @@
 #include <limits>
 #include <type_traits>
 
-namespace alg {
+namespace lal {
 namespace dtl {
 
 
@@ -69,12 +69,12 @@ public:
         return (m_data & packed_mask) >> remaining_bits;
     }
 
-    operator integer_ref() noexcept
+    operator integer_ref() noexcept // NOLINT(google-explicit-constructor)
     {
         return integer_ref(m_data);
     }
 
-    operator packed_ref() noexcept
+    operator packed_ref() noexcept // NOLINT(google-explicit-constructor)
     {
         return packed_ref(m_data);
     }

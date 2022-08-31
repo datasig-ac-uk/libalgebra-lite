@@ -7,7 +7,7 @@
 
 #include <libalgebra_lite/implementation_types.h>
 #include <libalgebra_lite/basis/index_key.h>
-#include "libalgebra_lite_export.h"
+//#include "libalgebra_lite_export.h"
 #include <utility>
 #include <vector>
 
@@ -16,7 +16,9 @@
 #include <memory>
 #include <unordered_map>
 
-namespace alg {
+namespace lal {
+
+
 
 class hall_set {
 public:
@@ -43,6 +45,14 @@ private:
     size_vector_type sizes;
 
 public:
+
+    struct find_result
+    {
+        typename reverse_map_type::const_iterator it;
+        bool found;
+    };
+
+
     static constexpr key_type root_element {0, 0};
     static constexpr parent_type root_parent {root_element, root_element};
 
@@ -54,8 +64,11 @@ public:
 
     key_type key_of_letter(let_t) const noexcept;
     size_type size(deg_t) const noexcept;
+    size_type size_of_degree(deg_t) const noexcept;
     bool letter(const key_type&) const noexcept;
     letter_type get_letter(dimn_t idx) const noexcept;
+
+    find_result find(parent_type parent) const noexcept;
 
     const parent_type &operator[](const key_type&) const noexcept;
     const key_type& operator[](const parent_type&) const;
@@ -63,9 +76,9 @@ public:
 
 
 
-class  hall_basis
+class hall_basis
 {
-    std::shared_ptr<hall_set> p_hallset;
+    std::shared_ptr<const hall_set> p_hallset;
     deg_t m_width;
     deg_t m_depth;
 
@@ -74,6 +87,9 @@ public:
     using key_type = typename hall_set::key_type;
     using parent_type = typename hall_set::parent_type;
 
+    hall_basis(deg_t width, deg_t depth) : m_width(width), m_depth(depth),
+        p_hallset(new hall_set(width, depth))
+    {}
 
     deg_t width() const noexcept { return m_width; }
     deg_t depth() const noexcept { return m_depth; }
@@ -99,6 +115,7 @@ public:
     {
         return (deg == 0) ? 0 : p_hallset->size(deg-1);
     }
+    typename hall_set::find_result find(parent_type parents) const noexcept;
 
 
 };
@@ -141,6 +158,6 @@ hall_extension<Func, Binop>::operator()(const hall_extension::key_type& key) con
                                                     : m_binop(operator()(parents.first), operator()(parents.second));
 }
 
-} // alg
+} // namespace lal
 
 #endif //LIBALGEBRA_LITE_HALL_SET_H

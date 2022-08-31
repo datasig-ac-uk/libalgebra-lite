@@ -10,16 +10,14 @@
 #include "free_tensor.h"
 #include "lie.h"
 
-namespace alg {
+namespace lal {
 
-class maps
+class LIBALGEBRA_LITE_EXPORT maps
 {
     std::shared_ptr<const tensor_basis> p_tensor_basis;
     std::shared_ptr<const hall_basis> p_lie_basis;
 
-
 public:
-
     using lkey_type = typename hall_basis::key_type;
     using tkey_type = typename tensor_basis::key_type;
     using generic_scalar_type = int;
@@ -27,7 +25,6 @@ public:
     using tensor_pair = std::pair<tkey_type, generic_scalar_type>;
     using generic_lie = std::vector<lie_pair>;
     using generic_tensor = std::vector<tensor_pair>;
-
 
 private:
 
@@ -46,10 +43,28 @@ public:
     free_tensor<Coefficients, VectorType, StorageModel>
     lie_to_tensor(const lie<Coefficients, VectorType, StorageModel>& arg) const
     {
+        if (arg.basis().width() != p_lie_basis->width()) {
+            throw std::invalid_argument("mismatched width");
+        }
+
+        auto max_deg = p_lie_basis->depth();
         free_tensor<Coefficients, VectorType, StorageModel> result(p_tensor_basis);
-        for (auto outer : arg) {
-            for (auto inner : expand(outer.key())) {
-                result.add_scal_prod(inner.first, inner.second*outer.value());
+        if (arg.basis().depth() <= max_deg) {
+            for (auto outer : arg) {
+                auto val = outer.value();
+                for (auto inner : expand(outer.key())) {
+                    result.add_scal_prod(inner.first, Coefficients::mul(inner.second, val));
+                }
+            }
+        } else {
+            for (auto outer : arg) {
+                auto key = outer.key();
+                auto val = outer.value();
+                if (p_lie_basis->degree(key) <= max_deg) {
+                    for (auto inner : expand(key)) {
+                        result.add_scal_prod(inner.first, Coefficients::mul(inner.second, val));
+                    }
+                }
             }
         }
         return result;
@@ -61,12 +76,33 @@ public:
     lie<Coefficients, VectorType, StorageModel>
     tensor_to_lie(const free_tensor<Coefficients, VectorType, StorageModel>& arg) const
     {
+        using scalar_type = typename Coefficients::scalar_type;
+
+        if (arg.basis().width() != p_tensor_basis->width()) {
+            throw std::invalid_argument("mismatched width");
+        }
+        auto max_deg = p_tensor_basis->depth();
+
         lie<Coefficients, VectorType, StorageModel> result(p_lie_basis);
-        for (auto outer : arg) {
-            for (auto inner : rbracketing(outer.key())) {
-                result.add_scal_prod()
+        if (arg.basis.depth() <= max_deg) {
+            for (auto outer : arg) {
+                auto val = outer.value();
+                for (auto inner : rbracketing(outer.key())) {
+                    result.add_scal_prod(inner.key(), Coefficients::mul(scalar_type(inner.second), val));
+                }
+            }
+        } else {
+            for (auto outer : arg) {
+                auto key = outer.key();
+                auto val = outer.value();
+                if (p_tensor_basis->degree(key) <= max_deg) {
+                    for (auto inner : rbracketing(key)) {
+                        result.add_scal_prod(inner.key(), Coefficients::mul(scalar_type(inner.second), val));
+                    }
+                }
             }
         }
+        return result;
     }
 };
 

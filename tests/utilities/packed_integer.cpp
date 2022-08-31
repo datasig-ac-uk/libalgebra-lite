@@ -9,7 +9,7 @@
 
 #include <cstdint>
 
-namespace alg {
+namespace lal {
 namespace dtl {
 
 struct packed_integer_access

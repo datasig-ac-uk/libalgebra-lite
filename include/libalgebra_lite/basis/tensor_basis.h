@@ -15,7 +15,7 @@
 #include <string>
 #include <iosfwd>
 
-namespace alg {
+namespace lal {
 
 
 
