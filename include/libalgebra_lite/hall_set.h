@@ -5,8 +5,8 @@
 #ifndef LIBALGEBRA_LITE_HALL_SET_H
 #define LIBALGEBRA_LITE_HALL_SET_H
 
-#include <libalgebra_lite/implementation_types.h>
-#include <libalgebra_lite/basis/index_key.h>
+#include "implementation_types.h"
+#include "index_key.h"
 //#include "libalgebra_lite_export.h"
 #include <utility>
 #include <vector>

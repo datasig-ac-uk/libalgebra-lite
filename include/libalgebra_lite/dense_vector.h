@@ -5,10 +5,10 @@
 #ifndef LIBALGEBRA_LITE_DENSE_VECTOR_H
 #define LIBALGEBRA_LITE_DENSE_VECTOR_H
 
-#include <libalgebra_lite/implementation_types.h>
-#include <libalgebra_lite/basis/traits.h>
-#include <libalgebra_lite/coefficients.h>
-#include "traits.h"
+#include "implementation_types.h"
+#include "basis_traits.h"
+#include "coefficients.h"
+#include "vector_traits.h"
 
 #include <memory>
 #include <type_traits>

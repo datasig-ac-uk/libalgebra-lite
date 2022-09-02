@@ -7,7 +7,7 @@
 
 #include <libalgebra_lite/implementation_types.h>
 #include <libalgebra_lite/algebra.h>
-#include <libalgebra_lite/basis/hall_set.h>
+#include "hall_set.h"
 
 #include <mutex>
 #include <unordered_map>

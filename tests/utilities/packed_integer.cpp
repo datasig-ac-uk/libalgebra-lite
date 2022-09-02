@@ -4,7 +4,7 @@
 
 #include <gtest/gtest.h>
 #define LAL_TESTING
-#include <libalgebra_lite/utilities/packed_integer.h>
+#include "libalgebra_lite/packed_integer.h"
 #undef LAL_TESTING
 
 #include <cstdint>

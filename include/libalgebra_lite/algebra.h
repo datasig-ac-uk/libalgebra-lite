@@ -7,9 +7,9 @@
 
 
 #include <libalgebra_lite/implementation_types.h>
-#include <libalgebra_lite/basis/traits.h>
+#include "basis_traits.h"
 #include <libalgebra_lite/coefficients.h>
-#include <libalgebra_lite/vectors/traits.h>
+#include "vector_traits.h"
 #include <libalgebra_lite/vector.h>
 
 #include <algorithm>

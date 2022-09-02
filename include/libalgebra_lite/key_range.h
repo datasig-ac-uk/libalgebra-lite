@@ -5,8 +5,8 @@
 #ifndef LIBALGEBRA_LITE_KEY_RANGE_H
 #define LIBALGEBRA_LITE_KEY_RANGE_H
 
-#include <libalgebra_lite/implementation_types.h>
-#include <libalgebra_lite/basis/traits.h>
+#include "implementation_types.h"
+#include "basis_traits.h"
 
 namespace lal {
 

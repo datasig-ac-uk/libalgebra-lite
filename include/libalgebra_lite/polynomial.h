@@ -6,8 +6,8 @@
 #define LIBALGEBRA_LITE_POLYNOMIAL_H
 
 #include "implementation_types.h"
-#include "basis/polynomial_basis.h"
-#include "vectors/sparse_vector.h"
+#include "polynomial_basis.h"
+#include "sparse_vector.h"
 #include "algebra.h"
 #include "libalgebra_lite_export.h"
 #include "coefficients.h"
@@ -43,10 +43,38 @@ class polynomial : public algebra<polynomial_basis,
         dtl::standard_storage
         >
 {
+    using base = algebra<polynomial_basis,
+                         Coefficients,
+                         base_multiplication<polynomial_multiplier>,
+                         sparse_vector,
+                         dtl::standard_storage>;
+
+public:
+
+    using base::base;
+
+    template <typename IndeterminateMap>
+    typename polynomial::scalar_type operator()(const IndeterminateMap& arg) const noexcept
+    {
+        using ring = typename polynomial::coefficient_ring;
+        auto ans = ring::zero();
+        for (const auto& item : *this) {
+            auto key_result = item.first.template eval<ring>(arg);
+            ring::add_inplace(ans, ring::mul(item.second, key_result));
+        }
+        return ans;
+    }
+
+
 };
 
 extern template class LIBALGEBRA_LITE_EXPORT polynomial<double_field>;
 extern template class LIBALGEBRA_LITE_EXPORT polynomial<float_field>;
+
+extern template class LIBALGEBRA_LITE_EXPORT coefficient_ring<polynomial<double_field>, double>;
+extern template class LIBALGEBRA_LITE_EXPORT coefficient_ring<polynomial<float_field>, float>;
+extern template class LIBALGEBRA_LITE_EXPORT coefficient_ring<polynomial<rational_field>,
+        typename rational_field::scalar_type>;
 
 }
 

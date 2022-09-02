@@ -13,7 +13,7 @@ namespace lal {
 typename polynomial_multiplier::product_type
 polynomial_multiplier::operator()(const key_type& lhs, const key_type& rhs) const
 {
-    std::map<key_type, int, typename polynomial_basis::key_order> tmp(lhs.begin(), lhs.end());
+    std::map<letter_type, deg_t> tmp(lhs.begin(), lhs.end());
 
     for (const auto& item : rhs) {
         tmp[item.first] += item.second;

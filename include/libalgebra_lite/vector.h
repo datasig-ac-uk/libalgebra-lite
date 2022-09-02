@@ -6,9 +6,9 @@
 #define LIBALGEBRA_LITE_VECTOR_H
 
 #include <libalgebra_lite/implementation_types.h>
-#include <libalgebra_lite/vectors/traits.h>
+#include "vector_traits.h"
 #include <libalgebra_lite/coefficients.h>
-#include <libalgebra_lite/basis/traits.h>
+#include "basis_traits.h"
 
 
 #include <memory>
@@ -346,11 +346,11 @@ private:
 
 public:
 
-    template <typename Iter>
+    template <typename Iter, typename C>
     std::enable_if_t<
             has_iterator_inplace_binop<
                     vector_type,
-                    decltype(coefficient_ring::add_inplace),
+                    decltype(coefficient_ring::template add_inplace<>),
                     Iter
                     >::value,
             vector&>
@@ -364,7 +364,7 @@ public:
     std::enable_if_t<
             has_iterator_inplace_binop<
                     vector_type,
-                    decltype(coefficient_ring::add_inplace),
+                    decltype(coefficient_ring::template add_inplace<>),
                     Iter>::value,
             vector&>
     sub_inplace(Iter begin, Iter end)
@@ -378,7 +378,7 @@ public:
     std::enable_if_t<
             !has_iterator_inplace_binop<
                     vector_type,
-                    decltype(coefficient_ring::add_inplace),
+                    decltype(coefficient_ring::template add_inplace<>),
                     Iter>::value,
             vector&>
     add_inplace(Iter begin, Iter end)
@@ -395,7 +395,7 @@ public:
     std::enable_if_t<
             !has_iterator_inplace_binop<
                     vector_type,
-                    decltype(coefficient_ring::sub_inplace),
+                    decltype(coefficient_ring::template sub_inplace<>),
                     Iter>::value,
             vector&>
     sub_inplace(Iter begin, Iter end)

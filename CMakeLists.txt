@@ -13,13 +13,12 @@ include(GNUInstallDirs)
 find_package(Boost CONFIG REQUIRED COMPONENTS headers)
 
 add_library(Libalgebra_lite SHARED
-        library.cpp
         src/basis/hall_set.cpp
         src/basis/tensor_basis.cpp
         include/libalgebra_lite/free_tensor.h
         include/libalgebra_lite/lie.h
         include/libalgebra_lite/maps.h
-        include/libalgebra_lite/vector_bundle.h src/lie_multiplier.cpp include/libalgebra_lite/basis/polynomial_basis.h include/libalgebra_lite/polynomial.h src/polynomial_multiplier.cpp src/polynomial.cpp)
+        include/libalgebra_lite/vector_bundle.h src/lie_multiplier.cpp include/libalgebra_lite/polynomial_basis.h include/libalgebra_lite/polynomial.h src/polynomial_multiplier.cpp src/polynomial.cpp)
 generate_export_header(Libalgebra_lite)
 
 

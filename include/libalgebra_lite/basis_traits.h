@@ -2,10 +2,10 @@
 // Created by user on 25/07/22.
 //
 
-#ifndef LIBALGEBRA_LITE_TRAITS_H
-#define LIBALGEBRA_LITE_TRAITS_H
+#ifndef LIBALGEBRA_LITE_BASIS_TRAITS_H
+#define LIBALGEBRA_LITE_BASIS_TRAITS_H
 
-#include <libalgebra_lite/implementation_types.h>
+#include "implementation_types.h"
 
 #include <functional>
 #include <utility>
@@ -84,4 +84,4 @@ struct is_basis_compatible : std::false_type
 
 } // namespace alg
 
-#endif //LIBALGEBRA_LITE_TRAITS_H
+#endif //LIBALGEBRA_LITE_BASIS_TRAITS_H

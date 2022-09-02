@@ -5,10 +5,10 @@
 #ifndef LIBALGEBRA_LITE_TENSOR_BASIS_H
 #define LIBALGEBRA_LITE_TENSOR_BASIS_H
 
-#include <libalgebra_lite/implementation_types.h>
-#include <libalgebra_lite/basis/index_key.h>
+#include "implementation_types.h"
+#include "index_key.h"
 #include "libalgebra_lite_export.h"
-#include <libalgebra_lite/basis/traits.h>
+#include "basis_traits.h"
 
 #include <vector>
 #include <cassert>

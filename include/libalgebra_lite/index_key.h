@@ -5,7 +5,7 @@
 #ifndef LIBALGEBRA_LITE_INDEX_KEY_H
 #define LIBALGEBRA_LITE_INDEX_KEY_H
 
-#include <libalgebra_lite/implementation_types.h>
+#include "implementation_types.h"
 
 #include <limits>
 #include <unordered_map>
@@ -120,14 +120,14 @@ struct index_key_access
 } // namespace dtl
 
 
-} // namespace alg
+} // namespace lal
 
 namespace std {
 
 template <int DegreeDigits, typename Int>
-struct hash<alg::index_key<DegreeDigits, Int>> {
-    constexpr size_t operator()(const alg::index_key<DegreeDigits, Int>& arg) const noexcept
-    { return size_t(alg::dtl::index_key_access::raw(arg)); }
+struct hash<lal::index_key<DegreeDigits, Int>> {
+    constexpr size_t operator()(const lal::index_key<DegreeDigits, Int>& arg) const noexcept
+    { return size_t(lal::dtl::index_key_access::raw(arg)); }
 };
 
 }

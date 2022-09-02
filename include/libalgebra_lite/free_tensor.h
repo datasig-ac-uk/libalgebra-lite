@@ -6,11 +6,11 @@
 #define LIBALGEBRA_LITE_FREE_TENSOR_H
 
 #include <libalgebra_lite/implementation_types.h>
-#include <libalgebra_lite/basis/tensor_basis.h>
-#include <libalgebra_lite/basis/traits.h>
+#include "tensor_basis.h"
+#include "basis_traits.h"
 #include <libalgebra_lite/coefficients.h>
-#include <libalgebra_lite/vectors/traits.h>
-#include <libalgebra_lite/vectors/dense_vector.h>
+#include "vector_traits.h"
+#include "dense_vector.h"
 #include <libalgebra_lite/algebra.h>
 
 #include <algorithm>

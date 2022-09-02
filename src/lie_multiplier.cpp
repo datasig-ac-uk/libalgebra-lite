@@ -3,11 +3,11 @@
 //
 
 
-#include <libalgebra_lite/lie.h>
+#include "libalgebra_lite/lie.h"
 
 #include <map>
 
-namespace alg {
+namespace lal {
 
 lie_multiplier::product_type
 lie_multiplier::key_prod_impl(key_type lhs, key_type rhs) const

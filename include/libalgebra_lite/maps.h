@@ -6,7 +6,7 @@
 #define LIBALGEBRA_LITE_MAPS_H
 
 #include "implementation_types.h"
-#include <libalgebra_lite/basis/tensor_basis.h>
+#include "tensor_basis.h"
 #include "free_tensor.h"
 #include "lie.h"
 

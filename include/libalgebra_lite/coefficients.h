@@ -5,9 +5,12 @@
 #ifndef LIBALGEBRA_LITE_COEFFICIENTS_H
 #define LIBALGEBRA_LITE_COEFFICIENTS_H
 
-#include <libalgebra_lite/implementation_types.h>
+#include "implementation_types.h"
+#include "libalgebra_lite_export.h"
 
 #include <memory>
+
+#include <boost/multiprecision/cpp_int.hpp>
 
 namespace lal {
 
@@ -80,9 +83,22 @@ struct coefficient_field : public coefficient_ring<Scalar, Scalar>
 {
 };
 
+extern template class LIBALGEBRA_LITE_EXPORT coefficient_field<double>;
+extern template class LIBALGEBRA_LITE_EXPORT coefficient_field<float>;
+
 
 using double_field = coefficient_field<double>;
 using float_field = coefficient_field<float>;
+
+namespace dtl {
+    using fallback_rational = boost::multiprecision::cpp_rational;
+    using rational = fallback_rational;
+} // namespace dtl
+
+extern template class LIBALGEBRA_LITE_EXPORT coefficient_field<dtl::rational>;
+
+using rational_field = coefficient_field<dtl::rational>;
+
 
 
 template <>

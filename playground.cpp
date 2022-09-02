@@ -2,10 +2,10 @@
 // Created by user on 07/08/22.
 //
 
-#include <libalgebra_lite/algebra.h>
-#include <libalgebra_lite/coefficients.h>
-#include <libalgebra_lite/vectors/dense_vector.h>
-#include <libalgebra_lite/vector.h>
+#include "libalgebra_lite/algebra/algebra.h"
+#include "libalgebra_lite/coefficients/coefficient_ring.h"
+#include "libalgebra_lite/dense_vector.h"
+#include "libalgebra_lite/vectors/vector.h"
 
 #include <iostream>
 #include <memory>

@@ -1,13 +1,13 @@
 //
 // Created by user on 27/07/22.
 //
-#include <libalgebra_lite/basis/tensor_basis.h>
+#include "include/libalgebra_lite/tensor_basis.h"
 
 
-namespace alg {
+namespace lal {
 
 
-alg::tensor_basis::tensor_basis(deg_t width, deg_t depth) :
+tensor_basis::tensor_basis(deg_t width, deg_t depth) :
         m_width (width), m_depth(depth)
 {
     m_powers.reserve(depth+1);
