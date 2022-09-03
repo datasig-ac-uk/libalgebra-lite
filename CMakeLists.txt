@@ -23,7 +23,7 @@ add_library(Libalgebra_lite SHARED
         include/libalgebra_lite/polynomial_basis.h
         include/libalgebra_lite/polynomial.h
         src/polynomial_multiplier.cpp
-        src/polynomial.cpp)
+        src/polynomial.cpp src/algebra/half_shuffle_multiplier.cpp src/algebra/shuffle_multiplier.cpp)
 generate_export_header(Libalgebra_lite)
 
 

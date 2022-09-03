@@ -15,6 +15,7 @@
 #include <vector>
 
 #include <boost/mpl/vector.hpp>
+#include <boost/functional/hash.hpp>
 
 #include "tensor_basis.h"
 #include "basis_traits.h"
@@ -427,6 +428,20 @@ class LIBALGEBRA_LITE_EXPORT half_shuffle_tensor_multiplier
 
     product_type key_prod_impl(key_type lhs, key_type rhs) const;
 
+protected:
+
+    key_type concat_product(key_type lhs, key_type rhs) const noexcept
+    {
+        const auto lhs_deg = lhs.degree();
+        const auto rhs_deg = rhs.degree();
+        const auto shift = p_basis->powers()[rhs_deg];
+
+        const auto idx = lhs.index()*shift + rhs.index();
+        return key_type(lhs_deg + rhs_deg, idx);
+    }
+
+    product_type shuffle(key_type lhs, key_type rhs) const;
+
 public:
 
     explicit half_shuffle_tensor_multiplier(std::shared_ptr<const tensor_basis> basis)
@@ -441,15 +456,20 @@ extern template class LIBALGEBRA_LITE_EXPORT base_multiplier<half_shuffle_tensor
 class LIBALGEBRA_LITE_EXPORT shuffle_tensor_multiplier
         : protected half_shuffle_tensor_multiplier
 {
-    using base_type = base_multiplier<
+    using base_type = base_multiplier<half_shuffle_tensor_multiplier, tensor_basis>;
     using half_type = half_shuffle_tensor_multiplier;
-
-    typename base_type::product_type key_prod_impl(key_type lhs, key_type rhs) const;
 
 
 public:
 
-    using base_type::base_type;
+    using half_type::half_type;
+
+
+#pragma clang diagnostic push
+#pragma ide diagnostic ignored "HidingNonVirtualFunction"
+    typename base_type::product_type operator()(typename base_type::key_type lhs,
+            typename base_type::key_type rhs) const;
+#pragma clang diagnostic pop
 
 
 };
