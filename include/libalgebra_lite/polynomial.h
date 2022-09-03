@@ -6,17 +6,16 @@
 #define LIBALGEBRA_LITE_POLYNOMIAL_H
 
 #include "implementation_types.h"
+#include "libalgebra_lite_export.h"
+
+#include <boost/container/small_vector.hpp>
+
 #include "polynomial_basis.h"
 #include "sparse_vector.h"
 #include "algebra.h"
 #include "libalgebra_lite_export.h"
 #include "coefficients.h"
 
-#include <boost/container/small_vector.hpp>
-
-#ifndef LIBALGEBRA_LITE_EXPORT
-#define LIBALGEBRA_LITE_EXPORT
-#endif
 
 namespace lal {
 
@@ -28,6 +27,8 @@ class LIBALGEBRA_LITE_EXPORT polynomial_multiplier
     using product_type = boost::container::small_vector<std::pair<key_type, int>, 1>;
 
 public:
+
+    using basis_type = polynomial_basis;
 
     product_type operator()(const key_type& lhs, const key_type& rhs) const;
 

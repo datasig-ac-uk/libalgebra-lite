@@ -5,9 +5,8 @@
 #ifndef LIBALGEBRA_LITE_LIE_H
 #define LIBALGEBRA_LITE_LIE_H
 
-#include <libalgebra_lite/implementation_types.h>
-#include <libalgebra_lite/algebra.h>
-#include "hall_set.h"
+#include "implementation_types.h"
+#include "libalgebra_lite_export.h"
 
 #include <mutex>
 #include <unordered_map>
@@ -15,45 +14,46 @@
 #include <boost/functional/hash.hpp>
 #include <boost/container/small_vector.hpp>
 
-#ifndef LIBALGEBRA_LITE_EXPORT
-#define LIBALGEBRA_LITE_EXPORT
-#endif
+#include "algebra.h"
+#include "hall_set.h"
 
 
 namespace lal {
 
 
-class LIBALGEBRA_LITE_EXPORT lie_multiplier
+
+class LIBALGEBRA_LITE_EXPORT lie_multiplier : public base_multiplier<lie_multiplier, hall_basis, 2>
 {
+    using base_type = base_multiplier<lie_multiplier, hall_basis, 2>;
+
     std::shared_ptr<const hall_basis> p_basis;
 
+    using typename base_type::key_type;
+    using typename base_type::product_type;
+    using typename base_type::reference;
 
-    using key_type = typename hall_basis::key_type;
     using parent_type = std::pair<key_type, key_type>;
-
-    using product_type = boost::container::small_vector<std::pair<key_type, int>, 1>;
-    using product_ref_type = const boost::container::small_vector_base<std::pair<key_type, int>>&;
 
     mutable std::unordered_map<parent_type, product_type, boost::hash<parent_type>> m_cache;
     mutable std::recursive_mutex m_lock;
 
     product_type key_prod_impl(key_type lhs, key_type rhs) const;
-    static product_type generic_minus(product_ref_type arg);
-    static product_type generic_sub(product_ref_type lhs, product_ref_type rhs);
-
-    product_type generic_by_key(product_ref_type lhs, key_type rhs) const;
 
 
 public:
+
 
     explicit lie_multiplier(std::shared_ptr<const hall_basis> basis)
         : p_basis(std::move(basis)), m_lock(), m_cache()
     {}
 
-    product_ref_type operator()(key_type lhs, key_type rhs) const;
+    reference operator()(key_type lhs, key_type rhs) const;
 
 
 };
+
+extern template class LIBALGEBRA_LITE_EXPORT base_multiplier<lie_multiplier, hall_basis>;
+
 
 struct LIBALGEBRA_LITE_EXPORT lie_multiplication : public base_multiplication<lie_multiplier>
 {

@@ -51,12 +51,12 @@ struct PackedIntegerFixture : public ::testing::Test
     using integral_t = std::uint64_t;
     using packed_t = char;
 
-    using pint_t = alg::dtl::packed_integer<std::uint64_t, char>;
+    using pint_t = lal::dtl::packed_integer<std::uint64_t, char>;
 
 };
 
 TEST_F(PackedIntegerFixture, test_remaining_bits) {
-    ASSERT_EQ(64-8, alg::dtl::packed_integer_access::remaining_bits(pint_t(0, 0)));
+    ASSERT_EQ(64-8, lal::dtl::packed_integer_access::remaining_bits(pint_t(0, 0)));
 }
 
 

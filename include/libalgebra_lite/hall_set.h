@@ -6,15 +6,17 @@
 #define LIBALGEBRA_LITE_HALL_SET_H
 
 #include "implementation_types.h"
-#include "index_key.h"
-//#include "libalgebra_lite_export.h"
+#include "libalgebra_lite_export.h"
+
+#include <memory>
+#include <mutex>
+#include <unordered_map>
 #include <utility>
 #include <vector>
 
 #include <boost/container/flat_map.hpp>
-#include <mutex>
-#include <memory>
-#include <unordered_map>
+
+#include "index_key.h"
 
 namespace lal {
 

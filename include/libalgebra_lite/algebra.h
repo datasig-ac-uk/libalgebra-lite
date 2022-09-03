@@ -6,21 +6,30 @@
 #define LIBALGEBRA_LITE_ALGEBRA_H
 
 
-#include <libalgebra_lite/implementation_types.h>
-#include "basis_traits.h"
-#include <libalgebra_lite/coefficients.h>
-#include "vector_traits.h"
-#include <libalgebra_lite/vector.h>
+#include "implementation_types.h"
+#include "libalgebra_lite_export.h"
 
 #include <algorithm>
+#include <map>
 #include <memory>
 #include <type_traits>
 #include <utility>
 #include <vector>
 
-#include <boost/tti/has_template.hpp>
+#include <boost/container/small_vector.hpp>
+#include <boost/mpl/vector.hpp>
+#include <boost/mpl/contains.hpp>
+
+#include "basis_traits.h"
+#include "coefficients.h"
+#include "vector_traits.h"
+#include "vector.h"
 
 namespace lal {
+
+
+
+
 
 
 template <typename Multiplication>
@@ -54,13 +63,14 @@ private:
     using has_degree_t = std::is_same<typename basis_trait<typename V::basis_type>::degree_tag, with_degree_tag>;
 
 public:
+
     template <typename Result,
               typename Vector1,
               typename Vector2,
               typename Fn>
     static std::enable_if_t<!has_degree_t<Result>::value>
     multiply_and_add(
-            mult_ptr mult,
+            const Multiplication& mult,
             Result& result,
             const Vector1& lhs,
             const Vector2& rhs,
@@ -70,7 +80,7 @@ public:
             return;
         }
 
-        mult->fma(result.base_vector(),
+        mult.fma(result.base_vector(),
                 lhs.base_vector(),
                 rhs.base_vector(),
                 fn);
@@ -80,13 +90,13 @@ public:
             typename Vector1,
             typename Vector2>
     static std::enable_if_t<!has_degree_t<Result>::value>
-    multiply_and_add(mult_ptr mult,
+    multiply_and_add(const Multiplication& mult,
             Result& result,
             const Vector1& lhs,
             const Vector2& rhs)
     {
         using scalar_type = typename Result::scalar_type;
-        mult->fma(result.base_vector(),
+        mult.fma(result.base_vector(),
                 lhs.base_vector(),
                 rhs.base_vector(),
                 [](scalar_type s) { return s; });
@@ -98,14 +108,14 @@ public:
               typename Fn>
     static std::enable_if_t<has_degree_t<Result>::value>
     multiply_and_add(
-            mult_ptr mult,
+            const Multiplication& mult,
             Result& result,
             const Vector1& lhs,
             const Vector2& rhs,
             Fn fn)
     {
         using traits = basis_trait<typename Result::basis_type>;
-        mult->fma(result.base_vector(),
+        mult.fma(result.base_vector(),
                 lhs.base_vector(),
                 rhs.base_vector(),
                 fn,
@@ -116,14 +126,14 @@ public:
             typename Vector1,
             typename Vector2>
     static std::enable_if_t<has_degree_t<Result>::value>
-    multiply_and_add(mult_ptr mult,
+    multiply_and_add(const Multiplication& mult,
             Result& result,
             const Vector1& lhs,
             const Vector2& rhs)
     {
         using scalar_type = typename Result::scalar_type;
         using traits = basis_trait<typename Result::basis_type>;
-        mult->fma(result.base_vector(),
+        mult.fma(result.base_vector(),
                 lhs.base_vector(),
                 rhs.base_vector(),
                 [](scalar_type s) { return s; },
@@ -132,63 +142,59 @@ public:
 
     template <typename Left, typename Right, typename Fn, typename Mult=Multiplication>
     static std::enable_if_t<!has_degree_t<Left>::value && has_fma_inplace<Left, Right, Fn, Mult>::value>
-    multiply_and_add_inplace(mult_ptr mult, Left& lhs, const Right& rhs, Fn fn)
+    multiply_and_add_inplace(const Multiplication& mult, Left& lhs, const Right& rhs, Fn fn)
     {
-        mult->fma_inplace(lhs.vector_type(), rhs.vector_type(), fn);
+        mult.fma_inplace(lhs.vector_type(), rhs.vector_type(), fn);
     }
 
     template <typename Left, typename Right, typename Fn, typename Mult=Multiplication>
     static std::enable_if_t<has_degree_t<Left>::value && has_fma_inplace<Left, Right, Fn, Mult>::value>
-    multiply_and_add_inplace(mult_ptr mult, Left& lhs, const Right& rhs, Fn fn)
+    multiply_and_add_inplace(const Multiplication& mult, Left& lhs, const Right& rhs, Fn fn)
     {
         using traits = basis_trait<typename Left::basis_type>;
-        mult->fma_inplace(lhs.base_vector(), rhs.base_vector(), fn,
+        mult.fma_inplace(lhs.base_vector(), rhs.base_vector(), fn,
                 traits::max_degree(lhs.basis()));
     }
 
     template <typename Left, typename Right, typename Fn, typename Mult=Multiplication>
     static std::enable_if_t<has_degree_t<Left>::value && has_fma_inplace<Left, Right, Fn, Mult>::value>
-    multiply_and_add_inplace(mult_ptr mult, Left& lhs, const Right& rhs, Fn fn, deg_t max_deg)
+    multiply_and_add_inplace(const Multiplication& mult, Left& lhs, const Right& rhs, Fn fn, deg_t max_deg)
     {
-        mult->fma_inplace(lhs.base_vector(), rhs.base_vector(), fn, max_deg);
+        mult.fma_inplace(lhs.base_vector(), rhs.base_vector(), fn, max_deg);
     }
 
     template <typename Left, typename Right, typename Fn>
     static std::enable_if_t<!has_degree_t<Left>::value>
-    multiply_inplace(mult_ptr mult, Left& lhs, const Right& rhs, Fn fn)
+    multiply_inplace(const Multiplication& mult, Left& lhs, const Right& rhs, Fn fn)
     {
         Left tmp(lhs.basis(), mult);
-        mult->fma_inplace(lhs.base_vector(), rhs.base_vector(), fn);
+        mult.fma_inplace(lhs.base_vector(), rhs.base_vector(), fn);
         lhs.swap(tmp);
     }
 
 
     template <typename Left, typename Right, typename Fn>
     static std::enable_if_t<has_degree_t<Left>::value>
-    multiply_inplace(mult_ptr mult, Left& lhs, const Right& rhs, Fn fn, deg_t max_deg)
+    multiply_inplace(const Multiplication& mult, Left& lhs, const Right& rhs, Fn fn, deg_t max_deg)
     {
         Left tmp(lhs.basis(), mult);
-        mult->fma_inplace(lhs.base_vector(), rhs.base_vector(), fn, max_deg);
+        mult.fma_inplace(lhs.base_vector(), rhs.base_vector(), fn, max_deg);
         lhs.swap(tmp);
     }
 
     template <typename Left, typename Right, typename Fn>
     static std::enable_if_t<has_degree_t<Left>::value>
-    multiply_inplace(mult_ptr mult, Left& lhs, const Right& rhs, Fn fn)
+    multiply_inplace(const Multiplication& mult, Left& lhs, const Right& rhs, Fn fn)
     {
         auto max_deg = basis_trait<typename Left::basis_type>::max_degree(*lhs.mult());
-        multiply_inplace(std::move(mult), lhs, rhs, fn, max_deg);
+        multiply_inplace(mult, lhs, rhs, fn, max_deg);
     }
 
-
-
+    template <typename Basis>
+    using compatible_with = boost::mpl::contains<typename Multiplication::compatible_bases, Basis>;
 
 };
 
-
-
-template <typename Basis>
-class basic_multiplier;
 
 namespace dtl {
 
@@ -304,6 +310,106 @@ public:
 } // namespace dtl
 
 
+template <typename Multiplier, typename Basis, dimn_t SSO=1, typename Scalar=int>
+class base_multiplier
+{
+    using basis_traits = basis_trait<Basis>;
+
+public:
+    using key_type = typename basis_traits::key_type;
+    using scalar_type = Scalar;
+    using pair_type = std::pair<key_type, scalar_type>;
+
+    using product_type = boost::container::small_vector<pair_type, SSO>;
+    using reference = const boost::container::small_vector_base<pair_type>&;
+
+
+protected:
+    static product_type uminus(reference arg)
+    {
+        product_type result;
+        result.reserve(arg.size());
+        for (const auto& item : arg) {
+            result.emplace_back(item.first, -item.second);
+        }
+        return result;
+    }
+
+    static product_type add(reference lhs, reference rhs)
+    {
+        std::map<key_type, scalar_type> tmp;
+        tmp.insert(lhs.begin(), lhs.end());
+
+        for (const auto& item : rhs) {
+            tmp[item.first] += item.second;
+        }
+
+        return {tmp.begin(), tmp.end()};
+    }
+
+    static product_type sub(reference lhs, reference rhs)
+    {
+        std::map<key_type, scalar_type> tmp;
+        tmp.insert(lhs.begin(), lhs.end());
+
+        for (const auto& item : rhs) {
+            tmp[item.first] -= item.second;
+        }
+
+        return {tmp.begin(), tmp.end()};
+    }
+
+    product_type mul(reference lhs, key_type rhs) const
+    {
+        std::map<key_type, scalar_type> tmp;
+
+        const auto& mult = static_cast<const Multiplier&>(*this);
+        for (const auto& outer : lhs) {
+            for (const auto& inner : mult(outer.first, rhs)) {
+                tmp[inner.first] += outer.second * inner.second;
+            }
+        }
+
+        return {tmp.begin(), tmp.end()};
+    }
+
+    product_type mul(key_type lhs, reference rhs) const
+    {
+        std::map<key_type, scalar_type> tmp;
+
+        const auto& mult = static_cast<const Multiplier&>(*this);
+        for (const auto& outer : rhs) {
+            for (const auto& inner : mult(lhs, outer.first)) {
+                tmp[inner.first] += inner.second * outer.second;
+            }
+        }
+
+        return {tmp.begin(), tmp.end()};
+    }
+
+    product_type mul(reference lhs, reference rhs) const
+    {
+        std::map<key_type, scalar_type> tmp;
+
+        const auto& mult = static_cast<const Multiplier&>(*this);
+        for (const auto& litem : lhs) {
+            for (const auto& ritem : rhs) {
+                for (const auto& inner : mult(litem.first, ritem.first)) {
+                    tmp[inner.first] += inner.second * litem.second * ritem.second;
+                }
+            }
+        }
+
+        return {tmp.begin(), tmp.end()};
+    }
+
+public:
+
+    using basis_type = Basis;
+
+};
+
+
 template <typename Multiplier>
 class base_multiplication
 {
@@ -350,7 +456,9 @@ class base_multiplication
         }
     }
 
-protected:
+public:
+
+    using compatible_bases = boost::mpl::vector<typename Multiplier::basis_type>;
 
     template <typename... Args>
     explicit base_multiplication(Args&&... args)
@@ -358,7 +466,6 @@ protected:
     {}
 
 
-public:
 
     template <typename OutVector,
             typename LeftVector,
@@ -491,13 +598,13 @@ operator*(const Algebra& lhs, const Algebra& rhs)
 {
     using traits = multiplication_traits<typename Algebra::multiplication_type>;
 
-    auto multiplication = lhs.multiplication();
+    const auto& multiplication = lhs.multiplication();
     if (!multiplication) {
         multiplication = rhs.multiplication();
     }
-    Algebra result(lhs.basis, multiplication);
+    Algebra result(lhs.basis(), multiplication);
     if (multiplication && !lhs.empty() && !rhs.empty()) {
-        traits::multiply_and_add(std::move(multiplication), lhs, rhs);
+        traits::multiply_and_add(*multiplication, lhs, rhs);
     }
     return result;
 }
@@ -516,7 +623,7 @@ operator*=(Algebra& lhs, const Algebra& rhs)
     }
 
     if (multiplication && !lhs.empty()) {
-        traits::multiply_inplace(lhs.multiplication, lhs, rhs);
+        traits::multiply_inplace(*lhs.multiplication, lhs, rhs);
     }
     return lhs;
 }
@@ -539,6 +646,35 @@ commutator(const Algebra& lhs, const Algebra& rhs)
     return result;
 }
 
+
+
+template <typename Multiplication,
+        typename Coefficients,
+        typename LBasis,
+        template <typename, typename> class LVectorType,
+        template <typename> class LStorageModel,
+        typename RBasis,
+        template <typename, typename> class RVectorType,
+        template <typename> class RStorageModel
+        >
+std::enable_if_t<
+        multiplication_traits<Multiplication>::template
+                compatible_with<LBasis>::value &&
+        multiplication_traits<Multiplication>::template
+                compatible_with<RBasis>::value,
+        vector<LBasis, Coefficients, LVectorType, LStorageModel>
+    >
+multiply(const Multiplication& multiplication,
+         const vector<LBasis, Coefficients, LVectorType, LStorageModel>& lhs,
+         const vector<RBasis, Coefficients, RVectorType, RStorageModel>& rhs)
+{
+    using traits = multiplication_traits<Multiplication>;
+    vector<LBasis, Coefficients, LVectorType, LStorageModel> result(lhs.basis());
+
+    traits::multiply_and_add(multiplication, result, lhs, rhs);
+
+    return result;
+}
 
 
 } // namespace lal

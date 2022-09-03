@@ -5,26 +5,34 @@
 #ifndef LIBALGEBRA_LITE_FREE_TENSOR_H
 #define LIBALGEBRA_LITE_FREE_TENSOR_H
 
-#include <libalgebra_lite/implementation_types.h>
-#include "tensor_basis.h"
-#include "basis_traits.h"
-#include <libalgebra_lite/coefficients.h>
-#include "vector_traits.h"
-#include "dense_vector.h"
-#include <libalgebra_lite/algebra.h>
+#include "implementation_types.h"
+#include "libalgebra_lite_export.h"
 
 #include <algorithm>
+#include <mutex>
+#include <unordered_map>
 #include <utility>
 #include <vector>
+
+#include <boost/mpl/vector.hpp>
+
+#include "tensor_basis.h"
+#include "basis_traits.h"
+#include "coefficients.h"
+#include "algebra.h"
+#include "vector_traits.h"
+#include "dense_vector.h"
 
 namespace lal {
 
 template<typename,
-         template<typename, typename, typename...> class,
+         template<typename, typename> class,
          template <typename> class,
          typename...>
 class free_tensor;
 
+
+namespace dtl {
 
 #define LAL_IS_TENSOR(V) std::is_same<typename V::basis_type, \
     tensor_basis>::value
@@ -37,8 +45,7 @@ class free_tensor;
                       && LAL_SAME_COEFFS(R, V1) && LAL_SAME_COEFFS(R, V2)>
 
 template<typename Coefficients>
-class dense_multiplication_helper
-{
+class dense_multiplication_helper {
     using traits = coefficient_trait<Coefficients>;
     using scalar_type = typename traits::scalar_type;
 
@@ -60,13 +67,13 @@ public:
     dimn_t tile_size;
     deg_t tile_letters;
 
-    template <typename Alloc>
+    template<typename Alloc>
     dense_multiplication_helper(
-            free_tensor<Coefficients, dense_vector_view, Alloc>& out,
-            const free_tensor<Coefficients, dense_vector_view, Alloc>& lhs,
-            const free_tensor<Coefficients, dense_vector_view, Alloc>& rhs
-            )
-        : p_basis(&out.basis()), lhs_deg(lhs.degree()), rhs_deg(rhs.degree())
+            free_tensor<Coefficients, dense_vector>& out,
+            const free_tensor<Coefficients, dense_vector>& lhs,
+            const free_tensor<Coefficients, dense_vector>& rhs
+    )
+            : p_basis(&out.basis()), lhs_deg(lhs.degree()), rhs_deg(rhs.degree())
     {
         const auto& powers = p_basis->powers();
 
@@ -85,58 +92,53 @@ public:
         write_buffer.resize(tile_size);
     }
 
-    const scalar_type& left_unit() const noexcept
-    { return *left_ptr; }
-    const scalar_type& right_unit() const noexcept
-    { return *right_ptr; }
+    const scalar_type& left_unit() const noexcept { return *left_ptr; }
+    const scalar_type& right_unit() const noexcept { return *right_ptr; }
 
-    const scalar_type* left_tile() const noexcept
-    { return left_read_buffer.data(); }
-    const scalar_type* right_tile() const noexcept
-    { return right_read_buffer.data(); }
-    scalar_type* write_tile() noexcept
-    { return write_buffer.data(); }
+    const scalar_type* left_tile() const noexcept { return left_read_buffer.data(); }
+    const scalar_type* right_tile() const noexcept { return right_read_buffer.data(); }
+    scalar_type* write_tile() noexcept { return write_buffer.data(); }
 
-    deg_t lhs_degree() const noexcept {  return lhs_deg; }
-    deg_t rhs_degree() const noexcept {  return rhs_deg; }
+    deg_t lhs_degree() const noexcept { return lhs_deg; }
+    deg_t rhs_degree() const noexcept { return rhs_deg; }
 
     const scalar_type* left_fwd_read(key_type k) const noexcept
     {
         auto offset = p_basis->start_of_degree(static_cast<deg_t>(k.degree()));
-        return left_ptr + k.index()*tile_width + offset;
+        return left_ptr+k.index()*tile_width+offset;
     }
     const scalar_type* right_fwd_read(key_type k) const noexcept
     {
         auto offset = p_basis->start_of_degree(static_cast<deg_t>(k.degree()));
-        return right_ptr + k.index()*tile_width + offset;
+        return right_ptr+k.index()*tile_width+offset;
     }
     scalar_type* fwd_write(key_type k) const noexcept
     {
         auto offset = p_basis->start_of_degree(static_cast<deg_t>(k.degree()));
-        return out_ptr + k.index()*tile_width + offset;
+        return out_ptr+k.index()*tile_width+offset;
     }
 
     void read_left_tile(key_type k) noexcept
     {
         auto offset = p_basis->start_of_degree(static_cast<deg_t>(k.degree()));
-        const auto* reverse_ptr = reverse_buffer.data() + k.index()*tile_width + offset;
-        std::copy(reverse_ptr, reverse_ptr + tile_width, left_read_buffer.data());
+        const auto* reverse_ptr = reverse_buffer.data()+k.index()*tile_width+offset;
+        std::copy(reverse_ptr, reverse_ptr+tile_width, left_read_buffer.data());
     }
     void read_right_tile(key_type k) noexcept
     {
         auto offset = p_basis->start_of_degree(static_cast<deg_t>(k.degree()));
-        const auto* fwd_ptr = right_ptr + k.index()*tile_width + offset;
-        std::copy(fwd_ptr, fwd_ptr + tile_width, right_read_buffer.data());
+        const auto* fwd_ptr = right_ptr+k.index()*tile_width+offset;
+        std::copy(fwd_ptr, fwd_ptr+tile_width, right_read_buffer.data());
     }
     void write_tile_in(key_type k, key_type kr) noexcept
     {
-        const auto offset = p_basis->start_of_degree(k.degree() + 2*tile_letters);
-        const auto* in_ptr = out_ptr + k.index()*tile_width + offset;
+        const auto offset = p_basis->start_of_degree(k.degree()+2*tile_letters);
+        const auto* in_ptr = out_ptr+k.index()*tile_width+offset;
         auto* tile_ptr = write_tile();
         const auto stride = p_basis->powers()[k.degree()+tile_letters];
 
-        for (dimn_t i=0; i<tile_width; ++i) {
-            for (dimn_t j=0; j<tile_width; ++j) {
+        for (dimn_t i = 0; i<tile_width; ++i) {
+            for (dimn_t j = 0; j<tile_width; ++j) {
                 tile_ptr[i*tile_width+j] = in_ptr[i*stride+j];
             }
         }
@@ -145,22 +147,21 @@ public:
     void write_tile_out(key_type k, key_type kr) noexcept
     {
         const auto deg = k.degree();
-        const auto offset = p_basis->start_of_degree(deg + 2*tile_letters);
-        const auto stride = p_basis->powers()[deg + tile_letters];
+        const auto offset = p_basis->start_of_degree(deg+2*tile_letters);
+        const auto stride = p_basis->powers()[deg+tile_letters];
 
-        auto* ptr = out_ptr + k.index()*tile_width + offset;
+        auto* ptr = out_ptr+k.index()*tile_width+offset;
         auto* tile_ptr = write_tile();
 
-        for (dimn_t i=0; i<tile_width; ++i) {
-            for (dimn_t j=0; j<tile_width; ++j) {
-                ptr[i*stride + j] = tile_ptr[i*tile_width + j];
+        for (dimn_t i = 0; i<tile_width; ++i) {
+            for (dimn_t j = 0; j<tile_width; ++j) {
+                ptr[i*stride+j] = tile_ptr[i*tile_width+j];
             }
         }
 
-        if (deg < p_basis->depth()) {
+        if (deg<p_basis->depth()) {
             // Write reverse data
         }
-
 
     }
 
@@ -169,45 +170,45 @@ public:
         const auto width = p_basis->width();
         auto idx = k.index();
 
-        typename key_type ::index_type result_idx = 0;
+        typename key_type::index_type result_idx = 0;
         while (idx) {
             result_idx *= width;
-            result_idx += idx % width;
+            result_idx += idx%width;
             idx /= width;
         }
 
-        return key_type {k.degree(), result_idx};
+        return key_type{k.degree(), result_idx};
     }
     std::pair<key_type, key_type> split_key(key_type k, deg_t lhs_size) const noexcept
     {
-        auto rhs_size = k.degree() - lhs_size;
+        auto rhs_size = k.degree()-lhs_size;
         auto split = p_basis->powers()[rhs_size];
-        return { key_type(lhs_size, k.index() / split),
-                 key_type(rhs_size, k.index() % split)};
+        return {key_type(lhs_size, k.index()/split),
+                key_type(rhs_size, k.index()%split)};
     }
 
-    dimn_t stride(deg_t deg) const noexcept {
-        return p_basis->powers()[deg - tile_letters];
+    dimn_t stride(deg_t deg) const noexcept
+    {
+        return p_basis->powers()[deg-tile_letters];
     }
 
     dimn_t combine(dimn_t lhs, dimn_t rhs, deg_t rh_deg)
     {
         const auto shift = p_basis->powers()[rh_deg];
-        return lhs*shift + rhs;
+        return lhs*shift+rhs;
     }
     key_type combine(key_type lhs, key_type rhs)
     {
         const auto rhs_deg = rhs.degree();
         const auto shift = p_basis->powers()[rhs_deg];
-        return key_type{lhs.degree() + rhs_deg, lhs.index()*shift+rhs.index()};
+        return key_type{lhs.degree()+rhs_deg, lhs.index()*shift+rhs.index()};
     }
     dimn_t combine(dimn_t lhs, key_type rhs)
     {
         const auto rhs_deg = rhs.degree();
         const auto shift = p_basis->powers()[rhs_deg];
-        return lhs*shift + rhs.index();
+        return lhs*shift+rhs.index();
     }
-
 
     std::pair<dimn_t, dimn_t> range_size(deg_t lhs, deg_t rhs) const noexcept
     {
@@ -215,19 +216,22 @@ public:
         return {powers[lhs], powers[rhs]};
     }
 
-    dimn_t range_size(deg_t deg) const noexcept
-    { return p_basis->powers()[deg]; }
-
+    dimn_t range_size(deg_t deg) const noexcept { return p_basis->powers()[deg]; }
 
 };
 
+
+
+
+
+} // namespace dtl
 
 class free_tensor_multiplication
 {
 
     template <typename Coefficients, typename Fn>
     void fma_dense_traditional(
-            dense_multiplication_helper<Coefficients>& helper,
+            dtl::dense_multiplication_helper<Coefficients>& helper,
             Fn fn, deg_t out_degree
             ) noexcept
     {
@@ -261,7 +265,7 @@ class free_tensor_multiplication
 
 
     template <typename Coefficients, typename Fn>
-    void fma_dense_giles(dense_multiplication_helper<Coefficients>& helper,
+    void fma_dense_giles(dtl::dense_multiplication_helper<Coefficients>& helper,
             Fn fn, deg_t out_degree) noexcept
     {
         using key_type = tensor_basis::key_type;
@@ -354,9 +358,9 @@ class free_tensor_multiplication
 
     template <typename Coefficients, typename Alloc, typename Fn>
     void fma_dense(
-            free_tensor<Coefficients, dense_vector_view, Alloc>& result,
-            const free_tensor<Coefficients, dense_vector_view, Alloc>& lhs,
-            const free_tensor<Coefficients, dense_vector_view, Alloc>& rhs,
+            free_tensor<Coefficients, dense_vector>& result,
+            const free_tensor<Coefficients, dense_vector>& lhs,
+            const free_tensor<Coefficients, dense_vector>& rhs,
             Fn fn,
             deg_t max_deg
             )
@@ -373,7 +377,7 @@ class free_tensor_multiplication
         const tensor_basis* basis = &result.basis();
         result.resize(basis->size(out_degree));
 
-        dense_multiplication_helper<Coefficients> helper(result, lhs, rhs);
+        dtl::dense_multiplication_helper<Coefficients> helper(result, lhs, rhs);
         if (out_degree > 2*helper.tile_letters) {
             fma_dense_giles(helper, fn, out_degree);
         } else {
@@ -384,6 +388,8 @@ class free_tensor_multiplication
 
 
 public:
+
+    using compatible_bases = boost::mpl::vector<tensor_basis>;
 
     template <typename Result, typename Vector1, typename Vector2, typename Fn>
     LAL_TENSOR_COMPAT_RVV(Result, Vector1, Vector2)
@@ -402,13 +408,61 @@ public:
 
 };
 
+
+class LIBALGEBRA_LITE_EXPORT half_shuffle_tensor_multiplier
+        : public base_multiplier<half_shuffle_tensor_multiplier, tensor_basis>
+{
+    using base_type = base_multiplier<half_shuffle_tensor_multiplier, tensor_basis>;
+
+    std::shared_ptr<const tensor_basis> p_basis;
+
+    using typename base_type::key_type;
+    using typename base_type::product_type;
+    using typename base_type::reference;
+
+    using parent_type = std::pair<key_type, key_type>;
+
+    mutable std::unordered_map<parent_type, product_type, boost::hash<parent_type>> m_cache;
+    mutable std::recursive_mutex m_lock;
+
+    product_type key_prod_impl(key_type lhs, key_type rhs) const;
+
+public:
+
+    explicit half_shuffle_tensor_multiplier(std::shared_ptr<const tensor_basis> basis)
+        : p_basis(std::move(basis))
+    {}
+
+    reference operator()(key_type lhs, key_type rhs) const;
+};
+
+extern template class LIBALGEBRA_LITE_EXPORT base_multiplier<half_shuffle_tensor_multiplier, tensor_basis>;
+
+class LIBALGEBRA_LITE_EXPORT shuffle_tensor_multiplier
+        : protected half_shuffle_tensor_multiplier
+{
+    using base_type = base_multiplier<
+    using half_type = half_shuffle_tensor_multiplier;
+
+    typename base_type::product_type key_prod_impl(key_type lhs, key_type rhs) const;
+
+
+public:
+
+    using base_type::base_type;
+
+
+};
+
+
+
 #undef LAL_TENSOR_COMPAT_RVV
 #undef LAL_SAME_COEFFS
 #undef LAL_IS_TENSOR
 
 
 template <typename Coefficients,
-          template <typename, typename, typename...> class VectorType,
+          template <typename, typename> class VectorType,
           template <typename> class StorageModel,
           typename... Args>
 class free_tensor : public algebra<tensor_basis, Coefficients, free_tensor_multiplication, VectorType, StorageModel>

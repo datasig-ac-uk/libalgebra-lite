@@ -6,7 +6,7 @@ find_package(GTest CONFIG REQUIRED)
 
 
 
-add_library(lal_testing_common STATIC lie/lie_multiplier.cpp)
+add_library(lal_testing_common STATIC)
 
 target_sources(lal_testing_common PRIVATE
         common/main.cpp

@@ -2,25 +2,25 @@
 // Created by user on 07/08/22.
 //
 
-#include "libalgebra_lite/algebra/algebra.h"
-#include "libalgebra_lite/coefficients/coefficient_ring.h"
+#include "libalgebra_lite/algebra.h"
+#include "libalgebra_lite/coefficients.h"
 #include "libalgebra_lite/dense_vector.h"
-#include "libalgebra_lite/vectors/vector.h"
+#include "libalgebra_lite/vector.h"
 
 #include <iostream>
 #include <memory>
 
-template <alg::dimn_t Dimension>
+template <lal::dimn_t Dimension>
 struct integer_basis
 {
     using key_type = unsigned;
-    using idx_type = alg::dimn_t;
+    using idx_type = lal::dimn_t;
 
     static constexpr idx_type key_to_index(key_type key) noexcept { return key; }
     static constexpr key_type index_to_key(idx_type idx) noexcept { return idx; }
 
-    static constexpr alg::dimn_t size(int) { return Dimension; }
-    static constexpr alg::deg_t degree(key_type) noexcept { return 0; }
+    static constexpr lal::dimn_t size(int) { return Dimension; }
+    static constexpr lal::deg_t degree(key_type) noexcept { return 0; }
 
 };
 
@@ -29,7 +29,7 @@ using basis_type = integer_basis<5>;
 
 
 
-namespace alg {
+namespace lal {
 
 template <>
 struct basic_multiplier<basis_type>
@@ -46,15 +46,19 @@ struct basic_multiplier<basis_type>
 };
 
 } // namespace alg
-using multiplier = alg::basic_multiplier<basis_type>;
-using vector_type = alg::vector<basis_type, alg::float_field, alg::dense_vector>;
+
+template <typename B, typename C>
+using dense_vector = lal::dense_vector<B, C>;
+
+using multiplier = lal::basic_multiplier<basis_type>;
+using vector_type = lal::vector<basis_type, lal::float_field, dense_vector>;
 
 
 int main()
 {
-    using traits = alg::multiplication_traits<alg::base_multiplication<multiplier>>;
-    auto basis = std::make_shared<basis_type>();
-    auto mult = std::make_shared<alg::base_multiplication<multiplier>>();
+    using traits = lal::multiplication_traits<lal::base_multiplication<multiplier>>;
+    auto basis = std::make_shared<const basis_type>();
+    auto mult = std::make_shared<lal::base_multiplication<multiplier>>(basis);
 
     vector_type lhs (basis, { 1., 2., 3., 4., 5. });
     std::cout << "lhs\n";

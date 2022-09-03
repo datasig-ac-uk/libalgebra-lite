@@ -5,16 +5,13 @@
 #ifndef LIBALGEBRA_LITE_VECTOR_H
 #define LIBALGEBRA_LITE_VECTOR_H
 
-#include <libalgebra_lite/implementation_types.h>
-#include "vector_traits.h"
-#include <libalgebra_lite/coefficients.h>
-#include "basis_traits.h"
-
+#include "implementation_types.h"
 
 #include <memory>
 
-
-#define LAL_INLINE_ALWAYS __attribute__((always_inline))
+#include "vector_traits.h"
+#include "coefficients.h"
+#include "basis_traits.h"
 
 
 namespace lal {

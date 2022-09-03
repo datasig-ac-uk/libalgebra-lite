@@ -2,7 +2,7 @@
 // Created by user on 28/08/22.
 //
 #include <gtest/gtest.h>
-#include "libalgebra_lite/hall_set.h"
+#include <libalgebra_lite/hall_set.h>
 #include <libalgebra_lite/lie.h>
 
 using namespace lal;
