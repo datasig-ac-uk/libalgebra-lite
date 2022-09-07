@@ -5,20 +5,24 @@
 
 #include "libalgebra_lite/lie.h"
 
+#include <mutex>
+#include <unordered_map>
+
+#include <boost/functional/hash.hpp>
 
 namespace lal {
 
 template class base_multiplier<lie_multiplier, hall_basis, 2>;
 
 lie_multiplier::product_type
-lie_multiplier::key_prod_impl(key_type lhs, key_type rhs) const
+lie_multiplier::key_prod_impl(const hall_basis& basis, key_type lhs, key_type rhs) const
 {
     if (lhs>rhs) {
-        return lie_multiplier::uminus(operator()(rhs, lhs));
+        return lie_multiplier::uminus(operator()(basis, rhs, lhs));
     }
 
     product_type result;
-    if (p_basis->degree(lhs) + p_basis->degree(rhs) > p_basis->depth()) {
+    if (basis.degree(lhs) + basis.degree(rhs) > basis.depth()) {
         return result;
     }
 
@@ -26,11 +30,11 @@ lie_multiplier::key_prod_impl(key_type lhs, key_type rhs) const
     if (found.found) {
         result.emplace_back(found.it->second, 1);
     } else {
-        auto lparent = p_basis->lparent(rhs);
-        auto rparent = p_basis->rparent(rhs);
+        auto lparent = basis.lparent(rhs);
+        auto rparent = basis.rparent(rhs);
 
-        auto result_left = mul(operator()(lhs, lparent), rparent);
-        auto result_right = mul(operator()(lhs, rparent), lparent);
+        auto result_left = mul(basis, operator()(basis, lhs, lparent), rparent);
+        auto result_right = mul(basis, operator()(basis, lhs, rparent), lparent);
 
         return sub(result_left, result_right);
     }
@@ -40,6 +44,7 @@ lie_multiplier::key_prod_impl(key_type lhs, key_type rhs) const
 
 
 lie_multiplier::reference lie_multiplier::operator()(
+        const hall_basis& basis,
         lie_multiplier::key_type lhs, lie_multiplier::key_type rhs) const
 {
     static const product_type null;
@@ -55,9 +60,12 @@ lie_multiplier::reference lie_multiplier::operator()(
         return found;
     }
 
-    found = key_prod_impl(lhs, rhs);
+    found = key_prod_impl(basis, lhs, rhs);
     return found;
 }
 
+
+
+template class multiplication_registry<lie_multiplication>;
 
 } // namespace alg

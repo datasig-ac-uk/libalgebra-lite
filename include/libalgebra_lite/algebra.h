@@ -28,10 +28,6 @@
 namespace lal {
 
 
-
-
-
-
 template <typename Multiplication>
 struct multiplication_traits
 {
@@ -323,8 +319,6 @@ public:
     using product_type = boost::container::small_vector<pair_type, SSO>;
     using reference = const boost::container::small_vector_base<pair_type>&;
 
-
-protected:
     static product_type uminus(reference arg)
     {
         product_type result;
@@ -359,13 +353,13 @@ protected:
         return {tmp.begin(), tmp.end()};
     }
 
-    product_type mul(reference lhs, key_type rhs) const
+    product_type mul(const Basis& basis, reference lhs, key_type rhs) const
     {
         std::map<key_type, scalar_type> tmp;
 
         const auto& mult = static_cast<const Multiplier&>(*this);
         for (const auto& outer : lhs) {
-            for (const auto& inner : mult(outer.first, rhs)) {
+            for (const auto& inner : mult(basis, outer.first, rhs)) {
                 tmp[inner.first] += outer.second * inner.second;
             }
         }
@@ -373,13 +367,13 @@ protected:
         return {tmp.begin(), tmp.end()};
     }
 
-    product_type mul(key_type lhs, reference rhs) const
+    product_type mul(const Basis& basis, key_type lhs, reference rhs) const
     {
         std::map<key_type, scalar_type> tmp;
 
         const auto& mult = static_cast<const Multiplier&>(*this);
         for (const auto& outer : rhs) {
-            for (const auto& inner : mult(lhs, outer.first)) {
+            for (const auto& inner : mult(basis, lhs, outer.first)) {
                 tmp[inner.first] += inner.second * outer.second;
             }
         }
@@ -387,14 +381,14 @@ protected:
         return {tmp.begin(), tmp.end()};
     }
 
-    product_type mul(reference lhs, reference rhs) const
+    product_type mul(const Basis& basis, reference lhs, reference rhs) const
     {
         std::map<key_type, scalar_type> tmp;
 
         const auto& mult = static_cast<const Multiplier&>(*this);
         for (const auto& litem : lhs) {
             for (const auto& ritem : rhs) {
-                for (const auto& inner : mult(litem.first, ritem.first)) {
+                for (const auto& inner : mult(basis, litem.first, ritem.first)) {
                     tmp[inner.first] += inner.second * litem.second * ritem.second;
                 }
             }
@@ -414,7 +408,6 @@ template <typename Multiplier>
 class base_multiplication
 {
 
-    Multiplier m_mult;
 
     template <typename V>
     using basis_t = typename V::basis_type;
@@ -456,6 +449,8 @@ class base_multiplication
         }
     }
 
+protected:
+    Multiplier m_mult;
 public:
 
     using compatible_bases = boost::mpl::vector<typename Multiplier::basis_type>;
@@ -465,6 +460,11 @@ public:
         : m_mult(std::forward<Args>(args)...)
     {}
 
+    template <typename Basis, typename Key>
+    decltype(auto) multiply(const Basis& basis, Key lhs, Key rhs) const
+    {
+        return m_mult(basis, lhs, rhs);
+    }
 
 
     template <typename OutVector,
@@ -477,10 +477,11 @@ public:
         // so the inner loop is always contiguous, rather than potentially
         // a linked list or other cache unfriendly data structure.
         helper_type<RightVector> helper(rhs);
+        const auto& basis = out.basis();
 
         for (auto litem : lhs) {
             for (auto ritem : helper) {
-                asp_helper(out, m_mult(litem.key(), ritem.first),
+                asp_helper(out, m_mult(basis, litem.key(), ritem.first),
                                 fn(litem.value()*ritem.second));
             }
         }
@@ -502,15 +503,16 @@ public:
         // of degree ranges that we can use to truncate products that
         // would overflow the max degree.
         graded_helper_type<RightVector> helper(rhs);
+        const auto& basis = out.basis();
 
-        auto out_deg = std::min(out_basis_traits::max_degree(out.basis()), lhs.degree() + rhs.degree());
+        auto out_deg = std::min(out_basis_traits::max_degree(basis), lhs.degree() + rhs.degree());
 
         const auto& lhs_basis = lhs.basis();
         for (auto litem : lhs) {
             auto lhs_degree = lhs_basis_traits::degree(lhs_basis, lhs_basis);
             auto rhs_degree = out_deg - lhs_degree;
             for (auto ritem : helper.degree_range(rhs_degree)) {
-                asp_helper(out, m_mult(litem.key(), ritem.first),
+                asp_helper(out, m_mult(basis, litem.key(), ritem.first),
                                 fn(litem.value(), ritem.second));
             }
         }

@@ -9,6 +9,7 @@
 #include "libalgebra_lite_export.h"
 
 #include <algorithm>
+#include <memory>
 #include <mutex>
 #include <unordered_map>
 #include <utility>
@@ -23,13 +24,13 @@
 #include "algebra.h"
 #include "vector_traits.h"
 #include "dense_vector.h"
+#include "registry.h"
 
 namespace lal {
 
 template<typename,
          template<typename, typename> class,
-         template <typename> class,
-         typename...>
+         template <typename> class>
 class free_tensor;
 
 
@@ -62,17 +63,19 @@ class dense_multiplication_helper {
     deg_t lhs_deg;
     deg_t rhs_deg;
     using key_type = typename tensor_basis::key_type;
+
+    using tensor_type = dense_vector<tensor_basis, Coefficients>;
+
 public:
 
     dimn_t tile_width;
     dimn_t tile_size;
     deg_t tile_letters;
 
-    template<typename Alloc>
     dense_multiplication_helper(
-            free_tensor<Coefficients, dense_vector>& out,
-            const free_tensor<Coefficients, dense_vector>& lhs,
-            const free_tensor<Coefficients, dense_vector>& rhs
+            tensor_type& out,
+            const tensor_type& lhs,
+            const tensor_type& rhs
     )
             : p_basis(&out.basis()), lhs_deg(lhs.degree()), rhs_deg(rhs.degree())
     {
@@ -227,42 +230,41 @@ public:
 
 } // namespace dtl
 
+class left_half_shuffle_tensor_multiplier;
+class right_half_shuffle_tensor_multiplier;
+
+extern template class LIBALGEBRA_LITE_EXPORT base_multiplier<left_half_shuffle_tensor_multiplier, tensor_basis>;
+extern template class LIBALGEBRA_LITE_EXPORT base_multiplier<right_half_shuffle_tensor_multiplier, tensor_basis>;
+
+class LIBALGEBRA_LITE_EXPORT free_tensor_multiplier
+{
+public:
+    using key_type = typename tensor_basis::key_type;
+    using basis_type = tensor_basis;
+
+
+    static key_type concat_product(const tensor_basis& basis, key_type lhs, key_type rhs) noexcept
+    {
+        const auto lhs_deg = lhs.degree();
+        const auto rhs_deg = rhs.degree();
+        const auto shift = basis.powers()[rhs_deg];
+
+        const auto idx = lhs.index()*shift + rhs.index();
+        return key_type(lhs_deg + rhs_deg, idx);
+    }
+
+    using product_type = boost::container::small_vector<std::pair<key_type, int>, 1>;
+
+
+    product_type operator()(const tensor_basis& basis, key_type lhs, key_type rhs) const noexcept;
+
+};
+
+
+#if 0
 class free_tensor_multiplication
 {
 
-    template <typename Coefficients, typename Fn>
-    void fma_dense_traditional(
-            dtl::dense_multiplication_helper<Coefficients>& helper,
-            Fn fn, deg_t out_degree
-            ) noexcept
-    {
-        using key_type = tensor_basis::key_type;
-        auto lhs_deg = helper.lhs_degree();
-        auto rhs_deg = helper.rhs_degree();
-
-        for (deg_t out_deg = out_degree; out_deg>=0; --out_deg) {
-            auto lhs_deg_min = std::max(0, out_deg-rhs_deg);
-            auto lhs_deg_max = std::min(out_deg, lhs_deg);
-
-            auto* out_ptr = helper.fwd_write(key_type(out_deg, 0));
-
-            for (deg_t lh_deg = lhs_deg_max; lh_deg>=0; --lh_deg) {
-                auto rh_deg = out_deg-lh_deg;
-
-                auto lhs_ptr = helper.left_fwd_read(key_type(lh_deg, 0));
-                auto rhs_ptr = helper.right_fwd_read(key_type(rh_deg, 0));
-
-                auto range_sizes = helper.range_size(lh_deg, rh_deg);
-
-                auto* p = out_ptr;
-                for (dimn_t i = 0; i<range_sizes.first; ++i) {
-                    for (dimn_t j = 0; j<range_sizes.second; ++j) {
-                        *(p++) += fn(lhs_ptr[i]*rhs_ptr[j]);
-                    }
-                }
-            }
-        }
-    }
 
 
     template <typename Coefficients, typename Fn>
@@ -397,10 +399,96 @@ public:
     multiply_and_add(Result& result, const Vector1& lhs, const Vector2& rhs, Fn op)
     {
 
-    }
+       using key_type = tensor_basis::key_type;
+
+        auto lhs_deg = helper.lhs_degree();
+        auto rhs_deg = helper.rhs_degree();
+
+        auto* tile = helper.write_tile();
+        const auto* left_rtile = helper.left_tile();
+        const auto* right_rtile = helper.right_tile();
+
+        for (deg_t out_deg=out_degree; out_deg > 2*helper.tile_letters; --out_deg) {
+            const auto stride = helper.stride(out_deg);
+            const auto adj_deg = out_deg - 2*helper.tile_letters;
+
+            // end is not actually a valid key, but it serves as a marker.
+            key_type start{adj_deg, 0}, end{adj_deg, helper.range_size(adj_deg)};
+
+            for (auto k = start; k<end; ++k) {
+                auto k_reverse = helper.reverse(k);
+
+                helper.write_tile_in(k, k_reverse);
+
+                {
+                    const auto& lhs_unit = helper.lhs_unit();
+                    const auto* rhs_ptr = helper.right_fwd_read(k);
+
+                    for (dimn_t i=0; i<helper.tile_width; ++i) {
+                        for (dimn_t j=0; j<helper.tile_width; ++j) {
+                            tile[i*helper.tile_width+j] += fn(lhs_unit*rhs_ptr[i*stride+j]);
+                        }
+                    }
+                }
+
+                {
+                    const auto* lhs_ptr = helper.lhs_fwd_read(k);
+                    const auto& rhs_unit = helper.rhs_unit();
+                    for (dimn_t i = 0; i<helper.tile_width; ++i) {
+                        for (dimn_t j = 0; j<helper.tile_width; ++j) {
+                            tile[i*helper.tile_width+j] += fn(lhs_ptr[i*stride+j]*rhs_unit);
+                        }
+                    }
+                }
+
+                for (deg_t lh_deg=1; lh_deg < helper.tile_letters; ++lh_deg) {
+                    auto rh_deg = adj_deg - lh_deg;
+                    for (dimn_t i=0; i<helper.tile_width; ++i) {
+                        const auto split = helper.split_key(k);
+                        const auto& lhs_val = *helper.left_fwd_read(split.first);
+                        helper.read_right_tile(helper.combine(key_type(helper.tile_letters-lh_deg, split.first), k));
+                        for (dimn_t j=0; j<helper.tile_width; ++j) {
+                            tile[i*helper.tile_width+j] += fn(lhs_val*right_rtile[j]);
+                        }
+                    }
+                }
+
+                for (deg_t lh_deg=0; lh_deg<adj_deg; ++lh_deg) {
+                    const auto rh_deg = adj_deg - lh_deg;
+                    auto split = helper.split_key(rh_deg, k);
+                    helper.read_left_tile(helper.reverse(split.first));
+                    helper.read_right_tile(split.second);
+
+                    for (dimn_t i=0; i<helper.tile_width; ++i) {
+                        for (dimn_t j=0; j<helper.tile_width; ++j) {
+                            tile[i*helper.tile_width+j] += fn(left_rtile[i]*right_rtile[j]);
+                        }
+                    }
+                }
+
+                for (deg_t rh_deg=1; rh_deg<helper.tile_letters; ++rh_deg) {
+                    const auto lh_deg = adj_deg - rh_deg;
+                    for (dimn_t j=0; j<helper.tile_width; ++j) {
+                        const auto split = helper.split_key(key_type(rh_deg, j));
+                        const auto& rhs_val = *helper.right_fwd_read(helper.combine(k_reverse, helper.reverse(split.first)));
+                        helper.read_left_tile(split.second);
+
+                        for (dimn_t i=0; i<helper.tile_width; ++i) {
+                            tile[i*helper.tile_width+j] += fn(left_rtile[i]*rhs_val);
+                        }
+                    }
+                }
+
+                helper.write_tile_out(k, k_reverse);
+            }
+
+        }
+
+        fma_dense_traditional(helper, fn, 2*helper.tile_letters);}
 
     template <typename Coefficients, typename Alloc, typename Fn>
-    void multiply_inplace(dense_vector_view<tensor_basis, Coefficients, Alloc>& lhs,
+    void multiply_inplace(
+            dense_vector_view<tensor_basis, Coefficients, Alloc>& lhs,
             const dense_vector_view<tensor_basis, Coefficients, Alloc>& rhs,
             Fn op) noexcept
     {
@@ -408,14 +496,12 @@ public:
     }
 
 };
+#endif
 
-
-class LIBALGEBRA_LITE_EXPORT half_shuffle_tensor_multiplier
-        : public base_multiplier<half_shuffle_tensor_multiplier, tensor_basis>
+class LIBALGEBRA_LITE_EXPORT left_half_shuffle_tensor_multiplier
+        : public base_multiplier<left_half_shuffle_tensor_multiplier, tensor_basis>
 {
-    using base_type = base_multiplier<half_shuffle_tensor_multiplier, tensor_basis>;
-
-    std::shared_ptr<const tensor_basis> p_basis;
+    using base_type = base_multiplier<left_half_shuffle_tensor_multiplier, tensor_basis>;
 
     using typename base_type::key_type;
     using typename base_type::product_type;
@@ -426,38 +512,58 @@ class LIBALGEBRA_LITE_EXPORT half_shuffle_tensor_multiplier
     mutable std::unordered_map<parent_type, product_type, boost::hash<parent_type>> m_cache;
     mutable std::recursive_mutex m_lock;
 
-    product_type key_prod_impl(key_type lhs, key_type rhs) const;
+    product_type key_prod_impl(const tensor_basis& basis, key_type lhs, key_type rhs) const;
 
 protected:
 
-    key_type concat_product(key_type lhs, key_type rhs) const noexcept
-    {
-        const auto lhs_deg = lhs.degree();
-        const auto rhs_deg = rhs.degree();
-        const auto shift = p_basis->powers()[rhs_deg];
-
-        const auto idx = lhs.index()*shift + rhs.index();
-        return key_type(lhs_deg + rhs_deg, idx);
-    }
-
-    product_type shuffle(key_type lhs, key_type rhs) const;
+    product_type shuffle(const tensor_basis& basis, key_type lhs, key_type rhs) const;
 
 public:
 
-    explicit half_shuffle_tensor_multiplier(std::shared_ptr<const tensor_basis> basis)
-        : p_basis(std::move(basis))
-    {}
-
-    reference operator()(key_type lhs, key_type rhs) const;
+    reference operator()(const tensor_basis& basis, key_type lhs, key_type rhs) const;
 };
 
-extern template class LIBALGEBRA_LITE_EXPORT base_multiplier<half_shuffle_tensor_multiplier, tensor_basis>;
+
+class LIBALGEBRA_LITE_EXPORT right_half_shuffle_tensor_multiplier
+        : public base_multiplier<right_half_shuffle_tensor_multiplier, tensor_basis>
+{
+    using base_type = base_multiplier<right_half_shuffle_tensor_multiplier, tensor_basis>;
+
+    using typename base_type::key_type;
+    using typename base_type::product_type;
+    using typename base_type::reference;
+
+    using parent_type = std::pair<key_type, key_type>;
+
+    mutable std::unordered_map<parent_type, product_type, boost::hash<parent_type>> m_cache;
+    mutable std::recursive_mutex m_lock;
+
+    product_type key_prod_impl(
+            const tensor_basis& basis, key_type lhs, key_type rhs) const;
+
+    parent_type split_at_right(const tensor_basis& basis, key_type key) const noexcept;
+
+
+protected:
+
+    product_type shuffle(const tensor_basis& basis, key_type lhs, key_type rhs) const;
+
+public:
+
+
+    reference operator()(const tensor_basis& basis, key_type lhs, key_type rhs) const;
+};
+
+
+
+using half_shuffle_tensor_multiplier = left_half_shuffle_tensor_multiplier;
+
 
 class LIBALGEBRA_LITE_EXPORT shuffle_tensor_multiplier
-        : protected half_shuffle_tensor_multiplier
+        : protected left_half_shuffle_tensor_multiplier
 {
-    using base_type = base_multiplier<half_shuffle_tensor_multiplier, tensor_basis>;
-    using half_type = half_shuffle_tensor_multiplier;
+    using base_type = base_multiplier<left_half_shuffle_tensor_multiplier, tensor_basis>;
+    using half_type = left_half_shuffle_tensor_multiplier;
 
 
 public:
@@ -467,14 +573,203 @@ public:
 
 #pragma clang diagnostic push
 #pragma ide diagnostic ignored "HidingNonVirtualFunction"
-    typename base_type::product_type operator()(typename base_type::key_type lhs,
+    typename base_type::product_type operator()(
+            const tensor_basis& basis,
+            typename base_type::key_type lhs,
             typename base_type::key_type rhs) const;
 #pragma clang diagnostic pop
+
+};
+
+
+class LIBALGEBRA_LITE_EXPORT free_tensor_multiplication
+    : public base_multiplication<free_tensor_multiplier>
+{
+    using base_type = base_multiplication<free_tensor_multiplier>;
+
+    using key_type = typename tensor_basis::key_type;
+
+    template <typename Coefficients, typename Fn>
+    void fma_dense_traditional(
+            dtl::dense_multiplication_helper<Coefficients>& helper,
+            Fn fn, deg_t out_degree
+    ) const noexcept
+    {
+        auto lhs_deg = helper.lhs_degree();
+        auto rhs_deg = helper.rhs_degree();
+
+        for (deg_t out_deg = out_degree; out_deg>=0; --out_deg) {
+            auto lhs_deg_min = std::max(0, out_deg-rhs_deg);
+            auto lhs_deg_max = std::min(out_deg, lhs_deg);
+
+            auto* out_ptr = helper.fwd_write(key_type(out_deg, 0));
+
+            for (deg_t lh_deg = lhs_deg_max; lh_deg>=0; --lh_deg) {
+                auto rh_deg = out_deg-lh_deg;
+
+                auto lhs_ptr = helper.left_fwd_read(key_type(lh_deg, 0));
+                auto rhs_ptr = helper.right_fwd_read(key_type(rh_deg, 0));
+
+                auto range_sizes = helper.range_size(lh_deg, rh_deg);
+
+                auto* p = out_ptr;
+                for (dimn_t i = 0; i<range_sizes.first; ++i) {
+                    for (dimn_t j = 0; j<range_sizes.second; ++j) {
+                        *(p++) += fn(lhs_ptr[i]*rhs_ptr[j]);
+                    }
+                }
+            }
+        }
+    }
+
+    template <typename Coefficients, typename Fn>
+    void fma_dense_tiled(
+            dtl::dense_multiplication_helper<Coefficients>& helper,
+            Fn fn, deg_t out_degree
+            ) const noexcept
+    {   using key_type = tensor_basis::key_type;
+
+        auto lhs_deg = helper.lhs_degree();
+        auto rhs_deg = helper.rhs_degree();
+
+        auto* tile = helper.write_tile();
+        const auto* left_rtile = helper.left_tile();
+        const auto* right_rtile = helper.right_tile();
+
+        for (deg_t out_deg=out_degree; out_deg > 2*helper.tile_letters; --out_deg) {
+            const auto stride = helper.stride(out_deg);
+            const auto adj_deg = out_deg - 2*helper.tile_letters;
+
+            // end is not actually a valid key, but it serves as a marker.
+            key_type start{adj_deg, 0}, end{adj_deg, helper.range_size(adj_deg)};
+
+            for (auto k = start; k<end; ++k) {
+                auto k_reverse = helper.reverse(k);
+
+                helper.write_tile_in(k, k_reverse);
+
+                {
+                    const auto& lhs_unit = helper.lhs_unit();
+                    const auto* rhs_ptr = helper.right_fwd_read(k);
+
+                    for (dimn_t i=0; i<helper.tile_width; ++i) {
+                        for (dimn_t j=0; j<helper.tile_width; ++j) {
+                            tile[i*helper.tile_width+j] += fn(lhs_unit*rhs_ptr[i*stride+j]);
+                        }
+                    }
+                }
+
+                {
+                    const auto* lhs_ptr = helper.lhs_fwd_read(k);
+                    const auto& rhs_unit = helper.rhs_unit();
+                    for (dimn_t i = 0; i<helper.tile_width; ++i) {
+                        for (dimn_t j = 0; j<helper.tile_width; ++j) {
+                            tile[i*helper.tile_width+j] += fn(lhs_ptr[i*stride+j]*rhs_unit);
+                        }
+                    }
+                }
+
+                for (deg_t lh_deg=1; lh_deg < helper.tile_letters; ++lh_deg) {
+                    auto rh_deg = adj_deg - lh_deg;
+                    for (dimn_t i=0; i<helper.tile_width; ++i) {
+                        const auto split = helper.split_key(k);
+                        const auto& lhs_val = *helper.left_fwd_read(split.first);
+                        helper.read_right_tile(helper.combine(key_type(helper.tile_letters-lh_deg, split.first), k));
+                        for (dimn_t j=0; j<helper.tile_width; ++j) {
+                            tile[i*helper.tile_width+j] += fn(lhs_val*right_rtile[j]);
+                        }
+                    }
+                }
+
+                for (deg_t lh_deg=0; lh_deg<adj_deg; ++lh_deg) {
+                    const auto rh_deg = adj_deg - lh_deg;
+                    auto split = helper.split_key(rh_deg, k);
+                    helper.read_left_tile(helper.reverse(split.first));
+                    helper.read_right_tile(split.second);
+
+                    for (dimn_t i=0; i<helper.tile_width; ++i) {
+                        for (dimn_t j=0; j<helper.tile_width; ++j) {
+                            tile[i*helper.tile_width+j] += fn(left_rtile[i]*right_rtile[j]);
+                        }
+                    }
+                }
+
+                for (deg_t rh_deg=1; rh_deg<helper.tile_letters; ++rh_deg) {
+                    const auto lh_deg = adj_deg - rh_deg;
+                    for (dimn_t j=0; j<helper.tile_width; ++j) {
+                        const auto split = helper.split_key(key_type(rh_deg, j));
+                        const auto& rhs_val = *helper.right_fwd_read(helper.combine(k_reverse, helper.reverse(split.first)));
+                        helper.read_left_tile(split.second);
+
+                        for (dimn_t i=0; i<helper.tile_width; ++i) {
+                            tile[i*helper.tile_width+j] += fn(left_rtile[i]*rhs_val);
+                        }
+                    }
+                }
+
+                helper.write_tile_out(k, k_reverse);
+            }
+
+        }
+
+        fma_dense_traditional(helper, fn, 2*helper.tile_letters);
+    }
+
+public:
+
+    template <typename Coeff>
+    using dense_tensor_vec = dense_vector<tensor_basis, Coeff>;
+
+    using base_type::base_type;
+
+    using base_type::fma;
+
+    template <typename Coeff, typename Op>
+    void fma(dense_tensor_vec<Coeff>& out,
+            const dense_tensor_vec<Coeff>& lhs,
+            const dense_tensor_vec<Coeff>& rhs,
+            Op op
+            ) const
+    {
+        fma(out, lhs, rhs, op, out.basis().depth());
+    }
+
+    template <typename Coeff, typename Op>
+    void fma(dense_tensor_vec<Coeff>& out,
+            const dense_tensor_vec<Coeff>& lhs,
+            const dense_tensor_vec<Coeff>& rhs,
+            deg_t max_degree,
+            Op op
+            ) const
+    {
+        const auto& basis = out.basis();
+        if (max_degree >= basis.depth()) {
+            max_degree = basis.depth();
+        }
+
+        deg_t out_degree = std::min(max_degree, lhs.degree()+rhs.degree());
+
+        const auto out_size = basis.size(out_degree);
+        if (out.size() < out_size) {
+            out.resize(out_size);
+        }
+
+        dtl::dense_multiplication_helper<Coeff> helper(out, lhs, rhs);
+        if (out_degree > 2*helper.tile_letters) {
+            fma_dense_tiled(helper, op, out_degree);
+        } else {
+            fma_dense_traditional(helper, op, out_degree);
+        }
+    }
 
 
 };
 
 
+using left_half_shuffle_multiplication = base_multiplication<left_half_shuffle_tensor_multiplier>;
+using half_shuffle_multiplication = left_half_shuffle_multiplication;
+using right_half_shuffle_multiplication = base_multiplication<right_half_shuffle_tensor_multiplier>;
+using shuffle_tensor_multiplication = base_multiplication<shuffle_tensor_multiplier>;
 
 #undef LAL_TENSOR_COMPAT_RVV
 #undef LAL_SAME_COEFFS
@@ -483,8 +778,7 @@ public:
 
 template <typename Coefficients,
           template <typename, typename> class VectorType,
-          template <typename> class StorageModel,
-          typename... Args>
+          template <typename> class StorageModel>
 class free_tensor : public algebra<tensor_basis, Coefficients, free_tensor_multiplication, VectorType, StorageModel>
 {
     using algebra_type = algebra<tensor_basis, Coefficients, free_tensor_multiplication, VectorType, StorageModel>;
@@ -495,6 +789,17 @@ class free_tensor : public algebra<tensor_basis, Coefficients, free_tensor_multi
 
 
 };
+
+
+extern template class LIBALGEBRA_LITE_EXPORT multiplication_registry<free_tensor_multiplication>;
+extern template class LIBALGEBRA_LITE_EXPORT multiplication_registry<left_half_shuffle_multiplication>;
+extern template class LIBALGEBRA_LITE_EXPORT multiplication_registry<right_half_shuffle_multiplication>;
+extern template class LIBALGEBRA_LITE_EXPORT multiplication_registry<shuffle_tensor_multiplication>;
+
+
+
+
+
 
 } // namespace lal
 

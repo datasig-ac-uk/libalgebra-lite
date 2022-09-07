@@ -13,14 +13,12 @@
 #include "polynomial_basis.h"
 #include "sparse_vector.h"
 #include "algebra.h"
-#include "libalgebra_lite_export.h"
 #include "coefficients.h"
-
+#include "registry.h"
 
 namespace lal {
 
-class LIBALGEBRA_LITE_EXPORT polynomial_multiplier
-{
+class LIBALGEBRA_LITE_EXPORT polynomial_multiplier {
     using letter_type = typename polynomial_basis::letter_type;
     using key_type = typename polynomial_basis::key_type;
 
@@ -30,20 +28,18 @@ public:
 
     using basis_type = polynomial_basis;
 
-    product_type operator()(const key_type& lhs, const key_type& rhs) const;
+    product_type operator()(const polynomial_basis& basis,
+            const key_type& lhs, const key_type& rhs) const;
 
 };
 
-
-
-template <typename Coefficients>
+template<typename Coefficients>
 class polynomial : public algebra<polynomial_basis,
-        Coefficients,
-        base_multiplication<polynomial_multiplier>,
-        sparse_vector,
-        dtl::standard_storage
-        >
-{
+                                  Coefficients,
+                                  base_multiplication<polynomial_multiplier>,
+                                  sparse_vector,
+                                  dtl::standard_storage
+> {
     using base = algebra<polynomial_basis,
                          Coefficients,
                          base_multiplication<polynomial_multiplier>,
@@ -54,7 +50,7 @@ public:
 
     using base::base;
 
-    template <typename IndeterminateMap>
+    template<typename IndeterminateMap>
     typename polynomial::scalar_type operator()(const IndeterminateMap& arg) const noexcept
     {
         using ring = typename polynomial::coefficient_ring;
@@ -66,7 +62,6 @@ public:
         return ans;
     }
 
-
 };
 
 extern template class LIBALGEBRA_LITE_EXPORT polynomial<double_field>;
@@ -75,9 +70,21 @@ extern template class LIBALGEBRA_LITE_EXPORT polynomial<float_field>;
 extern template class LIBALGEBRA_LITE_EXPORT coefficient_ring<polynomial<double_field>, double>;
 extern template class LIBALGEBRA_LITE_EXPORT coefficient_ring<polynomial<float_field>, float>;
 extern template class LIBALGEBRA_LITE_EXPORT coefficient_ring<polynomial<rational_field>,
-        typename rational_field::scalar_type>;
+                                                              typename rational_field::scalar_type>;
 
-}
+template<>
+class LIBALGEBRA_LITE_EXPORT multiplication_registry<base_multiplication<polynomial_multiplier>>
+{
+    using multiplication = base_multiplication<polynomial_multiplier>;
+public:
+
+    static std::shared_ptr<const multiplication> get();
+};
+
+
+
+
+} // namespace lal
 
 
 

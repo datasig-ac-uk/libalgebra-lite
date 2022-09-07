@@ -15,6 +15,7 @@
 
 #include "libalgebra_lite_export.h"
 #include "packed_integer.h"
+#include "registry.h"
 
 namespace lal {
 
@@ -107,6 +108,15 @@ struct LIBALGEBRA_LITE_EXPORT polynomial_basis
 
 };
 
+
+template <>
+class LIBALGEBRA_LITE_EXPORT basis_registry<polynomial_basis>
+{
+public:
+
+    static std::shared_ptr<const polynomial_basis> get();
+
+};
 
 } // namespace lal
 

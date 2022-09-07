@@ -19,11 +19,11 @@ add_library(Libalgebra_lite SHARED
         include/libalgebra_lite/lie.h
         include/libalgebra_lite/maps.h
         include/libalgebra_lite/vector_bundle.h
-        src/lie_multiplier.cpp
+        src/algebra/lie_multiplier.cpp
         include/libalgebra_lite/polynomial_basis.h
         include/libalgebra_lite/polynomial.h
-        src/polynomial_multiplier.cpp
-        src/polynomial.cpp src/algebra/half_shuffle_multiplier.cpp src/algebra/shuffle_multiplier.cpp)
+        src/algebra/polynomial_multiplier.cpp
+        src/algebra/polynomial.cpp src/algebra/half_shuffle_multiplier.cpp src/algebra/shuffle_multiplier.cpp src/algebra/free_tensor_multiplier.cpp include/libalgebra_lite/registry.h src/basis/polynomial_basis.cpp src/maps.cpp)
 generate_export_header(Libalgebra_lite)
 
 

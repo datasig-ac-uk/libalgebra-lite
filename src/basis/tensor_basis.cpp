@@ -22,4 +22,7 @@ tensor_basis::tensor_basis(deg_t width, deg_t depth) :
     m_sizes.push_back(1+width*m_sizes.back());
 }
 
+
+template class basis_registry<tensor_basis>;
+
 }

@@ -97,10 +97,17 @@ struct storage_base
         return coefficient_ring::zero();
     }
     LAL_INLINE_ALWAYS
-    basis_pointer basis() const noexcept
+    const basis_type& basis() const noexcept
+    {
+        assert(static_cast<bool>(p_basis));
+        return *p_basis;
+    }
+    LAL_INLINE_ALWAYS
+    basis_pointer get_basis() const noexcept
     {
         return p_basis;
     }
+
     LAL_INLINE_ALWAYS
     const_iterator begin() const noexcept
     {

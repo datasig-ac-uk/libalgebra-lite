@@ -17,6 +17,7 @@
 #include <boost/container/flat_map.hpp>
 
 #include "index_key.h"
+#include "registry.h"
 
 namespace lal {
 
@@ -121,32 +122,45 @@ public:
 
 
 };
-template<typename Func, typename Binop>
+
+
+
+template<typename Func,
+        typename Binop,
+        typename ReturnType=decltype(std::declval<Func>()(std::declval<let_t>()))>
 class hall_extension {
 public:
     using key_type = typename hall_set::key_type;
-    using out_type = decltype(std::declval<Func>()(std::declval<let_t>()));
+    using return_type = ReturnType;
 private:
+    using cached_type = decltype(std::declval<Func>()(std::declval<let_t>()));
+
     std::shared_ptr<hall_set> m_hall_set;
     Func m_func;
     Binop m_binop;
-    mutable std::unordered_map<key_type, out_type> m_cache;
+    mutable std::unordered_map<key_type, cached_type> m_cache;
     mutable std::recursive_mutex m_lock;
 public:
 
     explicit hall_extension(std::shared_ptr<hall_set> hs, Func&& func, Binop&& binop);
 
-    const out_type& operator()(const key_type& key) const;
+    return_type operator()(key_type key) const;
 
 };
-template<typename Func, typename Binop>
-hall_extension<Func, Binop>::hall_extension(std::shared_ptr<hall_set> hs, Func&& func, Binop&& binop)
-        : m_hall_set(std::move(hs)), m_func(std::forward<Func>(func)), m_binop(std::forward<Binop>(binop))
+
+
+template<typename Func, typename Binop, typename ReturnType>
+hall_extension<Func, Binop, ReturnType>::hall_extension(std::shared_ptr<hall_set> hs, Func&& func, Binop&& binop)
+        : m_hall_set(std::move(hs)),
+        m_func(std::forward<Func>(func)),
+        m_binop(std::forward<Binop>(binop))
 {
 }
-template<typename Func, typename Binop>
-const typename hall_extension<Func, Binop>::out_type&
-hall_extension<Func, Binop>::operator()(const hall_extension::key_type& key) const
+
+template<typename Func, typename Binop, typename ReturnType>
+ReturnType
+hall_extension<Func, Binop, ReturnType>::operator()(
+        hall_extension::key_type key) const
 {
     std::lock_guard<std::recursive_mutex> access(m_lock);
 
@@ -159,6 +173,10 @@ hall_extension<Func, Binop>::operator()(const hall_extension::key_type& key) con
     return m_cache[key] = (m_hall_set->letter(key)) ? m_func(key)
                                                     : m_binop(operator()(parents.first), operator()(parents.second));
 }
+
+
+extern template class LIBALGEBRA_LITE_EXPORT basis_registry<hall_basis>;
+
 
 } // namespace lal
 

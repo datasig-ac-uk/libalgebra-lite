@@ -6,6 +6,9 @@
 
 #include <sstream>
 #include <algorithm>
+#include <mutex>
+#include <unordered_map>
+#include <boost/functional/hash.hpp>
 
 namespace lal {
 
@@ -139,4 +142,7 @@ typename hall_set::find_result hall_basis::find(hall_basis::parent_type parents)
 {
     return p_hallset->find(parents);
 }
-} // alg
+
+template class basis_registry<hall_basis>
+
+} // namespace lal

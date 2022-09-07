@@ -6,35 +6,90 @@
 #define LIBALGEBRA_LITE_MAPS_H
 
 #include "implementation_types.h"
+#include "libalgebra_lite_export.h"
+
+#include <boost/container/small_vector.hpp>
+
 #include "tensor_basis.h"
 #include "free_tensor.h"
 #include "lie.h"
 
 namespace lal {
 
+
+namespace dtl {
+
+class generic_commutator
+{
+    const tensor_basis& m_basis;
+    const free_tensor_multiplication& m_mul;
+
+public:
+    using key_type = typename tensor_basis::key_type;
+    using pair_type = std::pair<key_type, int>;
+    using tensor_type = boost::container::small_vector<pair_type, 1>;
+    using ref_type = const boost::container::small_vector_base<pair_type>&;
+
+    generic_commutator(const tensor_basis& basis, const free_tensor_multiplication& mul)
+        : m_basis(basis), m_mul(mul)
+    {}
+
+    tensor_type operator()(ref_type lhs, ref_type rhs);
+
+
+};
+
+
+} // namespace dtl
+
+
 class LIBALGEBRA_LITE_EXPORT maps
 {
     std::shared_ptr<const tensor_basis> p_tensor_basis;
     std::shared_ptr<const hall_basis> p_lie_basis;
+    std::shared_ptr<const lie_multiplication> p_lie_mul;
+    std::shared_ptr<const free_tensor_multiplication> p_ftensor_mul;
+
+    dtl::generic_commutator m_commutator;
 
 public:
     using lkey_type = typename hall_basis::key_type;
     using tkey_type = typename tensor_basis::key_type;
     using generic_scalar_type = int;
+
     using lie_pair = std::pair<lkey_type, generic_scalar_type>;
     using tensor_pair = std::pair<tkey_type, generic_scalar_type>;
-    using generic_lie = std::vector<lie_pair>;
-    using generic_tensor = std::vector<tensor_pair>;
+    using generic_lie = boost::container::small_vector<lie_pair, 1>;
+    using generic_tensor = boost::container::small_vector<tensor_pair, 1>;
+
+    using gtensor_ref = const boost::container::small_vector_base<tensor_pair>&;
+    using glie_ref = const boost::container::small_vector_base<lie_pair>&;
 
 private:
 
-    static generic_lie expand_letter(let_t letter);
-    static generic_lie mulitply_generic_lie(const generic_lie&, const generic_lie&);
+    static generic_tensor expand_letter(let_t letter);
+
+
+    hall_extension<decltype(&maps::expand_letter),
+            dtl::generic_commutator,
+            gtensor_ref> m_expand;
+
+
+    generic_lie rbracketing_impl(tkey_type arg) const;
 
 public:
 
-    const generic_lie& rbracketing(tkey_type tkey) const;
-    const generic_tensor& expand(lkey_type lkey) const;
+    maps(deg_t width, deg_t depth)
+        : p_tensor_basis(basis_registry<tensor_basis>::get(width, depth)),
+          p_lie_basis(basis_registry<hall_basis>::get(width, depth)),
+          p_ftensor_mul(multiplication_registry<free_tensor_multiplication>::get(width)),
+          p_lie_mul(multiplication_registry<lie_multiplication>::get(width)),
+          m_commutator(*p_tensor_basis, *p_ftensor_mul)
+    {}
+
+
+    glie_ref rbracketing(tkey_type tkey) const;
+    gtensor_ref expand(lkey_type lkey) const;
 
 
     template <typename Coefficients,

@@ -6,14 +6,16 @@
 #define LIBALGEBRA_LITE_TENSOR_BASIS_H
 
 #include "implementation_types.h"
-#include "index_key.h"
 #include "libalgebra_lite_export.h"
-#include "basis_traits.h"
 
 #include <vector>
 #include <cassert>
 #include <string>
 #include <iosfwd>
+
+#include "registry.h"
+#include "index_key.h"
+#include "basis_traits.h"
 
 namespace lal {
 
@@ -79,14 +81,13 @@ public:
     const std::vector<dimn_t>& powers() const noexcept
     { return m_powers; }
 
-
-
 };
 
 
+extern template class LIBALGEBRA_LITE_EXPORT basis_registry<tensor_basis>;
 
 
-} // namespace alg
+} // namespace lal
 
 
 

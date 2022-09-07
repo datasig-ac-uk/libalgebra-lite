@@ -16,8 +16,7 @@ struct LieMultiplierFixture : public ::testing::Test
     using pref_type = const boost::container::small_vector_base<std::pair<key_type, int>>&;
 
     LieMultiplierFixture()
-        : lie_basis(new hall_basis {5, 5}),
-          multiplier(lie_basis)
+        : lie_basis(new hall_basis {5, 5})
     {}
 
 };
@@ -26,7 +25,7 @@ struct LieMultiplierFixture : public ::testing::Test
 TEST_F(LieMultiplierFixture, test_product_letters_in_order) {
     key_type k1(1, 0), k2(1, 1);
 
-    const auto& result = multiplier(k1, k2);
+    const auto& result = multiplier(*lie_basis, k1, k2);
 
     ASSERT_EQ(result.size(), 1);
     EXPECT_EQ(result[0].first, key_type(2, 0));
@@ -36,7 +35,7 @@ TEST_F(LieMultiplierFixture, test_product_letters_in_order) {
 TEST_F(LieMultiplierFixture, test_product_letters_reverse_order) {
     key_type k1(1, 1), k2(1, 0);
 
-    pref_type result = multiplier(k1, k2);
+    pref_type result = multiplier(*lie_basis, k1, k2);
 
     ASSERT_EQ(result.size(), 1);
     EXPECT_EQ(result[0].first, key_type(2, 0));

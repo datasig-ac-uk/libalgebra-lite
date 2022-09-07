@@ -16,7 +16,7 @@
 
 #include "algebra.h"
 #include "hall_set.h"
-
+#include "registry.h"
 
 namespace lal {
 
@@ -37,17 +37,12 @@ class LIBALGEBRA_LITE_EXPORT lie_multiplier : public base_multiplier<lie_multipl
     mutable std::unordered_map<parent_type, product_type, boost::hash<parent_type>> m_cache;
     mutable std::recursive_mutex m_lock;
 
-    product_type key_prod_impl(key_type lhs, key_type rhs) const;
+    product_type key_prod_impl(const hall_basis& basis, key_type lhs, key_type rhs) const;
 
 
 public:
 
-
-    explicit lie_multiplier(std::shared_ptr<const hall_basis> basis)
-        : p_basis(std::move(basis)), m_lock(), m_cache()
-    {}
-
-    reference operator()(key_type lhs, key_type rhs) const;
+    reference operator()(const hall_basis& basis, key_type lhs, key_type rhs) const;
 
 
 };
@@ -58,10 +53,6 @@ extern template class LIBALGEBRA_LITE_EXPORT base_multiplier<lie_multiplier, hal
 struct LIBALGEBRA_LITE_EXPORT lie_multiplication : public base_multiplication<lie_multiplier>
 {
     using base = base_multiplication<lie_multiplier>;
-
-    lie_multiplication(std::shared_ptr<const hall_basis> basis)
-        : base(std::move(basis))
-    {}
 };
 
 
@@ -75,6 +66,9 @@ using lie = algebra<hall_basis,
                     VectorType,
                     StorageModel>;
 
+
+
+extern template class LIBALGEBRA_LITE_EXPORT multiplication_registry<lie_multiplication>;
 
 } // namespace lal
 
