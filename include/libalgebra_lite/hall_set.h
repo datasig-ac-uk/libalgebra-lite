@@ -121,6 +121,8 @@ public:
     typename hall_set::find_result find(parent_type parents) const noexcept;
 
 
+    std::shared_ptr<const hall_set> get_hall_set() const noexcept { return p_hallset; }
+
 };
 
 
@@ -135,14 +137,14 @@ public:
 private:
     using cached_type = decltype(std::declval<Func>()(std::declval<let_t>()));
 
-    std::shared_ptr<hall_set> m_hall_set;
+    std::shared_ptr<const hall_set> m_hall_set;
     Func m_func;
     Binop m_binop;
     mutable std::unordered_map<key_type, cached_type> m_cache;
     mutable std::recursive_mutex m_lock;
 public:
 
-    explicit hall_extension(std::shared_ptr<hall_set> hs, Func&& func, Binop&& binop);
+    explicit hall_extension(std::shared_ptr<const hall_set> hs, Func&& func, Binop&& binop);
 
     return_type operator()(key_type key) const;
 
@@ -150,7 +152,7 @@ public:
 
 
 template<typename Func, typename Binop, typename ReturnType>
-hall_extension<Func, Binop, ReturnType>::hall_extension(std::shared_ptr<hall_set> hs, Func&& func, Binop&& binop)
+hall_extension<Func, Binop, ReturnType>::hall_extension(std::shared_ptr<const hall_set> hs, Func&& func, Binop&& binop)
         : m_hall_set(std::move(hs)),
         m_func(std::forward<Func>(func)),
         m_binop(std::forward<Binop>(binop))
@@ -170,7 +172,7 @@ hall_extension<Func, Binop, ReturnType>::operator()(
     }
 
     auto parents = (*m_hall_set)[key];
-    return m_cache[key] = (m_hall_set->letter(key)) ? m_func(key)
+    return m_cache[key] = (m_hall_set->letter(key)) ? m_func(m_hall_set->get_letter(key.index()))
                                                     : m_binop(operator()(parents.first), operator()(parents.second));
 }
 

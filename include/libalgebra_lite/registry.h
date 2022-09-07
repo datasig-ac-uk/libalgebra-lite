@@ -75,7 +75,7 @@ public:
             return found;
         }
 
-        found = std::make_shared<const Multiplication>(width);
+        return found = std::make_shared<const Multiplication>(width);
     }
 
 };

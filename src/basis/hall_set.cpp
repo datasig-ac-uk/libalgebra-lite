@@ -4,11 +4,8 @@
 
 #include "include/libalgebra_lite/hall_set.h"
 
-#include <sstream>
 #include <algorithm>
-#include <mutex>
 #include <unordered_map>
-#include <boost/functional/hash.hpp>
 
 namespace lal {
 
@@ -103,13 +100,13 @@ hall_set::hall_set(const hall_set& existing, hall_set::degree_type deg)
 {
 
 }
-hall_set::size_type hall_set::size_of_degree(deg_t) const noexcept
+hall_set::size_type hall_set::size_of_degree(deg_t arg) const noexcept
 {
-    return 0;
+    return size(arg+1) - size(arg);
 }
 hall_set::letter_type hall_set::get_letter(dimn_t idx) const noexcept
 {
-    return 0;
+    return let_t(idx+1);
 }
 typename hall_set::find_result hall_set::find(hall_set::parent_type parent) const noexcept
 {
@@ -143,6 +140,6 @@ typename hall_set::find_result hall_basis::find(hall_basis::parent_type parents)
     return p_hallset->find(parents);
 }
 
-template class basis_registry<hall_basis>
+template class basis_registry<hall_basis>;
 
 } // namespace lal

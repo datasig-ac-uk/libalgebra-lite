@@ -72,6 +72,9 @@ extern template class LIBALGEBRA_LITE_EXPORT coefficient_ring<polynomial<float_f
 extern template class LIBALGEBRA_LITE_EXPORT coefficient_ring<polynomial<rational_field>,
                                                               typename rational_field::scalar_type>;
 
+
+using polynomial_ring = coefficient_ring<polynomial<rational_field>, typename rational_field::scalar_type>;
+
 template<>
 class LIBALGEBRA_LITE_EXPORT multiplication_registry<base_multiplication<polynomial_multiplier>>
 {

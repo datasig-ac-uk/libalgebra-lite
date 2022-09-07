@@ -34,23 +34,26 @@ public:
         : m_basis(basis), m_mul(mul)
     {}
 
-    tensor_type operator()(ref_type lhs, ref_type rhs);
+    tensor_type operator()(ref_type lhs, ref_type rhs) const;
 
 
 };
 
-
-} // namespace dtl
-
-
-class LIBALGEBRA_LITE_EXPORT maps
+struct rbracketing_cache_item
 {
-    std::shared_ptr<const tensor_basis> p_tensor_basis;
-    std::shared_ptr<const hall_basis> p_lie_basis;
+    using key_type = typename tensor_basis::key_type;
+    boost::container::small_vector<std::pair<key_type, int>, 1> value;
+    bool set = false;
+};
+
+
+class LIBALGEBRA_LITE_EXPORT maps_implementation
+{
+    const tensor_basis* p_tensor_basis;
+    const hall_basis* p_lie_basis;
     std::shared_ptr<const lie_multiplication> p_lie_mul;
     std::shared_ptr<const free_tensor_multiplication> p_ftensor_mul;
 
-    dtl::generic_commutator m_commutator;
 
 public:
     using lkey_type = typename hall_basis::key_type;
@@ -66,30 +69,54 @@ public:
     using glie_ref = const boost::container::small_vector_base<lie_pair>&;
 
 private:
-
     static generic_tensor expand_letter(let_t letter);
 
+    hall_extension<decltype(&expand_letter),
+                   generic_commutator,
+                   gtensor_ref> m_expand;
 
-    hall_extension<decltype(&maps::expand_letter),
-            dtl::generic_commutator,
-            gtensor_ref> m_expand;
-
-
-    generic_lie rbracketing_impl(tkey_type arg) const;
-
+    mutable std::unordered_map<tkey_type, dtl::rbracketing_cache_item> m_rbracketing_cache;
+    mutable std::recursive_mutex m_rbracketing_lock;
 public:
 
-    maps(deg_t width, deg_t depth)
-        : p_tensor_basis(basis_registry<tensor_basis>::get(width, depth)),
-          p_lie_basis(basis_registry<hall_basis>::get(width, depth)),
-          p_ftensor_mul(multiplication_registry<free_tensor_multiplication>::get(width)),
-          p_lie_mul(multiplication_registry<lie_multiplication>::get(width)),
-          m_commutator(*p_tensor_basis, *p_ftensor_mul)
-    {}
 
+    maps_implementation(const tensor_basis* tbasis, const hall_basis* lbasis)
+        : p_tensor_basis(tbasis),
+          p_lie_basis(lbasis),
+          p_ftensor_mul(multiplication_registry<free_tensor_multiplication>::get(tbasis->width())),
+          p_lie_mul(multiplication_registry<lie_multiplication>::get(lbasis->width())),
+          m_expand(p_lie_basis->get_hall_set(), &expand_letter, generic_commutator(*p_tensor_basis, *p_ftensor_mul))
+    { }
 
     glie_ref rbracketing(tkey_type tkey) const;
     gtensor_ref expand(lkey_type lkey) const;
+
+};
+
+
+} // namespace dtl
+
+
+class LIBALGEBRA_LITE_EXPORT maps
+{
+    std::shared_ptr<const tensor_basis> p_tensor_basis;
+    std::shared_ptr<const hall_basis> p_lie_basis;
+    const dtl::maps_implementation* p_impl;
+public:
+
+    using tkey_type = typename tensor_basis::key_type;
+    using lkey_type = typename hall_basis::key_type;
+    using generic_scalar_type = typename dtl::maps_implementation::generic_scalar_type;
+    using generic_lie = typename dtl::maps_implementation::generic_lie;
+    using generic_tensor = typename dtl::maps_implementation::generic_tensor;
+    using glie_ref = typename dtl::maps_implementation::glie_ref;
+    using gtensor_ref = typename dtl::maps_implementation::gtensor_ref;
+
+    maps(deg_t width, deg_t depth);
+
+    glie_ref rbracketing(tkey_type tkey) const { return p_impl->rbracketing(tkey); }
+    gtensor_ref expand(lkey_type lkey) const { return p_impl->expand(lkey); }
+
 
 
     template <typename Coefficients,

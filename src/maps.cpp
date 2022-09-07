@@ -4,11 +4,25 @@
 
 #include "libalgebra_lite/maps.h"
 
+
+#include <mutex>
+#include <unordered_map>
+
+#include <boost/functional/hash.hpp>
+
 using namespace lal;
 
+
+
+
+
+
+
+
+
 dtl::generic_commutator::tensor_type dtl::generic_commutator::operator()(
-        const boost::container::small_vector_base<pair_type>& lhs,
-        const boost::container::small_vector_base<pair_type>& rhs)
+        ref_type lhs,
+        ref_type rhs) const
 {
     std::map<key_type, int> tmp;
 
@@ -25,21 +39,57 @@ dtl::generic_commutator::tensor_type dtl::generic_commutator::operator()(
     return {tmp.begin(), tmp.end()};
 }
 
-maps::generic_tensor maps::expand_letter(let_t letter)
+typename dtl::maps_implementation::generic_tensor dtl::maps_implementation::expand_letter(let_t letter)
 {
-    return {{tkey_type(1, letter), 1}};
+    return {{ tkey_type(1, letter-1), 1 }};
 }
+typename dtl::maps_implementation::glie_ref dtl::maps_implementation::rbracketing(
+        dtl::maps_implementation::tkey_type tkey) const
+{
+    static const boost::container::small_vector<std::pair<tkey_type, int>, 0> null;
 
-maps::generic_lie maps::rbracketing_impl(maps::lkey_type lhs, maps::lkey_type rhs) const
-{
-}
+    if (tkey.degree()==0) {
+        return null;
+    }
 
-typename maps::glie_ref maps::rbracketing(maps::tkey_type tkey) const
-{
-    static const boost::container::small_vector<lie_pair, 0> null;
-    return null;
+    std::lock_guard<std::recursive_mutex> access(m_rbracketing_lock);
+
+    auto& found = m_rbracketing_cache[tkey];
+    if (found.set) {
+        return found.value;
+    }
+
+    found.set = true;
+    if (p_tensor_basis->letter(tkey)) {
+        found.value.emplace_back(lkey_type(1, tkey.index()), 1);
+        return found.value;
+    }
+
+    auto lhs = p_tensor_basis->lparent(tkey);
+    auto rhs = p_tensor_basis->rparent(tkey);
+
+    return found.value = p_lie_mul->multiply_generic(*p_lie_basis, rbracketing(lhs), rbracketing(rhs));
 }
-typename maps::gtensor_ref maps::expand(maps::lkey_type lkey) const
+typename dtl::maps_implementation::gtensor_ref dtl::maps_implementation::expand(
+        dtl::maps_implementation::lkey_type lkey) const
 {
     return m_expand(lkey);
+}
+
+maps::maps(deg_t width, deg_t depth)
+    : p_tensor_basis(basis_registry<tensor_basis>::get(width, depth)),
+      p_lie_basis(basis_registry<hall_basis>::get(width, depth))
+{
+    static std::mutex lock;
+    static std::unordered_map<std::pair<deg_t, deg_t>, std::unique_ptr<const dtl::maps_implementation>,
+                              boost::hash<std::pair<deg_t, deg_t>>> cache;
+
+    std::lock_guard<std::mutex> access(lock);
+    auto& found = cache[{width, depth}];
+    if (found) {
+        p_impl = found.get();
+    }
+
+    found = std::make_unique<const dtl::maps_implementation>(p_tensor_basis.get(), p_lie_basis.get());
+    p_impl = found.get();
 }

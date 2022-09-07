@@ -8,6 +8,7 @@
 #include "implementation_types.h"
 
 #include <limits>
+#include <ostream>
 #include <unordered_map>
 
 namespace lal {
@@ -38,6 +39,9 @@ public:
     static constexpr deg_t max_degree = (deg_t(1) << degree_digits) - 1;
 
     using index_type = Int;
+
+    explicit constexpr index_key() : m_data(0)
+    {}
 
     explicit constexpr index_key(deg_t degree, index_type index)
         : m_data((Int(degree) << index_bits) + index)
@@ -102,6 +106,13 @@ public:
     }
 
 };
+
+template <int DegreeDigits, typename Int>
+std::ostream& operator<<(std::ostream& os, const index_key<DegreeDigits, Int>& arg) noexcept
+{
+    return os << "index_Key(" << arg.degree() << ", " << arg.index() << ')';
+}
+
 
 namespace dtl {
 

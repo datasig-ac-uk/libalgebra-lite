@@ -397,11 +397,8 @@ public:
         return {tmp.begin(), tmp.end()};
     }
 
-public:
-
-    using basis_type = Basis;
-
 };
+
 
 
 template <typename Multiplier>
@@ -451,7 +448,12 @@ class base_multiplication
 
 protected:
     Multiplier m_mult;
+
 public:
+
+    using basis_type = typename Multiplier::basis_type;
+    using key_type = typename basis_trait<basis_type>::key_type;
+    using generic_ref = const boost::container::small_vector_base<std::pair<key_type, int>>&;
 
     using compatible_bases = boost::mpl::vector<typename Multiplier::basis_type>;
 
@@ -464,6 +466,12 @@ public:
     decltype(auto) multiply(const Basis& basis, Key lhs, Key rhs) const
     {
         return m_mult(basis, lhs, rhs);
+    }
+
+    template <typename Basis>
+    decltype(auto) multiply_generic(const Basis& basis, generic_ref lhs, generic_ref rhs) const
+    {
+        return m_mult.mul(basis, lhs, rhs);
     }
 
 

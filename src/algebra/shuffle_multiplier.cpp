@@ -27,9 +27,6 @@ shuffle_tensor_multiplier::operator()(
 }
 
 
-static std::mutex left_shuffle_registry_lock;
-
-static std::unordered_map<deg_t, std::shared_ptr<const right_half_shuffle_multiplication>> rs_mul_cache;
 
 namespace lal {
 template class multiplication_registry<right_half_shuffle_multiplication>;

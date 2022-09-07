@@ -11,3 +11,5 @@ target_link_libraries(test_lie PRIVATE
 target_sources(test_lie PRIVATE
         lie_multiplier.cpp
         )
+
+gtest_discover_tests(test_lie)

@@ -16,7 +16,8 @@ struct LieMultiplierFixture : public ::testing::Test
     using pref_type = const boost::container::small_vector_base<std::pair<key_type, int>>&;
 
     LieMultiplierFixture()
-        : lie_basis(new hall_basis {5, 5})
+        : lie_basis(new hall_basis {5, 5}),
+          multiplier(5)
     {}
 
 };

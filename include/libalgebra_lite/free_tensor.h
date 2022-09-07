@@ -237,10 +237,15 @@ extern template class LIBALGEBRA_LITE_EXPORT base_multiplier<left_half_shuffle_t
 extern template class LIBALGEBRA_LITE_EXPORT base_multiplier<right_half_shuffle_tensor_multiplier, tensor_basis>;
 
 class LIBALGEBRA_LITE_EXPORT free_tensor_multiplier
+        : public base_multiplier<free_tensor_multiplier, tensor_basis>
 {
+    deg_t m_width;
 public:
     using key_type = typename tensor_basis::key_type;
     using basis_type = tensor_basis;
+
+    explicit free_tensor_multiplier(deg_t width) : m_width(width)
+    {}
 
 
     static key_type concat_product(const tensor_basis& basis, key_type lhs, key_type rhs) noexcept
@@ -514,11 +519,18 @@ class LIBALGEBRA_LITE_EXPORT left_half_shuffle_tensor_multiplier
 
     product_type key_prod_impl(const tensor_basis& basis, key_type lhs, key_type rhs) const;
 
+    deg_t m_width;
+
 protected:
 
     product_type shuffle(const tensor_basis& basis, key_type lhs, key_type rhs) const;
 
 public:
+
+    using basis_type = tensor_basis;
+
+    explicit left_half_shuffle_tensor_multiplier(deg_t width) : m_width(width)
+    {}
 
     reference operator()(const tensor_basis& basis, key_type lhs, key_type rhs) const;
 };
@@ -543,12 +555,18 @@ class LIBALGEBRA_LITE_EXPORT right_half_shuffle_tensor_multiplier
 
     parent_type split_at_right(const tensor_basis& basis, key_type key) const noexcept;
 
+    deg_t m_width;
 
 protected:
 
     product_type shuffle(const tensor_basis& basis, key_type lhs, key_type rhs) const;
 
 public:
+
+    using basis_type = tensor_basis;
+
+    explicit right_half_shuffle_tensor_multiplier(deg_t width) : m_width(width)
+    {}
 
 
     reference operator()(const tensor_basis& basis, key_type lhs, key_type rhs) const;
@@ -567,6 +585,7 @@ class LIBALGEBRA_LITE_EXPORT shuffle_tensor_multiplier
 
 
 public:
+    using basis_type = tensor_basis;
 
     using half_type::half_type;
 

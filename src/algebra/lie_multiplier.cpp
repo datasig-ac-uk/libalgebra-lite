@@ -26,7 +26,7 @@ lie_multiplier::key_prod_impl(const hall_basis& basis, key_type lhs, key_type rh
         return result;
     }
 
-    auto found = p_basis->find(parent_type(lhs, rhs));
+    auto found = basis.find(parent_type(lhs, rhs));
     if (found.found) {
         result.emplace_back(found.it->second, 1);
     } else {

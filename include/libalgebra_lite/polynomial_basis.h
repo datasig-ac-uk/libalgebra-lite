@@ -22,8 +22,10 @@ namespace lal {
 
 class LIBALGEBRA_LITE_EXPORT monomial
 {
+public:
     using letter_type = dtl::packed_integer<dimn_t, char>;
 
+private:
     using small_vec = boost::container::small_vector<std::pair<letter_type, deg_t>, 1>;
     using map_type = boost::container::flat_map<letter_type, deg_t, std::less<>, small_vec>;
 

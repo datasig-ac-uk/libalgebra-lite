@@ -26,7 +26,7 @@ class LIBALGEBRA_LITE_EXPORT lie_multiplier : public base_multiplier<lie_multipl
 {
     using base_type = base_multiplier<lie_multiplier, hall_basis, 2>;
 
-    std::shared_ptr<const hall_basis> p_basis;
+    deg_t m_width;
 
     using typename base_type::key_type;
     using typename base_type::product_type;
@@ -39,8 +39,11 @@ class LIBALGEBRA_LITE_EXPORT lie_multiplier : public base_multiplier<lie_multipl
 
     product_type key_prod_impl(const hall_basis& basis, key_type lhs, key_type rhs) const;
 
-
 public:
+    using basis_type = hall_basis;
+
+    explicit lie_multiplier(deg_t width) : m_width(width)
+    {}
 
     reference operator()(const hall_basis& basis, key_type lhs, key_type rhs) const;
 
@@ -53,6 +56,7 @@ extern template class LIBALGEBRA_LITE_EXPORT base_multiplier<lie_multiplier, hal
 struct LIBALGEBRA_LITE_EXPORT lie_multiplication : public base_multiplication<lie_multiplier>
 {
     using base = base_multiplication<lie_multiplier>;
+    using base::base;
 };
 
 

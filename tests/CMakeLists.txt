@@ -18,3 +18,4 @@ target_link_libraries(lal_testing_common PRIVATE
 
 add_subdirectory(lie)
 add_subdirectory(utilities)
+add_subdirectory(tensors)
