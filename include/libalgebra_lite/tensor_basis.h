@@ -21,7 +21,7 @@ namespace lal {
 
 
 
-class  tensor_basis
+class LIBALGEBRA_LITE_EXPORT tensor_basis
 {
     deg_t m_width;
     deg_t m_depth;
@@ -43,21 +43,27 @@ public:
     key_type lparent(const key_type& arg) const noexcept
     {
         auto degree = arg.degree();
+        if (degree == 0) {
+            return key_type(0, 0);
+        }
         return key_type(1, arg.degree() / m_powers[degree]);
     }
     key_type rparent(const key_type& arg) const noexcept
     {
         auto degree = arg.degree();
+        if (degree == 0) {
+            return key_type(0, 0);
+        }
         return key_type(degree-1, arg.index() % m_powers[degree]);
     }
 
-    std::string key_to_string(const key_type&) const noexcept;
-    std::ostream& stream_out(std::ostream&, const key_type&) const noexcept;
+    std::string key_to_string(const key_type&) const;
+    std::ostream& print_key(std::ostream&, const key_type&) const;
 
     static key_type key_of_letter(let_t letter) noexcept
     { return key_type(1, letter); }
     let_t first_letter(const key_type& arg) const noexcept
-    { return let_t(lparent(arg).index()); }
+    { return let_t(lparent(arg).index() + 1); }
     static bool letter(const key_type& arg) noexcept
     { return arg.degree() == 1; }
 
@@ -69,6 +75,7 @@ public:
             return m_sizes[deg-1];
         }
     }
+    dimn_t size_of_degree(deg_t deg) const noexcept;
     dimn_t size(int i) const noexcept
     {
         if (i >= 0) {
@@ -80,6 +87,9 @@ public:
 
     const std::vector<dimn_t>& powers() const noexcept
     { return m_powers; }
+
+    dimn_t key_to_index(key_type arg) const noexcept;
+    key_type index_to_key(dimn_t arg) const noexcept;
 
 };
 

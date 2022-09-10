@@ -33,6 +33,15 @@ public:
 
 };
 
+template<>
+class LIBALGEBRA_LITE_EXPORT multiplication_registry<base_multiplication<polynomial_multiplier>>
+{
+    using multiplication = base_multiplication<polynomial_multiplier>;
+public:
+
+    static std::shared_ptr<const multiplication> get();
+};
+
 template<typename Coefficients>
 class polynomial : public algebra<polynomial_basis,
                                   Coefficients,
@@ -47,8 +56,16 @@ class polynomial : public algebra<polynomial_basis,
                          dtl::standard_storage>;
 
 public:
-
+    using multiplication_type = base_multiplication<polynomial_multiplier>;
     using base::base;
+
+    template <typename Key, typename Scalar>
+    explicit polynomial(Key k, Scalar s)
+        : base(basis_registry<polynomial_basis>::get(),
+               multiplication_registry<multiplication_type>::get())
+    {
+        (*this)[typename base::key_type(k)] = base::scalar_type(s);
+    }
 
     template<typename IndeterminateMap>
     typename polynomial::scalar_type operator()(const IndeterminateMap& arg) const noexcept
@@ -74,15 +91,6 @@ extern template class LIBALGEBRA_LITE_EXPORT coefficient_ring<polynomial<rationa
 
 
 using polynomial_ring = coefficient_ring<polynomial<rational_field>, typename rational_field::scalar_type>;
-
-template<>
-class LIBALGEBRA_LITE_EXPORT multiplication_registry<base_multiplication<polynomial_multiplier>>
-{
-    using multiplication = base_multiplication<polynomial_multiplier>;
-public:
-
-    static std::shared_ptr<const multiplication> get();
-};
 
 
 

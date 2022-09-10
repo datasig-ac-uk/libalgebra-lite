@@ -112,6 +112,7 @@ public:
     using glie_ref = typename dtl::maps_implementation::glie_ref;
     using gtensor_ref = typename dtl::maps_implementation::gtensor_ref;
 
+    maps(std::shared_ptr<const tensor_basis> tbasis, std::shared_ptr<const hall_basis> lbasis);
     maps(deg_t width, deg_t depth);
 
     glie_ref rbracketing(tkey_type tkey) const { return p_impl->rbracketing(tkey); }

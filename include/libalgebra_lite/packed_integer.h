@@ -7,6 +7,7 @@
 
 #include <limits>
 #include <type_traits>
+#include <ostream>
 
 namespace lal {
 namespace dtl {
@@ -93,6 +94,13 @@ public:
     { return m_data >= arg.m_data; }
 
 };
+
+
+template <typename Int, typename Packed>
+std::ostream& operator<<(std::ostream& os, const packed_integer<Int, Packed>& arg) noexcept
+{
+    return os << Packed(arg) << Int(arg);
+}
 
 
 template <typename S, typename T>

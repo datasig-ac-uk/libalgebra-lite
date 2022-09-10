@@ -12,6 +12,8 @@ struct FreeTensorMultiplicationFixture : public TensorFixture
 
 public:
 
+    std::shared_ptr<const lal::free_tensor_multiplication> multiplication;
+
     using tensor_type = TensorType;
     using scalar_type = typename lal::polynomial_ring::scalar_type;
     using rational_type = typename lal::polynomial_ring::rational_type;
@@ -37,7 +39,7 @@ public:
     {
         const auto& powers = basis->powers();
 
-        tensor_type result(basis);
+        tensor_type result(basis, multiplication);
 
         for (lal::deg_t d=0; d<=basis->depth(); ++d) {
             for (lal::dimn_t i=0; i<powers[d]; ++i) {
@@ -87,8 +89,8 @@ TYPED_TEST_P(FreeTensorMultiplicationFixture, testMultiplication) {
     const auto& powers = this->basis->powers();
 
     const auto& first = result[TensorFixture::key_type(0, 0)];
-    EXPECT_EQ(first[this->key_to_monomial('x', TensorFixture::key_type(0, 0))], this->rational_type(1));
-    EXPECT_EQ(first[this->key_to_monomial('y', TensorFixture::key_type(0, 0))], this->rational_type(1));
+    EXPECT_EQ(first[this->key_to_monomial('x', TensorFixture::key_type(0, 0))], this->one());
+    EXPECT_EQ(first[this->key_to_monomial('y', TensorFixture::key_type(0, 0))], this->one());
 
     for (auto d=1; d<=this->basis->depth(); ++d) {
         for (auto i=0; i<powers[d]; ++i) {
@@ -109,9 +111,15 @@ TYPED_TEST_P(FreeTensorMultiplicationFixture, testMultiplication) {
 
 }
 
+REGISTER_TYPED_TEST_SUITE_P(FreeTensorMultiplicationFixture,
+        testMultiplication);
 
-REGISTER_TYPED_TEST_SUITE_P(
-        FreeTensorMultiplication,
-        FreeTensorMultiplicationFixture,
+//REGISTER_TYPED_TEST_SUITE_P(
+//        FreeTensorMultiplication,
+//        FreeTensorMultiplicationFixture,
+//        )
+
+using FreeTensorMultiplicationCases = ::testing::Types<
         lal::free_tensor<lal::polynomial_ring, lal::dense_vector, lal::dtl::standard_storage>
-        )
+        >;
+INSTANTIATE_TYPED_TEST_SUITE_P(FTM, FreeTensorMultiplicationFixture, FreeTensorMultiplicationCases);

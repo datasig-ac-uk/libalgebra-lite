@@ -124,6 +124,8 @@ protected:
 
 
 public:
+    sparse_iterator_base() : p_map(nullptr), m_it()
+    {}
 
     sparse_iterator_base(MapType* map, Iterator it)
         : p_map(map), m_it(it)
@@ -241,6 +243,13 @@ public:
 
     using iterator = dtl::sparse_iterator<map_type, typename map_type::iterator>;
     using const_iterator = dtl::sparse_iterator<const map_type, typename map_type::const_iterator>;
+
+    template <typename Key, typename Scalar>
+    explicit sparse_vector(const basis_type* basis, Key k, Scalar s)
+        : p_basis(basis)
+    {
+        m_data[key_type(k)] = scalar_type(s);
+    }
 
     explicit sparse_vector(const basis_type* basis) : p_basis(basis)
     {

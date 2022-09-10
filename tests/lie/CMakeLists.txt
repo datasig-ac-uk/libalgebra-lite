@@ -1,6 +1,6 @@
 
 
-add_executable(test_lie)
+add_executable(test_lie hall_basis.cpp lie_fixture.h)
 
 
 target_link_libraries(test_lie PRIVATE

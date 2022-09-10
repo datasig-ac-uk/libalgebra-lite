@@ -558,7 +558,14 @@ private:
     std::shared_ptr<const multiplication_type> p_mult;
 
 public:
-    algebra(const vector_type& base, std::shared_ptr<Multiplication> mult)
+
+    algebra(std::shared_ptr<const basis_type> basis, std::shared_ptr<const Multiplication> mult)
+        : vector_type(basis), p_mult(std::move(mult))
+    {}
+
+
+    algebra(const vector_type& base, std::shared_ptr<const Multiplication> mult)
+
         : vector_type(base), p_mult(std::move(mult))
     {}
 
@@ -608,13 +615,13 @@ operator*(const Algebra& lhs, const Algebra& rhs)
 {
     using traits = multiplication_traits<typename Algebra::multiplication_type>;
 
-    const auto& multiplication = lhs.multiplication();
+    auto multiplication = lhs.multiplication();
     if (!multiplication) {
         multiplication = rhs.multiplication();
     }
-    Algebra result(lhs.basis(), multiplication);
+    Algebra result(lhs.get_basis(), multiplication);
     if (multiplication && !lhs.empty() && !rhs.empty()) {
-        traits::multiply_and_add(*multiplication, lhs, rhs);
+        traits::multiply_and_add(*multiplication, result, lhs, rhs);
     }
     return result;
 }
@@ -648,7 +655,7 @@ commutator(const Algebra& lhs, const Algebra& rhs)
         multiplication = rhs.multiplication();
     }
 
-    Algebra result(lhs.basis(), multiplication);
+    Algebra result(lhs.get_basis(), multiplication);
     if (multiplication && !lhs.empty() && !rhs.empty()) {
         traits::mulitply_and_add(*multiplication, result, lhs, rhs);
         traits::multiply_and_add(*multiplication, result, rhs, lhs, Algebra::coefficient_ring::uminus);

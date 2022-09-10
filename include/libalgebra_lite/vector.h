@@ -12,6 +12,7 @@
 #include "vector_traits.h"
 #include "coefficients.h"
 #include "basis_traits.h"
+#include "registry.h"
 
 
 namespace lal {
@@ -47,6 +48,12 @@ struct storage_base
 
     explicit storage_base(basis_pointer basis, VectorType&& arg)
         : p_basis(std::move(basis)), p_impl(std::make_shared<VectorType>(std::move(arg)))
+    {}
+
+    template <typename... Args>
+    explicit storage_base(key_type k, scalar_type s, Args&&... args)
+        : p_basis(basis_registry<basis_type>::get(std::forward<Args>(args)...)),
+          p_impl(p_basis.get(), k, s)
     {}
 
     template <typename... BasisArgs>
@@ -112,7 +119,7 @@ struct storage_base
     const_iterator begin() const noexcept
     {
         if (p_impl) {
-            return p_impl->begin();
+            return p_impl->cbegin();
         }
         return const_iterator();
     }
@@ -120,7 +127,7 @@ struct storage_base
     const_iterator end() const noexcept
     {
         if (p_impl) {
-            return p_impl->end();
+            return p_impl->cend();
         }
         return const_iterator();
     }
@@ -301,6 +308,11 @@ protected:
 
 public:
 
+    template <typename Key, typename Scalar, typename... Args>
+    explicit vector(Key k, Scalar s, Args&&... args)
+        : base_type(key_type(k), scalar_type(s), std::forward<Args>(args)...)
+    {}
+
     explicit vector(basis_pointer basis) : base_type(std::move(basis))
     {}
 
@@ -330,6 +342,7 @@ public:
     using base_type::begin;
     using base_type::end;
     using base_type::base_vector;
+    using base_type::get_basis;
 
 
 private:
@@ -656,7 +669,21 @@ public:
 };
 
 
-
+template <typename Basis, typename Coeff, template <typename, typename> class VectorType, template <typename> class StorageModel>
+std::ostream& operator<<(std::ostream& os, const vector<Basis, Coeff, VectorType, StorageModel>& vect)
+{
+    const auto& basis = vect.basis();
+    const auto& zero = coefficient_trait<Coeff>::coefficient_ring::zero();
+    os << "{ ";
+    for (const auto& item : vect) {
+        auto val = item.value();
+        if (item.value() != zero) {
+            os << item.value() << '(' << basis.print_key(item.key()) << ") ";
+        }
+    }
+    os <<'}';
+    return os;
+}
 
 
 // Implementations of inplace fused methods

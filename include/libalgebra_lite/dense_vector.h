@@ -50,6 +50,7 @@ private:
 
 public:
     using basis_type        = Basis;
+    using key_type          = typename basis_traits::key_type;
     using size_type         = typename storage_type::size_type;
     using difference_type   = typename storage_type::difference_type;
     using iterator          = dtl::dense_vector_iterator<Basis, scalar_type>;
@@ -58,6 +59,14 @@ public:
     using const_pointer     = typename storage_type::const_pointer;
     using reference         = typename storage_type::reference;
     using const_reference   = typename storage_type::const_reference;
+
+    dense_vector_base(const Basis* basis, key_type k, scalar_type s)
+        : p_basis(basis), m_storage()
+    {
+        auto index = p_basis->key_to_index(k);
+        resize(index);
+        m_storage[index] = s;
+    }
 
     dense_vector_base(const Basis* basis, std::initializer_list<scalar_type> args)
             : p_basis(basis), m_storage(args)

@@ -32,7 +32,8 @@ public:
     using parent_type = std::pair<key_type, key_type>;
 private:
     using data_type = std::vector<parent_type>;
-    using reverse_map_type = boost::container::flat_map<parent_type, key_type>;
+//    using reverse_map_type = boost::container::flat_map<parent_type, key_type>;
+    using reverse_map_type = std::map<parent_type, key_type>;
     using l2k_map_type = std::vector<key_type>;
     using size_vector_type = std::vector<size_type>;
     using degree_range_map_type = std::vector<std::pair<size_type, size_type>>;
@@ -73,58 +74,12 @@ public:
 
     find_result find(parent_type parent) const noexcept;
 
+    size_type index_of_key(key_type arg) const noexcept;
+    key_type key_of_index(size_type index) const noexcept;
+
     const parent_type &operator[](const key_type&) const noexcept;
     const key_type& operator[](const parent_type&) const;
 };
-
-
-
-class hall_basis
-{
-    std::shared_ptr<const hall_set> p_hallset;
-    deg_t m_width;
-    deg_t m_depth;
-
-public:
-
-    using key_type = typename hall_set::key_type;
-    using parent_type = typename hall_set::parent_type;
-
-    hall_basis(deg_t width, deg_t depth) : m_width(width), m_depth(depth),
-        p_hallset(new hall_set(width, depth))
-    {}
-
-    deg_t width() const noexcept { return m_width; }
-    deg_t depth() const noexcept { return m_depth; }
-
-    static constexpr deg_t degree(const key_type& arg) noexcept
-    { return deg_t(arg.degree()); }
-
-    parent_type parents(const key_type& arg) const noexcept
-    { return (*p_hallset)[arg]; }
-    key_type lparent(const key_type& arg) const noexcept
-    { return parents(arg).first; }
-    key_type rparent(const key_type& arg) const noexcept
-    { return parents(arg).second; }
-    key_type key_of_letter(let_t letter) const noexcept
-    { return p_hallset->key_of_letter(letter); }
-    let_t first_letter(const key_type& key) const noexcept
-    { return p_hallset->get_letter((*p_hallset)[key].first.index()); }
-    dimn_t size(int deg) const noexcept
-    {
-        return p_hallset->size(deg < 0 ? static_cast<deg_t>(deg) : m_depth);
-    }
-    dimn_t start_of_degree(deg_t deg) const noexcept
-    {
-        return (deg == 0) ? 0 : p_hallset->size(deg-1);
-    }
-    typename hall_set::find_result find(parent_type parents) const noexcept;
-
-
-    std::shared_ptr<const hall_set> get_hall_set() const noexcept { return p_hallset; }
-
-};
-
 
 
 template<typename Func,
@@ -151,6 +106,73 @@ public:
 };
 
 
+class hall_basis
+{
+    std::shared_ptr<const hall_set> p_hallset;
+    deg_t m_width;
+    deg_t m_depth;
+
+    static std::string letter_to_string(let_t letter);
+    static std::string key_to_string_op(const std::string& left, const std::string& right);
+
+
+    hall_extension<decltype(&letter_to_string),
+            decltype(&key_to_string_op),
+            const std::string&> m_key_to_string;
+
+public:
+
+    using key_type = typename hall_set::key_type;
+    using parent_type = typename hall_set::parent_type;
+
+    hall_basis(deg_t width, deg_t depth) : m_width(width), m_depth(depth),
+        p_hallset(new hall_set(width, depth)),
+        m_key_to_string(p_hallset, &letter_to_string, &key_to_string_op)
+    {}
+
+    deg_t width() const noexcept { return m_width; }
+    deg_t depth() const noexcept { return m_depth; }
+
+    static constexpr deg_t degree(const key_type& arg) noexcept
+    { return deg_t(arg.degree()); }
+
+    parent_type parents(const key_type& arg) const noexcept
+    { return (*p_hallset)[arg]; }
+    key_type lparent(const key_type& arg) const noexcept
+    { return parents(arg).first; }
+    key_type rparent(const key_type& arg) const noexcept
+    { return parents(arg).second; }
+    key_type key_of_letter(let_t letter) const noexcept
+    { return p_hallset->key_of_letter(letter); }
+    let_t first_letter(const key_type& key) const noexcept
+    { return p_hallset->get_letter((*p_hallset)[key].first.index()); }
+    dimn_t size(int deg) const noexcept
+    {
+        return p_hallset->size(deg < 0 ? m_depth : static_cast<deg_t>(deg));
+    }
+    dimn_t start_of_degree(deg_t deg) const noexcept
+    {
+        return (deg == 0) ? 0 : p_hallset->size(deg-1);
+    }
+    dimn_t size_of_degree(deg_t deg) const noexcept { return p_hallset->size_of_degree(deg); }
+    typename hall_set::find_result find(parent_type parents) const noexcept;
+
+    dimn_t index_of_key(key_type arg) const noexcept { return p_hallset->index_of_key(arg); }
+    key_type key_of_index(dimn_t arg) const noexcept { return p_hallset->key_of_index(arg); }
+
+
+    std::shared_ptr<const hall_set> get_hall_set() const noexcept { return p_hallset; }
+
+    std::ostream& print_key(std::ostream& os, key_type key) const;
+
+
+};
+
+
+
+
+
+
 template<typename Func, typename Binop, typename ReturnType>
 hall_extension<Func, Binop, ReturnType>::hall_extension(std::shared_ptr<const hall_set> hs, Func&& func, Binop&& binop)
         : m_hall_set(std::move(hs)),
@@ -171,9 +193,12 @@ hall_extension<Func, Binop, ReturnType>::operator()(
         return found->second;
     }
 
+    if (m_hall_set->letter(key)) {
+        return m_cache[key] = m_func(m_hall_set->get_letter(key.index()));
+    }
+
     auto parents = (*m_hall_set)[key];
-    return m_cache[key] = (m_hall_set->letter(key)) ? m_func(m_hall_set->get_letter(key.index()))
-                                                    : m_binop(operator()(parents.first), operator()(parents.second));
+    return m_cache[key] = m_binop(operator()(parents.first), operator()(parents.second));
 }
 
 

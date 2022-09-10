@@ -110,7 +110,7 @@ public:
 template <int DegreeDigits, typename Int>
 std::ostream& operator<<(std::ostream& os, const index_key<DegreeDigits, Int>& arg) noexcept
 {
-    return os << "index_Key(" << arg.degree() << ", " << arg.index() << ')';
+    return os << "index_key(" << arg.degree() << ", " << arg.index() << ')';
 }
 
 

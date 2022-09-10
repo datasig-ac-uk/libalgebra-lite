@@ -9,6 +9,7 @@
 
 #include <functional>
 #include <numeric>
+#include <iosfwd>
 
 #include <boost/container/small_vector.hpp>
 #include <boost/container/flat_map.hpp>
@@ -42,7 +43,7 @@ private:
             return arg;
         }
         auto result1 = power<Coeff>(arg, exponent/2);
-        auto result2 = Coeff::mul(result1);
+        auto result2 = Coeff::mul(result1, result1);
         return (exponent % 2==0) ? result2 : Coeff::mul(arg, result2);
     }
 
@@ -50,6 +51,8 @@ public:
 
     using iterator = typename map_type::iterator;
     using const_iterator = typename map_type::const_iterator;
+
+    monomial() : m_data() {}
 
     explicit monomial(letter_type let, deg_t power=1)
     {
@@ -78,13 +81,27 @@ public:
         auto result = Coefficients::zero();
 
         for (const auto& item : m_data) {
-            Coefficients::add_inplace(power<Coefficients>(arg[item.first], item.second));
+            Coefficients::add_inplace(result,
+                    power<Coefficients>(arg[item.first], item.second));
         }
         return result;
     }
 
+    bool operator==(const monomial& other) const noexcept
+    {
+        return degree() == other.degree() && m_data == other.m_data;
+    }
+
+    bool operator<(const monomial& other) const noexcept
+    {
+        auto ldegree = degree();
+        auto rdegree = other.degree();
+        return (ldegree < rdegree) || (ldegree == rdegree && (m_data < other.m_data));
+    }
+
 };
 
+LIBALGEBRA_LITE_EXPORT std::ostream& operator<<(std::ostream& os, const monomial& arg) noexcept;
 
 
 struct LIBALGEBRA_LITE_EXPORT polynomial_basis
@@ -99,14 +116,10 @@ struct LIBALGEBRA_LITE_EXPORT polynomial_basis
 
     static deg_t degree(const key_type& key)
     {
-        return std::accumulate(key.begin(), key.end(), 0,
-                [](const auto& curr, const auto& key) { return curr + key.second; });
+        return key.degree();
     }
 
-    struct key_order
-    {
-        bool operator()(const key_type& lhs, const key_type& rhs) const;
-    };
+    std::ostream& print_key(std::ostream& os, const key_type& key) const;
 
 };
 

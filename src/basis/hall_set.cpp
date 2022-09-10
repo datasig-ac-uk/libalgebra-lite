@@ -6,6 +6,8 @@
 
 #include <algorithm>
 #include <unordered_map>
+#include <iostream>
+#include <functional>
 
 namespace lal {
 
@@ -27,6 +29,7 @@ hall_set::hall_set(hall_set::degree_type width, hall_set::degree_type depth)
 
     for (letter_type l = 1; l <= width; ++l) {
         key_type key(1, l-1);
+//        std::cout << zero_key << ' ' << key << ' ' << key << '\n';
         parent_type parents{zero_key, key};
         letters.push_back(l);
         data.push_back(parents);
@@ -65,9 +68,11 @@ void hall_set::grow_up(hall_set::degree_type new_depth)
                 for (letter_type j = std::max(j_lower, i + 1); j < j_upper; ++j) {
                     key_type jk(d-e, j-j_lower);
                     if (data[j].first <= ik) {
+                        key_type new_key (d, k_index++);
                         parent_type parents(ik, jk);
                         data.push_back(parents);
-                        reverse_map.insert(std::make_pair(parents, key_type(d, k_index++)));
+                        reverse_map.insert(std::make_pair(parents, new_key));
+//                        std::cout << parents.first << ' ' << parents.second  << ' ' << new_key << '\n';
                     }
                 }
             }
@@ -87,12 +92,15 @@ void hall_set::grow_up(hall_set::degree_type new_depth)
 
 hall_set::key_type hall_set::key_of_letter(let_t let) const noexcept
 {
-    return typename hall_set::key_type {1, letters[let]};
+    return typename hall_set::key_type {1, let-1};
 }
 hall_set::size_type hall_set::size(deg_t deg) const noexcept
 {
-    if (deg < sizes.size()) {
+    if (deg >= 0 && deg < sizes.size()) {
         return sizes[deg];
+    }
+    if (deg < 0 && deg >= -sizes.size()) {
+        return sizes[sizes.size() + deg];
     }
     return sizes.back();
 }
@@ -102,7 +110,8 @@ hall_set::hall_set(const hall_set& existing, hall_set::degree_type deg)
 }
 hall_set::size_type hall_set::size_of_degree(deg_t arg) const noexcept
 {
-    return size(arg+1) - size(arg);
+    auto range = degree_ranges[arg];
+    return range.second - range.first;
 }
 hall_set::letter_type hall_set::get_letter(dimn_t idx) const noexcept
 {
@@ -117,11 +126,14 @@ typename hall_set::find_result hall_set::find(hall_set::parent_type parent) cons
 }
 bool hall_set::letter(const hall_set::key_type &key) const noexcept
 {
-    return std::find(letters.begin(), letters.end(), key.index() + 1) != letters.end();
+    return key.degree() == 1;
 }
 const hall_set::parent_type &hall_set::operator[](const hall_set::key_type &key) const noexcept
 {
-    return data[key.index() + size(key.degree()-1)];
+    auto index = key.index();
+    auto offset = size(deg_t(key.degree())-1);
+    return data[index + offset + 1];
+//    return data[key.index() + size(deg_t(key.degree()-1)) + 1];
 }
 const hall_set::key_type &hall_set::operator[](const hall_set::parent_type &parent) const
 {
@@ -131,6 +143,33 @@ const hall_set::key_type &hall_set::operator[](const hall_set::parent_type &pare
     }
     return root_element;
 }
+dimn_t hall_set::index_of_key(hall_set::key_type arg) const noexcept
+{
+    return arg.index() + size(deg_t(arg.degree())-1);
+}
+hall_set::key_type hall_set::key_of_index(hall_set::size_type index) const noexcept
+{
+    auto found = std::lower_bound(
+            sizes.begin(),
+            sizes.end(),
+            index,
+            std::less_equal<>()
+            );
+    if (found == sizes.end()) {
+        return root_element;
+    }
+    auto deg = static_cast<deg_t>(found - sizes.begin());
+    return key_type(deg, index - *(--found));
+}
+
+std::string hall_basis::letter_to_string(let_t letter)
+{
+    return std::to_string(letter);
+}
+std::string hall_basis::key_to_string_op(const std::string& left, const std::string& right)
+{
+    return "[" + left + "," + right + "]";
+}
 
 constexpr typename hall_set::key_type hall_set::root_element;
 constexpr typename hall_set::parent_type hall_set::root_parent;
@@ -139,7 +178,10 @@ typename hall_set::find_result hall_basis::find(hall_basis::parent_type parents)
 {
     return p_hallset->find(parents);
 }
-
+std::ostream& hall_basis::print_key(std::ostream& os, hall_basis::key_type key) const
+{
+    return os << m_key_to_string(key);
+}
 template class basis_registry<hall_basis>;
 
 } // namespace lal

@@ -12,13 +12,12 @@
 
 using namespace lal;
 
+maps::maps(std::shared_ptr<const tensor_basis> tbasis, std::shared_ptr<const hall_basis> lbasis)
+   : p_tensor_basis(std::move(tbasis)), p_lie_basis(std::move(lbasis)),
+   p_impl(new dtl::maps_implementation(p_tensor_basis.get(), p_lie_basis.get()))
+{
 
-
-
-
-
-
-
+}
 
 dtl::generic_commutator::tensor_type dtl::generic_commutator::operator()(
         ref_type lhs,
