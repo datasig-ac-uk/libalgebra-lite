@@ -64,7 +64,7 @@ public:
         : base(basis_registry<polynomial_basis>::get(),
                multiplication_registry<multiplication_type>::get())
     {
-        (*this)[typename base::key_type(k)] = base::scalar_type(s);
+        (*this)[typename base::key_type(k)] = typename base::scalar_type(s);
     }
 
     template<typename IndeterminateMap>

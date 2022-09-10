@@ -576,7 +576,7 @@ public:
     {}
 
 
-    std::shared_ptr<multiplication_type> multiplication() const noexcept { return p_mult; }
+    std::shared_ptr<const multiplication_type> multiplication() const noexcept { return p_mult; }
 
     algebra& add_mul(const algebra& lhs, const algebra& rhs);
     algebra& sub_mul(const algebra& lhs, const algebra& rhs);

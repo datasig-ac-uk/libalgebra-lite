@@ -95,6 +95,8 @@ private:
 
 public:
 
+    const Basis& basis() const noexcept { return *p_basis; }
+
     void reserve(size_type n)
     {
         m_storage.reserve(adjust_size(n));
@@ -110,18 +112,25 @@ public:
         m_storage.resize(adjust_size(n), val);
     }
 
+    iterator begin() noexcept { return iterator(p_basis, m_storage.begin()); }
+    iterator end() noexcept { return iterator(p_basis, m_storage.end()); }
+    const_iterator begin() const noexcept { return const_iterator(p_basis, m_storage.begin()); }
+    const_iterator end() const noexcept { return const_iterator(p_basis, m_storage.end()); }
+    const_iterator cbegin() const noexcept { return const_iterator(p_basis, m_storage.begin()); }
+    const_iterator cend() const noexcept { return const_iterator(p_basis, m_storage.end()); }
+
     constexpr size_type size() const noexcept { return m_storage.size(); }
     constexpr bool empty() const noexcept { return m_storage.empty(); }
 
     template <typename Index>
     reference operator[](Index idx) noexcept
     {
-        return m_storage[idx];
+        return m_storage[p_basis->key_to_index(idx)];
     }
 
     template <typename Index>
     const_reference operator[](Index idx) const noexcept
-    { return m_storage[idx]; }
+    { return m_storage[p_basis->key_to_index(idx)]; }
 
     pointer as_mut_ptr() noexcept { return m_storage.data(); }
     const_pointer as_ptr() const noexcept { return m_storage.data(); }

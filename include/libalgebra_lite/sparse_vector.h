@@ -137,7 +137,7 @@ public:
         : p_map(&map), m_it(it)
     {}
 
-    Parent& operator++() noexcept { ++m_it; return *this; }
+    Parent& operator++() noexcept { ++m_it; return static_cast<Parent&>(*this); }
     const Parent operator++(int) noexcept
     {
         auto result = Parent(p_map, m_it);
@@ -145,8 +145,8 @@ public:
         return result;
     }
 
-    Parent& operator*() const noexcept { return *this; }
-    Parent* operator->() const noexcept { return this; }
+    Parent& operator*() noexcept { return static_cast<Parent&>(*this); }
+    Parent* operator->() noexcept { return static_cast<Parent*>(this); }
 
     bool operator==(const sparse_iterator_base& other) const noexcept
     {
