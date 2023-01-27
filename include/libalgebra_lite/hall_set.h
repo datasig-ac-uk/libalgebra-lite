@@ -163,8 +163,8 @@ public:
     dimn_t size_of_degree(deg_t deg) const noexcept { return p_hallset->size_of_degree(deg); }
     typename hall_set::find_result find(parent_type parents) const noexcept;
 
-    dimn_t index_of_key(key_type arg) const noexcept { return p_hallset->index_of_key(arg); }
-    key_type key_of_index(dimn_t arg) const noexcept { return p_hallset->key_of_index(arg); }
+    dimn_t key_to_index(key_type arg) const noexcept { return p_hallset->index_of_key(arg); }
+    key_type index_to_key(dimn_t arg) const noexcept { return p_hallset->key_of_index(arg); }
 
 
     std::shared_ptr<const hall_set> get_hall_set() const noexcept { return p_hallset; }
