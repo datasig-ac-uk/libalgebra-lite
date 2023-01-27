@@ -35,6 +35,10 @@ using let_t = std::size_t;
 #define LAL_INLINE_ALWAYS __attribute__((always_inline))
 #define LAL_INLINE_NEVER __attribute__((noinline))
 #define LAL_RESTRICT __restrict
+#else
+#define LAL_INLINE_ALWAYS
+#define LAL_INLINE_NEVER
+#define LAL_RESTRICT
 #endif
 
 

@@ -73,7 +73,6 @@ struct storage_base
     {}
 
 
-    LAL_INLINE_ALWAYS
     dimn_t size() const noexcept
     {
         if (p_impl) {
@@ -81,7 +80,7 @@ struct storage_base
         }
         return 0;
     }
-    LAL_INLINE_ALWAYS
+
     dimn_t dimension() const noexcept
     {
         if (p_impl) {
@@ -89,7 +88,7 @@ struct storage_base
         }
         return 0;
     }
-    LAL_INLINE_ALWAYS
+
     bool empty() const noexcept
     {
         if (p_impl) {
@@ -99,7 +98,6 @@ struct storage_base
     }
 
     template <typename KeyType>
-    LAL_INLINE_ALWAYS
     const_reference operator[](const KeyType& key) const
     {
         if (p_impl) {
@@ -107,19 +105,18 @@ struct storage_base
         }
         return coefficient_ring::zero();
     }
-    LAL_INLINE_ALWAYS
+
     const basis_type& basis() const noexcept
     {
         assert(static_cast<bool>(p_basis));
         return *p_basis;
     }
-    LAL_INLINE_ALWAYS
+
     basis_pointer get_basis() const noexcept
     {
         return p_basis;
     }
 
-    LAL_INLINE_ALWAYS
     const_iterator begin() const noexcept
     {
         if (p_impl) {
@@ -127,7 +124,7 @@ struct storage_base
         }
         return const_iterator();
     }
-    LAL_INLINE_ALWAYS
+
     const_iterator end() const noexcept
     {
         if (p_impl) {
@@ -135,7 +132,7 @@ struct storage_base
         }
         return const_iterator();
     }
-    LAL_INLINE_ALWAYS
+
     const vector_type& base_vector() const noexcept
     { return *p_impl; }
 };
@@ -177,21 +174,19 @@ struct standard_storage : public storage_base<VectorType>
     using base::base_vector;
 
     template <typename KeyType>
-    LAL_INLINE_ALWAYS
     reference operator[](const KeyType& key)
     {
         ensure_created();
         return (*p_impl)[key];
     }
 
-    LAL_INLINE_ALWAYS
     void clear()
     {
         if (p_impl) {
             p_impl->clear();
         }
     }
-    LAL_INLINE_ALWAYS
+
     iterator begin() noexcept
     {
         if (p_impl) {
@@ -199,7 +194,7 @@ struct standard_storage : public storage_base<VectorType>
         }
         return iterator();
     }
-    LAL_INLINE_ALWAYS
+
     iterator end() noexcept
     {
         if (p_impl) {
@@ -208,16 +203,12 @@ struct standard_storage : public storage_base<VectorType>
         return iterator();
     }
 
-
-    LAL_INLINE_ALWAYS
     vector_type& base_vector()
     {
         ensure_created();
         return *p_impl;
     }
-
-
-    LAL_INLINE_ALWAYS
+    
     void ensure_created()
     {
         if (!p_impl) {

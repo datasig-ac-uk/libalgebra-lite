@@ -554,6 +554,9 @@ public:
     using vector_type = vector<Basis, Coefficients, VectorType, StorageModel>;
     using multiplication_type = Multiplication;
 
+    using typename vector_type::basis_pointer;
+    using multiplication_pointer = std::shared_ptr<const multiplication_type>;
+
     using typename vector_type::basis_type;
     using typename vector_type::key_type;
     using typename vector_type::coefficient_ring;
@@ -561,7 +564,7 @@ public:
     using typename vector_type::rational_type;
 
 private:
-    std::shared_ptr<const multiplication_type> p_mult;
+    multiplication_pointer p_mult;
 
 public:
 
