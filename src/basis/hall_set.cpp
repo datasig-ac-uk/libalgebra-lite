@@ -17,7 +17,7 @@ hall_set::hall_set(hall_set::degree_type width, hall_set::degree_type depth)
 {
     data.reserve(1 + width);
     letters.reserve(width);
-    sizes.reserve(2);
+    m_sizes.reserve(2);
     l2k.reserve(width);
     degree_ranges.reserve(2);
 
@@ -25,7 +25,7 @@ hall_set::hall_set(hall_set::degree_type width, hall_set::degree_type depth)
 
     data.push_back({zero_key, zero_key});
     degree_ranges.push_back({0, 1});
-    sizes.push_back(0);
+    m_sizes.push_back(0);
 
     for (letter_type l = 1; l <= width; ++l) {
         key_type key(1, l-1);
@@ -43,7 +43,7 @@ hall_set::hall_set(hall_set::degree_type width, hall_set::degree_type depth)
     };
 
     degree_ranges.push_back(range);
-    sizes.push_back(width);
+    m_sizes.push_back(width);
     ++current_degree;
 
     if (depth > 1) {
@@ -84,7 +84,7 @@ void hall_set::grow_up(hall_set::degree_type new_depth)
         degree_ranges.push_back(range);
         // The hall set contains an entry for the "god element" 0,
         // so subtract one from the size.
-        sizes.push_back(data.size() - 1);
+        m_sizes.push_back(data.size() - 1);
 
         ++current_degree;
     }
@@ -96,13 +96,13 @@ hall_set::key_type hall_set::key_of_letter(let_t let) const noexcept
 }
 hall_set::size_type hall_set::size(deg_t deg) const noexcept
 {
-    if (deg >= 0 && deg < sizes.size()) {
-        return sizes[deg];
+    if (deg >= 0 && deg < m_sizes.size()) {
+        return m_sizes[deg];
     }
-    if (deg < 0 && deg >= -sizes.size()) {
-        return sizes[sizes.size() + deg];
+    if (deg < 0 && deg >= -m_sizes.size()) {
+        return m_sizes[m_sizes.size() + deg];
     }
-    return sizes.back();
+    return m_sizes.back();
 }
 hall_set::hall_set(const hall_set& existing, hall_set::degree_type deg)
 {
@@ -150,15 +150,15 @@ dimn_t hall_set::index_of_key(hall_set::key_type arg) const noexcept
 hall_set::key_type hall_set::key_of_index(hall_set::size_type index) const noexcept
 {
     auto found = std::lower_bound(
-            sizes.begin(),
-            sizes.end(),
+            m_sizes.begin(),
+            m_sizes.end(),
             index,
             std::less_equal<>()
             );
-    if (found == sizes.end()) {
+    if (found == m_sizes.end()) {
         return root_element;
     }
-    auto deg = static_cast<deg_t>(found - sizes.begin());
+    auto deg = static_cast<deg_t>(found - m_sizes.begin());
     return key_type(deg, index - *(--found));
 }
 

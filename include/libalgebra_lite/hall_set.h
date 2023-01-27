@@ -46,7 +46,7 @@ private:
     reverse_map_type reverse_map;
     l2k_map_type l2k;
     degree_range_map_type degree_ranges;
-    size_vector_type sizes;
+    size_vector_type m_sizes;
 
 public:
 
@@ -68,6 +68,8 @@ public:
 
     key_type key_of_letter(let_t) const noexcept;
     size_type size(deg_t) const noexcept;
+    const std::vector<dimn_t>& sizes() const noexcept { return m_sizes; }
+
     size_type size_of_degree(deg_t) const noexcept;
     bool letter(const key_type&) const noexcept;
     letter_type get_letter(dimn_t idx) const noexcept;
@@ -150,6 +152,10 @@ public:
     {
         return p_hallset->size(deg < 0 ? m_depth : static_cast<deg_t>(deg));
     }
+
+    const std::vector<dimn_t>& sizes() const noexcept
+    { return p_hallset->sizes(); }
+
     dimn_t start_of_degree(deg_t deg) const noexcept
     {
         return (deg == 0) ? 0 : p_hallset->size(deg-1);
