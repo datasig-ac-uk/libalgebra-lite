@@ -10,6 +10,13 @@
 
 #include <boost/predef.h>
 
+#include "config.h"
+
+#ifdef LAL_USE_LIBAGEBRA
+#include <libalgebra/libalgebra.h>
+#endif
+
+
 namespace lal {
 
 using dimn_t = std::size_t;
@@ -27,6 +34,7 @@ using let_t = std::size_t;
 #elif BOOST_COMP_GNUC
 #define LAL_INLINE_ALWAYS __attribute__((always_inline))
 #define LAL_INLINE_NEVER __attribute__((noinline))
+#define LAL_RESTRICT __restrict
 #endif
 
 

@@ -46,7 +46,7 @@ public:
         if (degree == 0) {
             return key_type(0, 0);
         }
-        return key_type(1, arg.degree() / m_powers[degree]);
+        return key_type(1, arg.index() / m_powers[degree-1]);
     }
     key_type rparent(const key_type& arg) const noexcept
     {
@@ -54,14 +54,14 @@ public:
         if (degree == 0) {
             return key_type(0, 0);
         }
-        return key_type(degree-1, arg.index() % m_powers[degree]);
+        return key_type(degree-1, arg.index() % m_powers[degree-1]);
     }
 
     std::string key_to_string(const key_type&) const;
     std::ostream& print_key(std::ostream&, const key_type&) const;
 
     static key_type key_of_letter(let_t letter) noexcept
-    { return key_type(1, letter); }
+    { return key_type(1, letter-1); }
     let_t first_letter(const key_type& arg) const noexcept
     { return let_t(lparent(arg).index() + 1); }
     static bool letter(const key_type& arg) noexcept
@@ -84,6 +84,9 @@ public:
             return m_sizes[m_depth];
         }
     }
+
+    const std::vector<dimn_t>& sizes() const noexcept
+    { return m_sizes; }
 
     const std::vector<dimn_t>& powers() const noexcept
     { return m_powers; }

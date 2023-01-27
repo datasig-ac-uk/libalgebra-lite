@@ -124,6 +124,16 @@ protected:
 
 
 public:
+    using difference_type = std::ptrdiff_t;
+    using value_type = Parent;
+    using reference = Parent&;
+    using const_reference = const Parent&;
+    using pointer = Parent*;
+    using const_pointer = const Parent*;
+    using iterator_category = std::forward_iterator_tag;
+
+
+
     sparse_iterator_base() : p_map(nullptr), m_it()
     {}
 
@@ -172,7 +182,13 @@ class sparse_iterator<MapType, typename MapType::iterator>
 {
     using base = sparse_iterator_base<MapType, typename MapType::iterator, sparse_iterator>;
 public:
-    using reference = sparse_mutable_reference<MapType, const typename base::key_type&>;
+    using difference_type = std::ptrdiff_t;
+    using value_type = sparse_iterator;
+    using reference = sparse_iterator&;
+    using pointer = sparse_iterator*;
+    using iterator_category = std::forward_iterator_tag;
+
+    using value_reference = sparse_mutable_reference<MapType, const typename base::key_type&>;
     using base::base;
 
     const typename base::key_type& key() const noexcept
@@ -181,10 +197,10 @@ public:
         return base::m_it->first;
     }
 
-    reference value() const noexcept
+    value_reference value() const noexcept
     {
         assert(base::p_map != nullptr);
-        return reference(*base::p_map, base::m_it);
+        return value_reference(*base::p_map, base::m_it);
     }
 };
 
@@ -195,6 +211,11 @@ class sparse_iterator<MapType, typename MapType::const_iterator>
 {
     using base = sparse_iterator_base<MapType, typename MapType::const_iterator, sparse_iterator>;
 public:
+    using difference_type = std::ptrdiff_t;
+    using iterator_category = std::forward_iterator_tag;
+    using value_type = sparse_iterator;
+    using reference = sparse_iterator&;
+    using pointer = sparse_iterator*;
 
     using base::base;
 
@@ -224,7 +245,8 @@ public:
     using rational_type = typename coeff_traits::rational_type;
 private:
 
-    using map_type = boost::container::flat_map<key_type, scalar_type>;
+//    using map_type = boost::container::flat_map<key_type, scalar_type>;
+    using map_type = std::map<key_type, scalar_type>;
     map_type m_data;
     const basis_type* p_basis;
     deg_t m_degree = 0;
@@ -244,11 +266,19 @@ public:
     using iterator = dtl::sparse_iterator<map_type, typename map_type::iterator>;
     using const_iterator = dtl::sparse_iterator<const map_type, typename map_type::const_iterator>;
 
+    template <typename Scalar>
+    explicit sparse_vector(const basis_type* basis, std::initializer_list<Scalar> args)
+        : p_basis(basis)
+    {
+        assert(args.size() == 1);
+        m_data[key_type()] = scalar_type(*args.begin());
+    }
+
     template <typename Key, typename Scalar>
     explicit sparse_vector(const basis_type* basis, Key k, Scalar s)
         : p_basis(basis)
     {
-        m_data[key_type(k)] = scalar_type(s);
+        m_data.insert(std::make_pair(key_type(k), scalar_type(s)));
     }
 
     explicit sparse_vector(const basis_type* basis) : p_basis(basis)
@@ -261,6 +291,17 @@ public:
     constexpr bool empty() const noexcept { return m_data.empty(); }
     constexpr dimn_t dimension() const noexcept { return size(); }
     constexpr const basis_type& basis() const noexcept { return *p_basis; }
+    deg_t degree() const noexcept
+    {
+        deg_t result = 0;
+        for (const auto& item : m_data) {
+            auto d = p_basis->degree(item.first);
+            if (d > result) {
+                result = d;
+            }
+        }
+        return result;
+    }
     dimn_t capacity() const noexcept { return basis_traits::max_dimension(*p_basis); }
 
     iterator begin() noexcept { return {m_data, m_data.begin()}; }
@@ -292,7 +333,7 @@ public:
     sparse_vector unary_op(UnaryOp op) const
     {
         map_type data;
-        data.reserve(m_data.size());
+//        data.reserve(m_data.size());
         for (const auto& item : m_data) {
             data.emplace(item.first, op(item.second));
         }
@@ -302,51 +343,39 @@ public:
     template <typename BinOp>
     sparse_vector binary_op(const sparse_vector& rhs, BinOp op) const
     {
-        map_type data;
-        data.reserve(m_data.size());
+        sparse_vector tmp(*this);
+        tmp.inplace_binary_op(rhs, [op](const scalar_type& l, const scalar_type& r) {
+            scalar_type tmp(l);
+            op(tmp, r);
+            return tmp;
+        });
 
-        auto lit = m_data.begin();
-        auto lend = m_data.end();
-        auto rit = rhs.m_data.begin();
-        auto rend = rhs.m_data.end();
-
-        scalar_type val;
-        const auto& zero = coefficient_ring::zero();
-
-        while (lit != lend && rit != rend) {
-            if (lit->first == rit->first
-                && (val = op(lit->second, rit->second) != zero)) {
-                data[lit->first] = val;
-                ++lit;
-                ++rit;
-            } else if (lit->first < rit->first) {
-                val = op(lit->second, zero);
-                if (val != zero) {
-                    data[lit->first] = val;
-                }
-                ++lit;
-            } else {
-                val = op(zero, rit->second);
-                if (val != zero) {
-                    data[rit->first] = val;
-                }
-                ++rit;
-            }
-        }
-
-        return {p_basis, std::move(data)};
+        return tmp;
     }
 
     template <typename BinOp>
-    sparse_vector& inplace_binop(const sparse_vector& rhs, BinOp op)
+    sparse_vector& inplace_binary_op(const sparse_vector& rhs, BinOp op)
     {
-        auto new_op = [op](const scalar_type& lval, const scalar_type& rval) {
-            auto tmp = lval;
-            op(tmp, rval);
-            return tmp;
-        };
-        auto tmp = binary_op(rhs, new_op);
-        std::swap(m_data, tmp.m_data);
+        const auto lend = m_data.end();
+        auto rit = rhs.m_data.begin();
+        const auto rend = rhs.m_data.end();
+
+        const auto& zero = coefficient_ring::zero();
+
+        for (; rit != rend; ++rit) {
+            auto it = m_data.find(rit->first);
+            if (it != lend) {
+                op(it->second, rit->second);
+                if (it->second == zero) {
+                    m_data.erase(it);
+                }
+            } else {
+                assert(rit->second != zero);
+                m_data.insert(*rit);
+            }
+        }
+
+
         return *this;
     }
 

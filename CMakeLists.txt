@@ -23,7 +23,14 @@ add_library(Libalgebra_lite SHARED
         include/libalgebra_lite/polynomial_basis.h
         include/libalgebra_lite/polynomial.h
         src/algebra/polynomial_multiplier.cpp
-        src/algebra/polynomial.cpp src/algebra/half_shuffle_multiplier.cpp src/algebra/shuffle_multiplier.cpp src/algebra/free_tensor_multiplier.cpp include/libalgebra_lite/registry.h src/basis/polynomial_basis.cpp src/maps.cpp)
+        src/algebra/polynomial.cpp
+        src/algebra/half_shuffle_multiplier.cpp
+        src/algebra/shuffle_multiplier.cpp
+        src/algebra/free_tensor_multiplier.cpp
+        include/libalgebra_lite/registry.h
+        src/basis/polynomial_basis.cpp
+        src/algebra/polynomial_ring.cpp
+        src/maps.cpp src/basis/unpacked_tensor_word.cpp include/libalgebra_lite/unpacked_tensor_word.h)
 generate_export_header(Libalgebra_lite)
 
 
@@ -37,8 +44,12 @@ target_include_directories(Libalgebra_lite PUBLIC
 
 target_link_libraries(Libalgebra_lite PRIVATE Boost::boost)
 
+if (TARGET Libalgebra::Libalgebra)
+    set(LAL_USE_LIBALGEBRA ON)
+    target_link_libraries(Libalgebra_lite PUBLIC Libalgebra::Libalgebra)
+endif()
 
-
+    configure_file(cmake/config.h.in config.h)
 
 
 enable_testing()
