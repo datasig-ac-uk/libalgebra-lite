@@ -99,10 +99,13 @@ public:
         return (ldegree < rdegree) || (ldegree == rdegree && (m_data < other.m_data));
     }
 
+    monomial& operator*=(const monomial& rhs);
+
 };
 
-LIBALGEBRA_LITE_EXPORT std::ostream& operator<<(std::ostream& os, const monomial& arg) noexcept;
+LIBALGEBRA_LITE_EXPORT std::ostream& operator<<(std::ostream& os, const monomial& arg);
 
+LIBALGEBRA_LITE_EXPORT monomial operator*(const monomial& lhs, const monomial& rhs);
 
 struct LIBALGEBRA_LITE_EXPORT polynomial_basis
 {

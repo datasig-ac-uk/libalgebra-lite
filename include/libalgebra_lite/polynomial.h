@@ -59,6 +59,14 @@ public:
     using multiplication_type = base_multiplication<polynomial_multiplier>;
     using base::base;
 
+    template <typename Scalar>
+    explicit polynomial(Scalar s)
+        : base(basis_registry<polynomial_basis>::get(),
+               multiplication_registry<multiplication_type>::get(),
+                monomial(),
+               typename base::scalar_type(s))
+    {}
+
     template <typename Key, typename Scalar>
     explicit polynomial(Key k, Scalar s)
         : base(basis_registry<polynomial_basis>::get(),

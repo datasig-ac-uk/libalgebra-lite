@@ -11,19 +11,49 @@
 namespace lal {
 
 
-std::ostream& operator<<(std::ostream& os, const monomial& arg) noexcept
+std::ostream& operator<<(std::ostream& os, const monomial& arg)
 {
     bool first = true;
     for (const auto& item : arg) {
-        os << item.first << '^' << item.second;
         if (first) {
             first = false;
-        } else {
+        }
+        else {
             os << ' ';
         }
+        if (item.second > 0) {
+            os << item.first;
+            if (item.second > 1) {
+                os << '^' << item.second;
+            }
+        }
+
     }
     return os;
 }
+
+monomial& monomial::operator*=(const monomial& rhs)
+{
+    const auto lend = m_data.end();
+    for (const auto& item : rhs.m_data) {
+        auto it = m_data.find(item.first);
+        if (it == lend) {
+            m_data.insert(item);
+        } else {
+            it->second += item.second;
+        }
+    }
+
+    return *this;
+}
+
+monomial operator*(const monomial& lhs, const monomial& rhs)
+{
+    monomial result(lhs);
+    result *= rhs;
+    return result;
+}
+
 deg_t monomial::degree() const noexcept
 {
     return std::accumulate(m_data.begin(), m_data.end(), 0,
