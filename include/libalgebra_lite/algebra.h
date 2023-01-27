@@ -210,8 +210,8 @@ public:
 
     using const_iterator = typename std::vector<key_value>::const_iterator;
 
-    template<template<typename, typename, typename...> class VTR, typename... RArgs>
-    explicit general_multiplication_helper(const VTR<Basis, Coefficients, RArgs...>& rhs)
+    template<typename Vector>
+    explicit general_multiplication_helper(const Vector& rhs)
         : right_buffer()
     {
         right_buffer.reserve(rhs.size());
@@ -264,8 +264,8 @@ public:
 
     using iterable = degree_range_iterator_helper<base_iter>;
 
-    template<template<typename, typename, typename...> class VTR, typename... RArgs>
-    explicit graded_multiplication_helper(const VTR<Basis, Coefficients, RArgs...>& rhs)
+    template<typename Vector>
+    explicit graded_multiplication_helper(const Vector& rhs)
         : base_type(rhs)
     {
         ordering order;
@@ -427,22 +427,27 @@ class base_multiplication
     using graded_helper_type = dtl::graded_multiplication_helper<
             typename V::basis_type, typename V::coefficient_ring>;
 
-    template <typename OutVector, typename KeyProd, typename Sca>
-    void asp_helper(OutVector& out, KeyProd&& key_prod, Sca&& scalar) const
-    {
-        using scalar_type = scal_t<OutVector>;
-        out.add_scal_prod(std::forward<KeyProd>(key_prod),
-                scalar_type(std::forward<Sca>(scalar)));
-    }
+//    template <typename OutVector, typename KeyProd, typename Sca>
+//    void asp_helper(OutVector& out, KeyProd&& key_prod, Sca&& scalar) const
+//    {
+//        using scalar_type = scal_t<OutVector>;
+//        scalar_type s(std::forward<Sca>(scalar));
+//        out.inplace_binary_op(std::forward<KeyProd>(key_prod), [s](scalar_type& lhs, const scalar_type& rhs) {
+//            return lhs += (rhs*s);
+//        });
+//    }
 
-    template <typename OutVector, typename KSca, typename PSca>
-    void asp_helper(OutVector& out, key_vect<OutVector, KSca>&& key_prod, PSca&& scalar) const
+    template <typename OutVector, typename ProductType, typename PSca>
+    void asp_helper(OutVector& out, ProductType&& key_prod, PSca&& scalar) const
     {
         using scalar_type = scal_t<OutVector>;
+        using ring = typename OutVector::coefficient_ring;
+        scalar_type s(std::forward<PSca>(scalar));
+
         for (const auto& kv_pair : key_prod) {
-            out.add_scal_prod(kv_pair.first,
-                    scalar_type(kv_pair.second)*scalar_type(std::forward<PSca>(scalar)));
-
+            auto val = out[kv_pair.first];
+            val += scalar_type(kv_pair.second)*s;
+//            out[kv_pair.first] += scalar_type(kv_pair.second)*s;
         }
     }
 
@@ -517,11 +522,12 @@ public:
 
         const auto& lhs_basis = lhs.basis();
         for (auto litem : lhs) {
-            auto lhs_degree = lhs_basis_traits::degree(lhs_basis, lhs_basis);
+            auto lkey = litem.key();
+            auto lhs_degree = lhs_basis_traits::degree(lhs_basis, lkey);
             auto rhs_degree = out_deg - lhs_degree;
             for (auto ritem : helper.degree_range(rhs_degree)) {
-                asp_helper(out, m_mult(basis, litem.key(), ritem.first),
-                                fn(litem.value(), ritem.second));
+                asp_helper(out, m_mult(basis, lkey, ritem.first),
+                                fn(litem.value()*ritem.second));
             }
         }
     }
@@ -559,14 +565,33 @@ private:
 
 public:
 
+//    using vector_type::vector_type;
+
+    algebra() : vector_type(), p_mult(multiplication_registry<Multiplication>::get())
+    {}
+
+    algebra(vector_type&& arg) : vector_type(std::move(arg)), p_mult(multiplication_registry<Multiplication>::get())
+    {}
+
+    template <typename Scalar>
+    algebra(std::shared_ptr<const basis_type> basis, std::shared_ptr<const Multiplication> mul,
+            std::initializer_list<Scalar> args)
+        : vector_type(std::move(basis), args), p_mult(std::move(mul))
+    {}
+
     algebra(std::shared_ptr<const basis_type> basis, std::shared_ptr<const Multiplication> mult)
         : vector_type(basis), p_mult(std::move(mult))
     {}
 
 
     algebra(const vector_type& base, std::shared_ptr<const Multiplication> mult)
-
         : vector_type(base), p_mult(std::move(mult))
+    {}
+
+    template <typename... Args>
+    explicit algebra(std::shared_ptr<const basis_type> basis, std::shared_ptr<const Multiplication> mul,
+            Args&&... args) : vector_type(std::move(basis), std::forward<Args>(args)...),
+            p_mult(std::move(mul))
     {}
 
     template <template <typename, typename> class OtherVectorType,
@@ -575,6 +600,25 @@ public:
         : vector_type((other)), p_mult(other.p_mult)
     {}
 
+    algebra(const algebra& other) : vector_type(other), p_mult(other.p_mult)
+    {}
+
+    algebra(algebra&& other) noexcept : vector_type(static_cast<vector_type&&>(other)), p_mult(std::move(other.p_mult))
+    {}
+
+    algebra& operator=(const algebra& other)
+    {
+        vector_type::operator=(other);
+        p_mult = other.p_mult;
+        return *this;
+    }
+
+    algebra& operator=(algebra&& other) noexcept
+    {
+        p_mult = std::move(other.p_mult);
+        vector_type::operator=(static_cast<vector_type&&>(other));
+        return *this;
+    }
 
     std::shared_ptr<const multiplication_type> multiplication() const noexcept { return p_mult; }
 
