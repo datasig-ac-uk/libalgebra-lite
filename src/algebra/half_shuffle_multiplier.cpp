@@ -13,6 +13,14 @@ using namespace lal;
 namespace lal {
 template class base_multiplier<left_half_shuffle_tensor_multiplier, tensor_basis>;
 template class base_multiplier<right_half_shuffle_tensor_multiplier, tensor_basis>;
+
+
+std::ostream& operator<<(std::ostream& os, std::pair<const tensor_basis*, index_key<>> arg)
+{
+    return arg.first->print_key(os, arg.second);
+}
+
+
 } // namespace lal
 
 
@@ -30,8 +38,11 @@ left_half_shuffle_tensor_multiplier::shuffle(
         return {{lhs, 1}};
     }
 
+//    const auto& left = operator()(basis, lhs, rhs);
+//    const auto& right = operator()(basis, rhs, lhs);
     return base_type::add(operator()(basis, lhs, rhs),
             operator()(basis, rhs, lhs));
+//    return base_type::add(left, right);
 }
 
 typename left_half_shuffle_tensor_multiplier::product_type
@@ -39,8 +50,9 @@ lal::left_half_shuffle_tensor_multiplier::key_prod_impl(
         const tensor_basis& basis,
         key_type lhs, key_type rhs) const
 {
-    product_type result;
     using ftm = free_tensor_multiplier;
+
+    std::map<key_type, scalar_type> tmp;
 
     const auto lhs_deg = lhs.degree();
     const auto rhs_deg = rhs.degree();
@@ -57,13 +69,13 @@ lal::left_half_shuffle_tensor_multiplier::key_prod_impl(
         const auto lparent = basis.lparent(lhs);
         const auto& right_part = shuffle(basis, basis.rparent(lhs), rhs);
 
-        result.reserve(right_part.size());
         for (const auto& item : right_part) {
-            result.emplace_back(ftm::concat_product(basis, lparent, item.first), item.second);
+            auto prod = ftm::concat_product(basis, lparent, item.first);
+            tmp[ftm::concat_product(basis, lparent, item.first)] += item.second;
         }
     }
 
-    return result;
+    return {tmp.begin(), tmp.end()};
 }
 
 
@@ -113,7 +125,7 @@ right_half_shuffle_tensor_multiplier::key_prod_impl(
         key_type rhs) const
 {
 
-    product_type result;
+    std::map<key_type, scalar_type> tmp;
 
     const auto lhs_deg = lhs.degree();
     const auto rhs_deg = rhs.degree();
@@ -121,24 +133,21 @@ right_half_shuffle_tensor_multiplier::key_prod_impl(
     if (lhs_deg + rhs_deg <= basis.depth()) {
 
         if (lhs_deg == 0) {
-            goto finish_right_half_shuffle;
+            return {};
         }
         if (rhs_deg == 0) {
-            result.emplace_back(lhs, 1);
-            goto finish_right_half_shuffle;
+            return {{lhs, 1}};
         }
 
         const auto parents = split_at_right(basis, rhs);
         const auto& left_part = shuffle(basis, lhs, parents.first);
 
-        result.reserve(left_part.size());
         for (const auto& item : left_part) {
-            result.emplace_back(free_tensor_multiplier::concat_product(basis, item.first, parents.second), item.second);
+            tmp[free_tensor_multiplier::concat_product(basis, item.first, parents.second)] += item.second;
         }
     }
 
-finish_right_half_shuffle:
-    return result;
+    return {tmp.begin(), tmp.end()};
 }
 typename right_half_shuffle_tensor_multiplier::product_type
 right_half_shuffle_tensor_multiplier::shuffle(
