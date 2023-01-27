@@ -46,6 +46,10 @@ struct storage_base
     basis_pointer p_basis;
     std::shared_ptr<vector_type> p_impl;
 
+    storage_base(storage_base&& other) noexcept
+        : p_basis(std::move(other.p_basis)), p_impl(std::move(other.p_impl))
+    {}
+
     explicit storage_base(basis_pointer basis, VectorType&& arg)
         : p_basis(std::move(basis)), p_impl(std::make_shared<VectorType>(std::move(arg)))
     {}
@@ -283,6 +287,8 @@ template <typename Basis,
 class vector : protected StorageModel<VectorType<Basis, Coefficients>>
 {
     using base_type = StorageModel<VectorType<Basis, Coefficients>>;
+    using registry = basis_registry<Basis>;
+
 public:
     using typename base_type::vector_type;
     using typename base_type::basis_type;
@@ -308,9 +314,29 @@ protected:
 
 public:
 
-    template <typename Key, typename Scalar, typename... Args>
-    explicit vector(Key k, Scalar s, Args&&... args)
-        : base_type(key_type(k), scalar_type(s), std::forward<Args>(args)...)
+    vector() : base_type(registry::get())
+    {}
+
+    vector(const vector& other) : base_type(other.p_basis)
+    {
+        if (other.p_impl) {
+            p_impl = std::make_shared<vector_type>(*other.p_impl);
+        }
+    }
+
+    vector(vector&& other) noexcept : base_type(std::move(other.p_basis))
+    {
+        p_impl = std::move(other.p_impl);
+    }
+
+    template <typename Key, typename Scalar>
+    explicit vector(Key k, Scalar s)
+        : base_type(registry::get(), key_type(k), scalar_type(s))
+    {}
+
+    template <typename Key, typename Scalar>
+    explicit vector(basis_pointer basis, Key key, Scalar s)
+        : base_type(std::move(basis), key_type(key), scalar_type(s))
     {}
 
     explicit vector(basis_pointer basis) : base_type(std::move(basis))
@@ -344,6 +370,26 @@ public:
     using base_type::base_vector;
     using base_type::get_basis;
 
+
+    vector& operator=(const vector& other)
+    {
+        if (p_basis.get() != other.p_basis.get()) {
+            p_basis = other.p_basis;
+        }
+        if (other.p_impl){
+            p_impl = std::make_shared<vector_type>(*other.p_impl);
+        } else {
+            p_impl = nullptr;
+        }
+        return *this;
+    }
+
+    vector& operator=(vector&& other) noexcept
+    {
+        p_basis = std::move(other.p_basis);
+        p_impl = std::move(other.p_impl);
+        return *this;
+    }
 
 private:
 
@@ -400,6 +446,7 @@ public:
             vector&>
     add_inplace(Iter begin, Iter end)
     {
+        base_type::ensure_created();
         for (auto it = begin; it !=end; ++it) {
             coefficient_ring::add_inplace((*p_impl)[it->first], it->second);
         }
@@ -417,6 +464,7 @@ public:
             vector&>
     sub_inplace(Iter begin, Iter end)
     {
+        base_type::ensure_created();
         for (auto it = begin; it != end; ++it) {
             coefficient_ring::sub_inplace(*p_impl, it->second);
         }
@@ -517,10 +565,12 @@ public:
     operator-(const Vector& arg)
     {
         using coeffs = typename Vector::coefficient_ring;
+        vector result_inner(arg.p_basis);
         if (arg.p_impl) {
-            return arg->unary_op([](const scalar_type& s) { return coeffs::uminus(s); });
+            result_inner.p_impl = std::make_shared<vector_type>(
+                    arg.p_impl->unary_op([](const scalar_type& s) { return coeffs::uminus(s); }));
         }
-        return Vector(arg.p_basis);
+        return Vector(std::move(result_inner));
     }
 
     template <typename Vector, typename Scal>
@@ -530,7 +580,8 @@ public:
         using coeffs = typename Vector::coefficient_ring;
         if (arg.p_impl) {
             scalar_type multiplier(scalar);
-            return arg->unary_op([multiplier](const scalar_type& s) { return coeffs::mul(s, multiplier); });
+            return Vector(arg.p_basis,
+                    arg.p_impl->unary_op([multiplier](const scalar_type& s) { return coeffs::mul(s, multiplier); }));
         }
         return Vector(arg.p_basis);
     };
@@ -542,7 +593,8 @@ public:
         using coeffs = typename Vector::coefficient_ring;
         if (arg.p_impl) {
             scalar_type multiplier(scalar);
-            return arg->unary_op([multiplier](const scalar_type& s) { return coeffs::mul(multiplier, s); });
+            return Vector(arg.p_basis,
+                    arg.p_impl->unary_op([multiplier](const scalar_type& s) { return coeffs::mul(multiplier, s); }));
         }
         return Vector(arg.p_basis);
     };
@@ -554,7 +606,8 @@ public:
         using coeffs = typename Vector::coefficient_ring;
         if (arg.p_impl) {
             scalar_type multiplier(coefficient_ring::one()/scalar);
-            return arg->unary_op([multiplier](const scalar_type& s) { return coeffs::mul(s, multiplier); });
+            return Vector(arg.p_basis,
+                    arg.p_impl->unary_op([multiplier](const scalar_type& s) { return coeffs::mul(s, multiplier); }));
         }
         return Vector(arg.p_basis);
     }
@@ -594,14 +647,15 @@ public:
             return LVector(vector(rhs.p_basis));
         }
         if (lhs.p_impl) {
-            return lhs.p_impl->binary_op(rhs, [](const scalar_type& l, const rscalar_type& r) { return l + scalar_type(r); });
+            return LVector(lhs.p_basis,
+                    lhs.p_impl->binary_op(rhs, [](const scalar_type& l, const rscalar_type& r) { return l + scalar_type(r); }));
         }
         return LVector(lhs.p_basis);
 
     }
 
     template <typename LVector, typename Scal>
-    friend std::enable_if<std::is_base_of<vector, LVector>::value, LVector&>
+    friend std::enable_if_t<std::is_base_of<vector, LVector>::value, LVector&>
     operator*=(LVector& lhs, const Scal& scal)
     {
         if (lhs.p_basis && lhs.p_impl) {
@@ -614,7 +668,7 @@ public:
     }
 
     template <typename LVector, typename Rat>
-    friend std::enable_if<std::is_base_of<vector, LVector>::value, LVector&>
+    friend std::enable_if_t<std::is_base_of<vector, LVector>::value, LVector&>
     operator/=(LVector& lhs, const Rat& scal)
     {
         if (lhs.p_basis && lhs.p_impl) {
@@ -629,31 +683,30 @@ public:
 
 
     template <typename LVector>
-    friend std::enable_if<std::is_base_of<vector, LVector>::value, LVector&>
+    friend std::enable_if_t<std::is_base_of<vector, LVector>::value, LVector&>
     operator+=(LVector& lhs, const vector& rhs)
     {
         if (!rhs.p_basis || !rhs.p_impl) {
             return lhs;
         }
-        if (!lhs.p_basis || !lhs.p_impl) {
-            lhs.vector::operator=(rhs);
-            return lhs;
+        if (!lhs.p_basis) {
+            lhs.p_basis = rhs.p_basis;
         }
-        return lhs.p_impl->binary_op_inplace(rhs, LVector::coefficient_ring::add_inplace);
+        lhs.ensure_created();
+        lhs.p_impl->inplace_binary_op(rhs.base_vector(), [](auto& l, const auto& r) { l += r; });
+        return lhs;
     }
 
     template <typename LVector>
-    friend std::enable_if<std::is_base_of<vector, LVector>::value, LVector&>
+    friend std::enable_if_t<std::is_base_of<vector, LVector>::value, LVector&>
     operator-=(LVector& lhs, const vector& rhs)
     {
         if (!rhs.p_basis || !rhs.p_impl) {
             return lhs;
         }
-        if (!lhs.p_basis || !lhs.p_impl) {
-            lhs.vector::operator=(-rhs);
-            return lhs;
-        }
-        return lhs.p_impl->binary_op_inplace(rhs, LVector::coefficient_ring::sub_inplace);
+        lhs.ensure_created();
+        lhs.p_impl->inplace_binary_op(rhs.base_vector(), LVector::coefficient_ring::template sub_inplace<>);
+        return lhs;
     }
 
 
@@ -665,8 +718,20 @@ public:
     }
 
 
-
 };
+
+template <typename B, typename C, template <typename, typename> class VT, template <typename> class SM>
+bool operator==(const vector<B, C, VT, SM>& lhs, const vector<B, C, VT, SM>& rhs) noexcept
+{
+    return false;
+}
+template <typename B, typename C, template <typename, typename> class VT, template <typename> class SM>
+bool operator!=(const vector<B, C, VT, SM>& lhs, const vector<B, C, VT, SM>& rhs) noexcept
+{
+    return !(lhs == rhs);
+}
+
+
 
 
 template <typename Basis, typename Coeff, template <typename, typename> class VectorType, template <typename> class StorageModel>
@@ -675,10 +740,12 @@ std::ostream& operator<<(std::ostream& os, const vector<Basis, Coeff, VectorType
     const auto& basis = vect.basis();
     const auto& zero = coefficient_trait<Coeff>::coefficient_ring::zero();
     os << "{ ";
-    for (const auto& item : vect) {
+    for (auto item : vect) {
         auto val = item.value();
         if (item.value() != zero) {
-            os << item.value() << '(' << basis.print_key(item.key()) << ") ";
+            os << item.value() << '(';
+            basis.print_key(os, item.key());
+            os << ") ";
         }
     }
     os <<'}';
@@ -697,6 +764,7 @@ template<typename Key, typename Scal>
 vector<Basis, Coefficients, VectorType, StorageModel>&
 vector<Basis, Coefficients, VectorType, StorageModel>::add_scal_prod(const Key& key, const Scal& scal)
 {
+    base_type::ensure_created();
     coefficient_ring::add_inplace((*p_impl)[key_type(key)], scalar_type(scal));
     return *this;
 }
@@ -708,6 +776,7 @@ template<typename Key, typename Rat>
 vector<Basis, Coefficients, VectorType, StorageModel>&
 vector<Basis, Coefficients, VectorType, StorageModel>::add_scal_div(const Key& key, const Rat& scal)
 {
+    base_type::ensure_created();
     coefficient_ring::add_inplace((*p_impl)[key_type(key)],
             coefficient_ring::div(coefficient_ring::one(), rational_type(scal)));
     return *this;
@@ -720,6 +789,7 @@ template<typename Key, typename Scal>
 vector<Basis, Coefficients, VectorType, StorageModel>&
 vector<Basis, Coefficients, VectorType, StorageModel>::sub_scal_prod(const Key& key, const Scal& scal)
 {
+    base_type::ensure_created();
     coefficient_ring::sub_inplace((*p_impl)[key_type(key)], scalar_type(scal));
     return *this;
 }
@@ -731,6 +801,7 @@ template<typename Key, typename Rat>
 vector<Basis, Coefficients, VectorType, StorageModel>&
 vector<Basis, Coefficients, VectorType, StorageModel>::sub_scal_div(const Key& key, const Rat& scal)
 {
+    base_type::ensure_created();
     coefficient_ring::sub_inplace((*p_impl)[key_type(key)],
             coefficient_ring::div(coefficient_ring::one(), rational_type(scal)));
     return *this;
@@ -743,6 +814,7 @@ template<typename Scal>
 vector<Basis, Coefficients, VectorType, StorageModel>&
 vector<Basis, Coefficients, VectorType, StorageModel>::add_scal_prod(const vector& rhs, const Scal& scal)
 {
+    base_type::ensure_created();
     return *this;
 }
 template<typename Basis,
@@ -753,6 +825,7 @@ template<typename Rat>
 vector<Basis, Coefficients, VectorType, StorageModel>&
 vector<Basis, Coefficients, VectorType, StorageModel>::add_scal_div(const vector& rhs, const Rat& scal)
 {
+    base_type::ensure_created();
     return *this;
 }
 template<typename Basis,
@@ -763,6 +836,7 @@ template<typename Scal>
 vector<Basis, Coefficients, VectorType, StorageModel>&
 vector<Basis, Coefficients, VectorType, StorageModel>::sub_scal_prod(const vector& rhs, const Scal& scal)
 {
+    base_type::ensure_created();
     return *this;
 }
 template<typename Basis,
@@ -773,6 +847,7 @@ template<typename Rat>
 vector<Basis, Coefficients, VectorType, StorageModel>&
 vector<Basis, Coefficients, VectorType, StorageModel>::sub_scal_div(const vector& rhs, const Rat& scal)
 {
+    base_type::ensure_created();
     return *this;
 }
 template<typename Basis,
@@ -786,6 +861,7 @@ vector<Basis, Coefficients, VectorType, StorageModel>&
 vector<Basis, Coefficients, VectorType, StorageModel>::add_scal_prod(
         const vector<Basis, Coefficients, AltVecType,  AltStorageModel>& rhs, const Scal& scal)
 {
+    base_type::ensure_created();
     return *this;
 }
 template<typename Basis,
@@ -799,6 +875,7 @@ vector<Basis, Coefficients, VectorType, StorageModel>&
 vector<Basis, Coefficients, VectorType, StorageModel>::add_scal_div(
         const vector<Basis, Coefficients, AltVecType, AltStorageModel>& rhs, const Rat& scal)
 {
+    base_type::ensure_created();
     return *this;
 }
 template<typename Basis,
@@ -812,6 +889,7 @@ vector<Basis, Coefficients, VectorType, StorageModel>&
 vector<Basis, Coefficients, VectorType, StorageModel>::sub_scal_prod(
         const vector<Basis, Coefficients, AltVecType, AltStorageModel>& rhs, const Scal& scal)
 {
+    base_type::ensure_created();
     return *this;
 }
 template<typename Basis,
@@ -825,6 +903,7 @@ vector<Basis, Coefficients, VectorType, StorageModel>&
 vector<Basis, Coefficients, VectorType, StorageModel>::sub_scal_div(
         const vector<Basis, Coefficients, AltVecType, AltStorageModel>& rhs, const Rat& scal)
 {
+    base_type::ensure_created();
     return *this;
 }
 template<typename Basis,
@@ -840,6 +919,7 @@ vector<Basis, Coefficients, VectorType, StorageModel>&
 vector<Basis, Coefficients, VectorType, StorageModel>::add_scal_prod(
         const vector<AltBasis, AltCoeffs, AltVecType, AltStorageModel>& rhs, const Scal& scal)
 {
+    base_type::ensure_created();
     return *this;
 }
 template<typename Basis,
@@ -855,6 +935,7 @@ vector<Basis, Coefficients, VectorType, StorageModel>&
 vector<Basis, Coefficients, VectorType, StorageModel>::add_scal_div(
         const vector<AltBasis, AltCoeffs, AltVecType, AltStorageModel>& rhs, const Rat& scal)
 {
+    base_type::ensure_created();
     return *this;
 }
 template<typename Basis,
@@ -870,6 +951,7 @@ vector<Basis, Coefficients, VectorType, StorageModel>&
 vector<Basis, Coefficients, VectorType, StorageModel>::sub_scal_prod(
         const vector<AltBasis, AltCoeffs, AltVecType, AltStorageModel>& rhs, const Scal& scal)
 {
+    base_type::ensure_created();
     return *this;
 }
 template<typename Basis,
@@ -885,6 +967,7 @@ vector<Basis, Coefficients, VectorType, StorageModel>&
 vector<Basis, Coefficients, VectorType, StorageModel>::sub_scal_div(
         const vector<AltBasis, AltCoeffs, AltVecType, AltStorageModel>& rhs, const Rat& scal)
 {
+    base_type::ensure_created();
     return *this;
 }
 
