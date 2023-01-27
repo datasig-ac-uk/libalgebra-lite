@@ -18,10 +18,10 @@ namespace lal {
 
 namespace dtl {
 
-template <typename Basis, typename Scalar>
+template <typename Basis, typename Scalar, typename Iterator>
 class dense_vector_const_iterator;
 
-template <typename Basis, typename Scalar>
+template <typename Basis, typename Scalar, typename Iterator>
 class dense_vector_iterator;
 
 } // namespace dtl
@@ -47,14 +47,17 @@ private:
 
     const Basis* p_basis;
     storage_type m_storage;
+    deg_t m_degree;
 
 public:
     using basis_type        = Basis;
     using key_type          = typename basis_traits::key_type;
     using size_type         = typename storage_type::size_type;
     using difference_type   = typename storage_type::difference_type;
-    using iterator          = dtl::dense_vector_iterator<Basis, scalar_type>;
-    using const_iterator    = dtl::dense_vector_const_iterator<Basis, scalar_type>;
+    using iterator          = dtl::dense_vector_iterator<Basis, scalar_type,
+                                typename storage_type::iterator>;
+    using const_iterator    = dtl::dense_vector_const_iterator<Basis, scalar_type,
+                                typename storage_type::const_iterator>;
     using pointer           = typename storage_type::pointer;
     using const_pointer     = typename storage_type::const_pointer;
     using reference         = typename storage_type::reference;
@@ -67,6 +70,9 @@ public:
         resize(index);
         m_storage[index] = s;
     }
+
+    explicit dense_vector_base(const Basis* basis) : p_basis(basis)
+    {}
 
     dense_vector_base(const Basis* basis, std::initializer_list<scalar_type> args)
             : p_basis(basis), m_storage(args)
@@ -90,7 +96,9 @@ private:
 
     size_type adjust_size(size_type n) const noexcept
     {
-        return std::min(basis_traits::max_dimension(*p_basis), n);
+        auto next = basis_traits::get_next_dimension(*p_basis, n);
+        return std::min(basis_traits::max_dimension(*p_basis),
+                next.first);
     }
 
 public:
@@ -99,17 +107,23 @@ public:
 
     void reserve(size_type n)
     {
-        m_storage.reserve(adjust_size(n));
+        auto next = basis_traits::get_next_dimension(*p_basis, n);
+        m_storage.reserve(next.first);
+        m_degree = next.second;
     }
     void resize(size_type n)
     {
-        m_storage.resize(adjust_size(n));
+        auto next = basis_traits::get_next_dimension(*p_basis, n);
+        m_storage.resize(next.first);
+        m_degree = next.second;
     }
 
     template <typename S>
     void resize(size_type n, const S& val)
     {
-        m_storage.resize(adjust_size(n), val);
+        auto next = basis_traits::get_next_dimension(*p_basis, n);
+        m_storage.resize(next.first, val);
+        m_degree = next.second;
     }
 
     iterator begin() noexcept { return iterator(p_basis, m_storage.begin()); }
@@ -120,12 +134,17 @@ public:
     const_iterator cend() const noexcept { return const_iterator(p_basis, m_storage.end()); }
 
     constexpr size_type size() const noexcept { return m_storage.size(); }
+    constexpr deg_t degree() const noexcept { return m_degree; }
     constexpr bool empty() const noexcept { return m_storage.empty(); }
 
     template <typename Index>
     reference operator[](Index idx) noexcept
     {
-        return m_storage[p_basis->key_to_index(idx)];
+        auto key = p_basis->key_to_index(idx);
+        if (key >= m_storage.size()) {
+            resize(key);
+        }
+        return m_storage[key];
     }
 
     template <typename Index>
@@ -236,10 +255,10 @@ namespace dtl {
 template <typename KeyRef, typename ScaRef>
 class dense_iterator_item
 {
-    template <typename B, typename C>
+    template <typename B, typename C, typename I>
     friend class dense_vector_iterator;
 
-    template <typename B, typename C>
+    template <typename B, typename C, typename I>
     friend class dense_vector_const_iterator;
 
     KeyRef m_key;
@@ -254,7 +273,7 @@ public:
     ScaRef value() noexcept { return m_sca; }
 };
 
-template <typename Basis, typename Coefficients>
+template <typename Basis, typename Coefficients, typename Iterator>
 class dense_vector_iterator
 {
     using basis_traits = basis_trait<Basis>;
@@ -263,13 +282,14 @@ class dense_vector_iterator
     using scalar_type = typename coeff_traits::scalar_type;
 
     const Basis* p_basis = nullptr;
-    scalar_type* p_data = nullptr;
+    Iterator p_data;
     key_type m_key;
 
+    using it_traits = std::iterator_traits<Iterator>;
 
 public:
 
-    using value_type = dtl::dense_iterator_item<const key_type&, scalar_type&>;
+    using value_type = dtl::dense_iterator_item<const key_type&, typename it_traits::reference>;
     using reference = value_type;
     using pointer = value_type;
     using iterator_category = std::forward_iterator_tag;
@@ -277,15 +297,22 @@ public:
 
     dense_vector_iterator() = default;
 
-    dense_vector_iterator(const Basis* basis, scalar_type* data)
+    dense_vector_iterator(const Basis* basis, Iterator data)
         : p_basis(basis), p_data(data), m_key()
     {}
 
     dense_vector_iterator& operator++()
     {
-        p_data++;
-        m_key++;
+        ++p_data;
+        ++m_key;
         return *this;
+    }
+
+    const dense_vector_iterator operator++(int)
+    {
+        auto current(*this);
+        operator++();
+        return current;
     }
 
     reference operator*() noexcept
@@ -311,7 +338,7 @@ public:
 
 
 
-template <typename Basis, typename Coefficients>
+template <typename Basis, typename Coefficients, typename Iterator>
 class dense_vector_const_iterator
 {
     using basis_traits = basis_trait<Basis>;
@@ -320,26 +347,36 @@ class dense_vector_const_iterator
     using scalar_type = typename coeff_traits::scalar_type;
 
     const Basis* p_basis = nullptr;
-    const scalar_type* p_data = nullptr;
+    Iterator p_data;
     key_type m_key;
 
+    using it_traits = std::iterator_traits<Iterator>;
 
 public:
 
-    using value_type = dtl::dense_iterator_item<const key_type&, const scalar_type&>;
+    using value_type = dtl::dense_iterator_item<const key_type&, typename it_traits::reference>;
     using reference = value_type;
     using pointer = value_type;
     using iterator_category = std::forward_iterator_tag;
 
-    dense_vector_const_iterator(const Basis* basis, scalar_type* data)
+    dense_vector_const_iterator() = default;
+
+    dense_vector_const_iterator(const Basis* basis, Iterator data)
         : p_basis(basis), p_data(data), m_key()
     {}
 
     dense_vector_const_iterator& operator++()
     {
-        p_data++;
-        m_key++;
+        ++p_data;
+        ++m_key;
         return *this;
+    }
+
+    const dense_vector_const_iterator operator++(int)
+    {
+        auto current(*this);
+        operator++();
+        return current;
     }
 
     reference operator*() noexcept
