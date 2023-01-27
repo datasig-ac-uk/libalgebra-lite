@@ -23,6 +23,7 @@ shuffle_tensor_multiplier::operator()(
         return {};
     }
 
+
     return half_type::shuffle(basis, lhs, rhs);
 }
 

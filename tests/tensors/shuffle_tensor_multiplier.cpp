@@ -52,11 +52,11 @@ TEST_F(ShuffleMultiplierFixture, testMultiplierLetterLetter) {
     auto result = multiplier(*basis, lhs, rhs);
 
     ASSERT_EQ(2, result.size());
+    EXPECT_EQ(key(4, 1), result[1].first);
+    EXPECT_EQ(1, result[1].second);
     EXPECT_EQ(key(1, 4), result[0].first);
     EXPECT_EQ(1, result[0].second);
 
-    EXPECT_EQ(key(4, 1), result[1].first);
-    EXPECT_EQ(1, result[1].second);
 }
 
 
@@ -67,7 +67,7 @@ TEST_F(ShuffleMultiplierFixture, testMutliplierWordWord) {
 
     auto result = multiplier(*basis, lhs, rhs);
 
-    ASSERT_EQ(5, result.size());
+    ASSERT_EQ(6, result.size());
 
     EXPECT_EQ(key(1, 2, 3, 4), result[0].first);
     EXPECT_EQ(1, result[0].second);
@@ -81,6 +81,9 @@ TEST_F(ShuffleMultiplierFixture, testMutliplierWordWord) {
     EXPECT_EQ(key(3, 1, 2, 4), result[3].first);
     EXPECT_EQ(1, result[3].second);
 
-    EXPECT_EQ(key(3, 4, 1, 2), result[4].first);
+    EXPECT_EQ(key(3, 1, 4, 2), result[4].first);
     EXPECT_EQ(1, result[4].second);
+
+    EXPECT_EQ(key(3, 4, 1, 2), result[5].first);
+    EXPECT_EQ(1, result[5].second);
 }
