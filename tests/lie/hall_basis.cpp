@@ -112,8 +112,8 @@ TEST_F(LieFixture, testSizeOfDegreeVsSize) {
 TEST_F(LieFixture, testIndexToKeyRoundtrip) {
 
     for (lal::dimn_t i=0; i<basis->size(-1); ++i) {
-        auto k = basis->key_of_index(i);
-        auto index = basis->index_of_key(k);
+        auto k = basis->index_to_key(i);
+        auto index = basis->key_to_index(k);
 
         EXPECT_EQ(i, index);
     }
