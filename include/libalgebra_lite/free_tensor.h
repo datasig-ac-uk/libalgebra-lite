@@ -94,6 +94,10 @@ public:
         left_read_buffer.resize(tile_width);
         right_read_buffer.resize(tile_width);
         write_buffer.resize(tile_size);
+
+        if (lhs.degree() > 1) {
+            reverse_buffer.resize(p_basis->size(lhs.degree()-1));
+        }
     }
 
     const scalar_type& left_unit() const noexcept { return *left_ptr; }
@@ -196,11 +200,6 @@ public:
         return p_basis->powers()[deg-tile_letters];
     }
 
-    dimn_t combine(dimn_t lhs, dimn_t rhs, deg_t rh_deg)
-    {
-        const auto shift = p_basis->powers()[rh_deg];
-        return lhs*shift+rhs;
-    }
     key_type combine(key_type lhs, key_type rhs)
     {
         const auto rhs_deg = rhs.degree();
@@ -606,6 +605,24 @@ class LIBALGEBRA_LITE_EXPORT free_tensor_multiplication
 {
     using base_type = base_multiplication<free_tensor_multiplier>;
 
+    template <typename C>
+    using ctraits = coefficient_trait<C>;
+
+    template <typename C>
+    using sca_ref = typename ctraits<C>::scalar_type&;
+    template <typename C>
+    using sca_cref = const typename ctraits<C>::scalar_type&;
+    template <typename C>
+    using sca_ptr = typename ctraits<C>::scalar_type*;
+    template <typename C>
+    using sca_rptr = typename ctraits<C>::scalar_type* LAL_RESTRICT;
+    template <typename C>
+    using sca_cptr = const typename ctraits<C>::scalar_type*;
+    template <typename C>
+    using sca_crptr = const typename ctraits<C>::scalar_type* LAL_RESTRICT;
+
+
+
     using key_type = typename tensor_basis::key_type;
 
     template <typename Coefficients, typename Fn>
@@ -641,6 +658,64 @@ class LIBALGEBRA_LITE_EXPORT free_tensor_multiplication
         }
     }
 
+    template <typename C, typename Fn>
+    LAL_INLINE_ALWAYS static void
+    impl_db0(sca_rptr<C> tile,
+             sca_crptr<C> lhs_ptr,
+             sca_cref<C> rhs_unit,
+             dimn_t stride,
+             dimn_t tile_width,
+             Fn op) noexcept
+    {
+
+    }
+    template <typename C, typename Fn>
+    LAL_INLINE_ALWAYS static void
+    impl_0bd(sca_rptr<C> tile,
+             sca_cref<C> lhs_unit,
+             sca_crptr<C> rhs_ptr,
+             dimn_t stride,
+             dimn_t tile_width,
+             Fn op) noexcept
+    {
+
+    }
+
+    template <typename C, typename Fn>
+    LAL_INLINE_ALWAYS static void
+    impl_mid(sca_rptr<C> tile,
+            sca_crptr<C> lhs_tile,
+            sca_crptr<C> rhs_tile,
+            dimn_t stride,
+            dimn_t tile_width,
+            Fn op
+            ) noexcept
+    {
+    }
+
+    template <typename C, typename Fn>
+    LAL_INLINE_ALWAYS static void
+    impl_lb1(sca_rptr<C> tile,
+            sca_cref<C> lhs_val,
+            sca_crptr<C> rhs_tile,
+            dimn_t lhs_index,
+            dimn_t tile_width,
+            Fn op
+            ) noexcept
+    {}
+
+    template <typename C, typename Fn>
+    LAL_INLINE_ALWAYS static void
+    impl_1br(sca_rptr<C> tile,
+            sca_crptr<C> lhs_tile,
+            sca_cref<C> rhs_val,
+            dimn_t index,
+            dimn_t tile_width,
+            Fn op
+            ) noexcept
+    {}
+
+
     template <typename Coefficients, typename Fn>
     void fma_dense_tiled(
             dtl::dense_multiplication_helper<Coefficients>& helper,
@@ -668,7 +743,7 @@ class LIBALGEBRA_LITE_EXPORT free_tensor_multiplication
                 helper.write_tile_in(k, k_reverse);
 
                 {
-                    const auto& lhs_unit = helper.lhs_unit();
+                    const auto& lhs_unit = helper.left_unit();
                     const auto* rhs_ptr = helper.right_fwd_read(k);
 
                     for (dimn_t i=0; i<helper.tile_width; ++i) {
@@ -679,8 +754,8 @@ class LIBALGEBRA_LITE_EXPORT free_tensor_multiplication
                 }
 
                 {
-                    const auto* lhs_ptr = helper.lhs_fwd_read(k);
-                    const auto& rhs_unit = helper.rhs_unit();
+                    const auto* lhs_ptr = helper.left_fwd_read(k);
+                    const auto& rhs_unit = helper.right_unit();
                     for (dimn_t i = 0; i<helper.tile_width; ++i) {
                         for (dimn_t j = 0; j<helper.tile_width; ++j) {
                             tile[i*helper.tile_width+j] += fn(lhs_ptr[i*stride+j]*rhs_unit);
@@ -691,9 +766,9 @@ class LIBALGEBRA_LITE_EXPORT free_tensor_multiplication
                 for (deg_t lh_deg=1; lh_deg < helper.tile_letters; ++lh_deg) {
                     auto rh_deg = adj_deg - lh_deg;
                     for (dimn_t i=0; i<helper.tile_width; ++i) {
-                        const auto split = helper.split_key(k);
+                        const auto split = helper.split_key(k, lh_deg);
                         const auto& lhs_val = *helper.left_fwd_read(split.first);
-                        helper.read_right_tile(helper.combine(key_type(helper.tile_letters-lh_deg, split.first), k));
+                        helper.read_right_tile(helper.combine(split.first, k));
                         for (dimn_t j=0; j<helper.tile_width; ++j) {
                             tile[i*helper.tile_width+j] += fn(lhs_val*right_rtile[j]);
                         }
@@ -702,7 +777,7 @@ class LIBALGEBRA_LITE_EXPORT free_tensor_multiplication
 
                 for (deg_t lh_deg=0; lh_deg<adj_deg; ++lh_deg) {
                     const auto rh_deg = adj_deg - lh_deg;
-                    auto split = helper.split_key(rh_deg, k);
+                    auto split = helper.split_key(k, lh_deg);
                     helper.read_left_tile(helper.reverse(split.first));
                     helper.read_right_tile(split.second);
 
@@ -716,7 +791,7 @@ class LIBALGEBRA_LITE_EXPORT free_tensor_multiplication
                 for (deg_t rh_deg=1; rh_deg<helper.tile_letters; ++rh_deg) {
                     const auto lh_deg = adj_deg - rh_deg;
                     for (dimn_t j=0; j<helper.tile_width; ++j) {
-                        const auto split = helper.split_key(key_type(rh_deg, j));
+                        const auto split = helper.split_key(key_type(rh_deg, j), lh_deg);
                         const auto& rhs_val = *helper.right_fwd_read(helper.combine(k_reverse, helper.reverse(split.first)));
                         helper.read_left_tile(split.second);
 
@@ -757,9 +832,9 @@ public:
     void fma(dense_tensor_vec<Coeff>& out,
             const dense_tensor_vec<Coeff>& lhs,
             const dense_tensor_vec<Coeff>& rhs,
-            deg_t max_degree,
-            Op op
-            ) const
+            Op op,
+            deg_t max_degree
+    ) const
     {
         const auto& basis = out.basis();
         if (max_degree >= basis.depth()) {
@@ -774,11 +849,11 @@ public:
         }
 
         dtl::dense_multiplication_helper<Coeff> helper(out, lhs, rhs);
-        if (out_degree > 2*helper.tile_letters) {
-            fma_dense_tiled(helper, op, out_degree);
-        } else {
+//        if (out_degree > 2*helper.tile_letters) {
+//            fma_dense_tiled(helper, op, out_degree);
+//        } else {
             fma_dense_traditional(helper, op, out_degree);
-        }
+//        }
     }
 
 
