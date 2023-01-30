@@ -795,6 +795,12 @@ public:
 
         const auto out_size = basis.size(out_degree);
         if (out.size()<out_size) {
+            /*
+             * The resize function will look for the smallest dimension larger than
+             * the requested dim, so if we give it size, it will look for the smallest
+             * dimension greater than size, not simply size. Thus, we subtract 1 to make
+             * sure the next smallest dimension is equal to size.
+             */
             out.resize(out_size-1);
         }
 
@@ -832,6 +838,12 @@ class free_tensor
 
     static void resize_to_degree(free_tensor<Coefficients, dense_vector, StorageModel>& arg, deg_t degree) {
         auto size = arg.basis().size(degree);
+        /*
+         * The resize function will look for the smallest dimension larger than
+         * the requested dim, so if we give it size, it will look for the smallest
+         * dimension greater than size, not simply size. Thus, we subtract 1 to make
+         * sure the next smallest dimension is equal to size.
+         */
         arg.base_vector().resize(size-1);
     }
 
