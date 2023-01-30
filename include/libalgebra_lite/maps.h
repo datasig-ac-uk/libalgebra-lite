@@ -171,7 +171,7 @@ public:
             for (auto outer : arg) {
                 auto val = outer.value();
                 for (auto inner : rbracketing(outer.key())) {
-                    result.add_scal_prod(inner.key(), Coefficients::mul(scalar_type(inner.second), val));
+                    result.add_scal_prod(inner.first, Coefficients::mul(scalar_type(inner.second), val));
                 }
             }
         } else {
@@ -180,7 +180,7 @@ public:
                 auto val = outer.value();
                 if (p_tensor_basis->degree(key) <= max_deg) {
                     for (auto inner : rbracketing(key)) {
-                        result.add_scal_prod(inner.key(), Coefficients::mul(scalar_type(inner.second), val));
+                        result.add_scal_prod(inner.first, Coefficients::mul(scalar_type(inner.second), val));
                     }
                 }
             }
