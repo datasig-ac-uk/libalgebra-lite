@@ -31,6 +31,7 @@ class LIBALGEBRA_LITE_EXPORT tensor_basis
 
 public:
     using key_type = index_key<>;
+    using degree_tag = with_degree_tag;
 
     tensor_basis(deg_t width, deg_t depth);
 
