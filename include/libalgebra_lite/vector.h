@@ -101,7 +101,10 @@ struct storage_base
     const_reference operator[](const KeyType& key) const
     {
         if (p_impl) {
-            return (*p_impl)[key];
+            // The pointer held by in p_impl need not be const,
+            // so cast to a const reference to force the use of
+            // the const operator[]
+            return const_cast<const vector_type&>(*p_impl)[key];
         }
         return coefficient_ring::zero();
     }

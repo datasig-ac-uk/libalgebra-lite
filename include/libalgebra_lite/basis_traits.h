@@ -62,7 +62,7 @@ struct basis_trait {
         const auto& sizes = basis.sizes();
         const auto begin = sizes.begin();
         const auto end = sizes.end();
-        auto it = std::lower_bound(begin, end, dim, std::less_equal<>());
+        auto it = std::lower_bound(begin, end, dim ,std::less_equal<>());
         if (it == end) {
             return {max_dimension(basis), 0};
         }

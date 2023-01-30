@@ -795,7 +795,7 @@ public:
 
         const auto out_size = basis.size(out_degree);
         if (out.size()<out_size) {
-            out.resize(out_size);
+            out.resize(out_size-1);
         }
 
         dtl::dense_multiplication_helper<Coeff> helper(out, lhs, rhs);
@@ -831,8 +831,8 @@ class free_tensor
     using algebra_type::algebra_type;
 
     static void resize_to_degree(free_tensor<Coefficients, dense_vector, StorageModel>& arg, deg_t degree) {
-        auto size = arg.basis().start_of_degree(degree);
-        arg.base_vector().resize(size);
+        auto size = arg.basis().size(degree);
+        arg.base_vector().resize(size-1);
     }
 
     template <template <typename, typename> class OVT>

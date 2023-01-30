@@ -113,13 +113,14 @@ TYPED_TEST_P(FreeTensorMultiplicationFixture, testMultiplication) {
     auto x0 = this->key_to_monomial('x', TensorFixture::key_type(0, 0));
     auto y0 = this->key_to_monomial('y', TensorFixture::key_type(0, 0));
 
+    const auto first_key = x0*y0;
+    const auto first_item = first[first_key];
     EXPECT_EQ(first[x0 * y0], this->one());
 
     for (auto d=1; d<=this->basis->depth(); ++d) {
         for (auto i=0; i<powers[d]; ++i) {
             TensorFixture::key_type key(d, i);
             const auto& val = result[key];
-            this->basis->print_key(std::cout, key);
             auto components = this->deconstruct_key('x', 'y', key);
 
             ASSERT_EQ(val.size(), components.size());
