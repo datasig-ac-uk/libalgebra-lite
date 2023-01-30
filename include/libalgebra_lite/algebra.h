@@ -698,7 +698,7 @@ operator*=(Algebra& lhs, const Algebra& rhs)
     }
 
     if (multiplication && !lhs.empty()) {
-        traits::multiply_inplace(*lhs.multiplication, lhs, rhs);
+        traits::multiply_inplace(*lhs.multiplication(), lhs, rhs);
     }
     return lhs;
 }
@@ -715,7 +715,7 @@ commutator(const Algebra& lhs, const Algebra& rhs)
 
     Algebra result(lhs.get_basis(), multiplication);
     if (multiplication && !lhs.empty() && !rhs.empty()) {
-        traits::mulitply_and_add(*multiplication, result, lhs, rhs);
+        traits::multiply_and_add(*multiplication, result, lhs, rhs);
         traits::multiply_and_add(*multiplication, result, rhs, lhs, Algebra::coefficient_ring::uminus);
     }
     return result;
