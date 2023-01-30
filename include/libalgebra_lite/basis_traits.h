@@ -14,10 +14,8 @@
 
 namespace lal {
 
-struct with_degree_tag {
-    deg_t degree;
-};
-struct without_degree_tag { };
+struct with_degree_tag {};
+struct without_degree_tag {};
 
 namespace dtl {
 
@@ -37,12 +35,26 @@ struct key_value_ordering
 
 };
 
+
+template <typename Basis>
+class has_degree_tag_helper {
+
+    template <typename B=Basis>
+    static typename B::degree_tag choose(void*);
+
+    static without_degree_tag choose(...);
+
+public:
+    using type = decltype(choose(nullptr));
+};
+
+
 } // namespace dtl
 
 template <typename Basis>
 struct basis_trait {
     using key_type = typename Basis::key_type;
-    using degree_tag = without_degree_tag;
+    using degree_tag = typename dtl::has_degree_tag_helper<Basis>::type;
 
     static dimn_t max_dimension(const Basis& basis) noexcept { return basis.size(-1); };
 
