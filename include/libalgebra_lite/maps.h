@@ -167,7 +167,7 @@ public:
         auto max_deg = p_tensor_basis->depth();
 
         lie<Coefficients, VectorType, StorageModel> result(p_lie_basis);
-        if (arg.basis.depth() <= max_deg) {
+        if (arg.basis().depth() <= max_deg) {
             for (auto outer : arg) {
                 auto val = outer.value();
                 for (auto inner : rbracketing(outer.key())) {
