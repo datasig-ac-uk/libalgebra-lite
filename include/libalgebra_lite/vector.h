@@ -47,7 +47,10 @@ struct storage_base
     basis_pointer p_basis;
 
     template <typename... Args>
-    storage_base(Args... args) : p_basis(new registry::get(std::forward<Args>(args)...))
+    storage_base(Args... args) : p_basis(registry::get(std::forward<Args>(args)...))
+    {}
+
+    storage_base(basis_pointer&& basis) noexcept : p_basis(std::move(basis))
     {}
 
     storage_base(storage_base&& other) noexcept : p_basis(std::move(other.p_basis))
@@ -102,16 +105,29 @@ protected:
 
 public:
 
+    explicit standard_storage(basis_pointer&& basis) : base(std::move(basis)),
+        m_instance(&base::basis())
+    {}
 
+    explicit standard_storage(basis_pointer basis, vector_type&& data)
+        : base(std::move(basis)), m_instance(std::move(data))
+    {
+        assert(m_instance.basis() == &*p_basis);
+    }
 
+    template <typename... Args>
+    explicit standard_storage(Args... args) : base(std::forward<Args>(args)...),
+        m_instance(&base::basis())
+    {}
 
+    template <typename... VArgs>
+    explicit standard_storage(basis_pointer basis) : base(std::move(basis)),
+        , m_instance(&base::basis(), std::forward<VArgs>(args)...)
+    {}
 
     vector_type& base_vector() noexcept { return instance(); }
     const vector_type& base_vector() const noexcept { return instance(); }
-    
-    void ensure_created()
-    {
-    }
+
 
 
 };
@@ -154,20 +170,9 @@ protected:
 
 public:
 
-    vector() : base_type(registry::get())
-    {}
-
-    vector(const vector& other) : base_type(other.p_basis)
-    {
-    }
-
-    vector(vector&& other) noexcept : base_type(std::move(other.p_basis))
-    {
-    }
 
     template <typename Key, typename Scalar>
-    explicit vector(Key k, Scalar s)
-        : base_type(registry::get())
+    explicit vector(Key k, Scalar s) : base_type(p_basis, key_type(k), scalar_type(s))
     {
     }
 
@@ -243,15 +248,6 @@ public:
     const_iterator end() const noexcept
     {
         return base_type::instance().cend();
-    }
-
-    vector& operator=(const vector& other)
-    {
-        return *this;
-    }
-    vector& operator=(vector&& other) noexcept
-    {
-        return *this;
     }
 
 private:
