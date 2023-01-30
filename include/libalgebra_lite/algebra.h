@@ -598,7 +598,7 @@ public:
     {}
 
     template <typename... Args>
-    explicit algebra(Args... args) : vector_type(std::forward<Args>(args)...),
+    explicit algebra(std::shared_ptr<const basis_type> basis, Args... args) : vector_type(std::move(basis), std::forward<Args>(args)...),
             p_mult(multiplication_registry<Multiplication>::get(vector_type::basis()))
     {}
 

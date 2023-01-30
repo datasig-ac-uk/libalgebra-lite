@@ -18,6 +18,7 @@
 
 #include "index_key.h"
 #include "registry.h"
+#include "basis_traits.h"
 
 namespace lal {
 
@@ -126,6 +127,7 @@ public:
 
     using key_type = typename hall_set::key_type;
     using parent_type = typename hall_set::parent_type;
+    using degree_tag LAL_UNUSED = with_degree_tag;
 
     hall_basis(deg_t width, deg_t depth) : m_width(width), m_depth(depth),
         p_hallset(new hall_set(width, depth)),

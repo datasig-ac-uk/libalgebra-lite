@@ -133,7 +133,11 @@ public:
     const_iterator cbegin() const noexcept { return const_iterator(p_basis, m_storage.begin()); }
     const_iterator cend() const noexcept { return const_iterator(p_basis, m_storage.end()); }
 
-    constexpr size_type size() const noexcept { return m_storage.size(); }
+    size_type size() const noexcept {
+        const auto& zero = Coefficients::zero();
+        return std::count_if(m_storage.begin(), m_storage.end(), [&zero] (const scalar_type& s) { return s != zero; });
+    }
+    constexpr size_type dimension() const noexcept { return m_storage.size(); }
     constexpr deg_t degree() const noexcept { return m_degree; }
     constexpr bool empty() const noexcept { return m_storage.empty(); }
 
@@ -188,7 +192,7 @@ public:
     template <typename BinaryOp>
     dense_vector_base binary_op(const dense_vector_base& arg, BinaryOp op)
     {
-        dense_vector_base result;
+        dense_vector_base result(p_basis);
 
         const difference_type lhs_size(size());
         const difference_type rhs_size(arg.size());
@@ -203,11 +207,11 @@ public:
         }
 
         for (auto i=mid; i<lhs_size; ++i) {
-            result.emplace_back(op(m_storage[i], zero));
+            result.m_storage.emplace_back(op(m_storage[i], zero));
         }
 
         for (auto i=mid; i<rhs_size; ++i) {
-            result.emplace_back(op(zero, arg.m_storage[i]));
+            result.m_storage.emplace_back(op(zero, arg.m_storage[i]));
         }
 
         return result;
@@ -298,7 +302,7 @@ public:
     dense_vector_iterator() = default;
 
     dense_vector_iterator(const Basis* basis, Iterator data)
-        : p_basis(basis), p_data(data), m_key()
+        : p_basis(basis), p_data(data), m_key(basis_traits::index_to_key(*basis, 0))
     {}
 
     dense_vector_iterator& operator++()
@@ -362,7 +366,7 @@ public:
     dense_vector_const_iterator() = default;
 
     dense_vector_const_iterator(const Basis* basis, Iterator data)
-        : p_basis(basis), p_data(data), m_key()
+        : p_basis(basis), p_data(data), m_key(basis_traits::index_to_key(*basis, 0))
     {}
 
     dense_vector_const_iterator& operator++()

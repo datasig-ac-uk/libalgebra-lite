@@ -9,6 +9,7 @@
 #include <libalgebra_lite/free_tensor.h>
 #include <libalgebra_lite/maps.h>
 #include <libalgebra_lite/coefficients.h>
+#include <libalgebra_lite/polynomial.h>
 
 #include <gtest/gtest.h>
 
@@ -23,6 +24,10 @@ public:
     std::shared_ptr<const lal::hall_basis> lbasis;
     lal::maps maps;
 
+    using poly_t = lal::polynomial_ring::scalar_type;
+    using rational_type = lal::polynomial_ring::rational_type;
+    using dtensor_t = lal::free_tensor<lal::polynomial_ring, lal::dense_vector, lal::dtl::standard_storage>;
+    using dlie_t = lal::lie<lal::polynomial_ring, lal::dense_vector, lal::dtl::standard_storage>;
 
     MapsFixture()
         : tbasis(new lal::tensor_basis(width, depth)),
@@ -57,6 +62,80 @@ public:
     lkey_type lkey(Left left, Right right) const
     {
         return lbasis->find({lkey(left), lkey(right)}).it->second;
+    }
+
+private:
+
+    template <typename S, typename T>
+    static constexpr S pow(S base, T exponent) noexcept
+    {
+        if (exponent == 0) return S(1);
+        if (exponent == 1) return base;
+        auto half_pow = pow(base, exponent / 2);
+        auto result = half_pow * half_pow;
+        if (exponent & 1) result *= base;
+        return result;
+    }
+
+    lal::dimn_t lkey_to_word_fragment(lkey_type key) const
+    {
+        if (key.degree() == 1) {
+            return lal::dimn_t(lbasis->first_letter(key));
+        }
+
+        auto parents = lbasis->parents(key);
+        // insert a 0 between groups of brackets
+        lal::dimn_t shift = pow(lal::dimn_t(10), parents.second.degree() + 1);
+        return lkey_to_word_fragment(parents.first)*shift + lkey_to_word_fragment(parents.second);
+    }
+
+
+    lal::monomial lkey_to_poly(char prefix, lkey_type key) const
+    {
+        return lal::monomial(typename lal::monomial::letter_type(prefix, lkey_to_word_fragment(key)), 1);
+    }
+
+    lal::monomial tkey_to_poly(char prefix, tkey_type key) const
+    {
+        lal::dimn_t word = 0;
+        auto deg = key.degree();
+        auto index = key.index();
+        for (deg_t i=0; i<deg; ++i) {
+            word *= 10;
+            auto old = index;
+            index /= width;
+            word += 1 + (old - index*width);
+        }
+        return lal::monomial(typename lal::monomial::letter_type(prefix, word), 1);
+    }
+
+public:
+    dtensor_t generic_dtensor(char prefix, deg_t degree=3) const
+    {
+        const auto& sizes = tbasis->sizes();
+
+        dtensor_t result(tbasis);
+        for (deg_t d=0; d<=degree; ++d) {
+            tkey_type k(d, 0);
+            for (lal::dimn_t i=0; i<sizes[d]; ++i, ++k) {
+                result[k] = poly_t(tkey_to_poly(prefix, k), rational_type(1));
+            }
+        }
+        return result;
+    }
+
+    dlie_t generic_lie(char prefix, lal::deg_t degree=3) const
+    {
+        const auto& sizes = lbasis->sizes();
+
+        dlie_t result(lbasis);
+        for (lal::deg_t d=1; d<=degree; ++d) {
+            lkey_type k(d, 0);
+            for (lal::dimn_t i=0; i<sizes[d]; ++i, ++k) {
+                result[k] = poly_t(lkey_to_poly(prefix, k), rational_type(1));
+            }
+        }
+        return result;
     }
 
 };

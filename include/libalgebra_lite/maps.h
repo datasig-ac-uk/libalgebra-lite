@@ -126,6 +126,7 @@ public:
     free_tensor<Coefficients, VectorType, StorageModel>
     lie_to_tensor(const lie<Coefficients, VectorType, StorageModel>& arg) const
     {
+        using scalar_type = typename coefficient_trait<Coefficients>::scalar_type;
         if (arg.basis().width() != p_lie_basis->width()) {
             throw std::invalid_argument("mismatched width");
         }
@@ -134,10 +135,10 @@ public:
         free_tensor<Coefficients, VectorType, StorageModel> result(p_tensor_basis);
         if (arg.basis().depth() <= max_deg) {
             for (auto outer : arg) {
-                auto val = outer.value();
-                for (auto inner : expand(outer.key())) {
-                    result.add_scal_prod(inner.first, Coefficients::mul(inner.second, val));
-                }
+                    auto val = outer.value();
+                    for (auto inner : expand(outer.key())) {
+                        result.add_scal_prod(inner.first, scalar_type(inner.second) * val);
+                    }
             }
         } else {
             for (auto outer : arg) {
@@ -145,7 +146,7 @@ public:
                 auto val = outer.value();
                 if (p_lie_basis->degree(key) <= max_deg) {
                     for (auto inner : expand(key)) {
-                        result.add_scal_prod(inner.first, Coefficients::mul(inner.second, val));
+                        result.add_scal_prod(inner.first, scalar_type(inner.second) * val);
                     }
                 }
             }
