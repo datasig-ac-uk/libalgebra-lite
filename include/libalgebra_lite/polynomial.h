@@ -40,6 +40,8 @@ class LIBALGEBRA_LITE_EXPORT multiplication_registry<base_multiplication<polynom
 public:
 
     static std::shared_ptr<const multiplication> get();
+    template <typename Basis>
+    static std::shared_ptr<const multiplication> get(const Basis&) { return get(); }
 };
 
 template<typename Coefficients>
