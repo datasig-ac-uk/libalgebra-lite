@@ -570,10 +570,16 @@ public:
 
 //    using vector_type::vector_type;
 
-    algebra() : vector_type(), p_mult(multiplication_registry<Multiplication>::get())
+    algebra() : vector_type(),
+        p_mult(multiplication_registry<Multiplication>::get(vector_type::basis()))
     {}
 
-    algebra(vector_type&& arg) : vector_type(std::move(arg)), p_mult(multiplication_registry<Multiplication>::get())
+    explicit algebra(std::shared_ptr<const basis_type> basis) : vector_type(std::move(basis)),
+        p_mult(multiplication_registry<Multiplication>::get(vector_type::basis()))
+    {}
+
+    explicit algebra(vector_type&& arg) : vector_type(std::move(arg)),
+        p_mult(multiplication_registry<Multiplication>::get(vector_type::basis()))
     {}
 
     template <typename Scalar>
@@ -589,6 +595,11 @@ public:
 
     algebra(const vector_type& base, std::shared_ptr<const Multiplication> mult)
         : vector_type(base), p_mult(std::move(mult))
+    {}
+
+    template <typename... Args>
+    explicit algebra(Args... args) : vector_type(std::forward<Args>(args)...),
+            p_mult(multiplication_registry<Multiplication>::get(vector_type::basis()))
     {}
 
     template <typename... Args>
@@ -740,6 +751,31 @@ multiply(const Multiplication& multiplication,
     return result;
 }
 
+template<typename Basis, typename Coefficients, typename Multiplication, template <typename, typename> class VectorType, template <typename> class StorageModel>
+algebra<Basis, Coefficients, Multiplication, VectorType, StorageModel>& algebra<Basis, Coefficients, Multiplication, VectorType, StorageModel>::add_mul(const algebra& lhs,
+        const algebra& rhs)
+{
+   return *this;
+}
+template<typename Basis, typename Coefficients, typename Multiplication, template <typename, typename> class VectorType, template <typename> class StorageModel>
+algebra<Basis, Coefficients, Multiplication, VectorType, StorageModel>& algebra<Basis, Coefficients, Multiplication, VectorType, StorageModel>::sub_mul(const algebra& lhs,
+        const algebra& rhs)
+{
+    return *this;
+}
+template<typename Basis, typename Coefficients, typename Multiplication, template <typename, typename> class VectorType, template <typename> class StorageModel>
+algebra<Basis, Coefficients, Multiplication, VectorType, StorageModel>& algebra<Basis, Coefficients, Multiplication, VectorType, StorageModel>::mul_scal_prod(const algebra& lhs,
+        const scalar_type& scal)
+{
+    return *this;
+}
+template<typename Basis, typename Coefficients, typename Multiplication, template <typename, typename> class VectorType, template <typename> class StorageModel>
+algebra<Basis, Coefficients, Multiplication, VectorType, StorageModel>&
+algebra<Basis, Coefficients, Multiplication, VectorType, StorageModel>::mul_scal_div(const algebra& lhs,
+        const rational_type& scal)
+{
+    return *this;
+}
 
 } // namespace lal
 

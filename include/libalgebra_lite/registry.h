@@ -65,7 +65,6 @@ public:
      * parameter, which is really only there to help validate the
      * bases of the vector arguments.
      */
-
     static std::shared_ptr<const Multiplication> get(deg_t width)
     {
         std::lock_guard<std::mutex> access(m_lock);
@@ -77,6 +76,13 @@ public:
 
         return found = std::make_shared<const Multiplication>(width);
     }
+
+    template <typename Basis>
+    static std::shared_ptr<const Multiplication> get(const Basis& basis)
+    {
+        return get(basis.width());
+    }
+
 
 };
 
