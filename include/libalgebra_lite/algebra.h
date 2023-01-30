@@ -689,6 +689,7 @@ std::enable_if_t<dtl::is_algebra<Algebra>::value, Algebra&>
 operator*=(Algebra& lhs, const Algebra& rhs)
 {
     using traits = multiplication_traits<typename Algebra::multiplication_type>;
+    using scalar_type = typename Algebra::scalar_type;
     if (rhs.empty()) {
         lhs.clear();
     }
@@ -698,7 +699,7 @@ operator*=(Algebra& lhs, const Algebra& rhs)
     }
 
     if (multiplication && !lhs.empty()) {
-        traits::multiply_inplace(*lhs.multiplication(), lhs, rhs);
+        traits::multiply_inplace(*lhs.multiplication(), lhs, rhs, [](scalar_type arg) { return arg; });
     }
     return lhs;
 }

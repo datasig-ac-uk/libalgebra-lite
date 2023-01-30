@@ -759,7 +759,7 @@ vector<Basis, Coefficients, VectorType, StorageModel>&
 vector<Basis, Coefficients, VectorType, StorageModel>::add_scal_prod(const Key& key, const Scal& scal)
 {
     base_type::ensure_created();
-    coefficient_ring::add_inplace((*p_impl)[key_type(key)], scalar_type(scal));
+    (*p_impl)[key_type(key)] += scalar_type(scal);
     return *this;
 }
 template<typename Basis,

@@ -811,6 +811,11 @@ public:
         fma_dense_traditional(helper, op, out_degree);
         //        }
     }
+
+    template <typename Coeffs, typename Op>
+    void fma_inplace(dense_tensor_vec<Coeffs>& lhs, const dense_tensor_vec<Coeffs>& rhs, Op op, deg_t max_deg)
+    {}
+
 };
 
 using left_half_shuffle_multiplication =
