@@ -190,7 +190,7 @@ public:
     }
 
     template <typename BinaryOp>
-    dense_vector_base binary_op(const dense_vector_base& arg, BinaryOp op)
+    dense_vector_base binary_op(const dense_vector_base& arg, BinaryOp op) const
     {
         dense_vector_base result(p_basis);
 
@@ -372,7 +372,7 @@ public:
     dense_vector_const_iterator& operator++()
     {
         ++p_data;
-        ++m_key;
+        basis_traits::advance_key(*p_basis, m_key);
         return *this;
     }
 

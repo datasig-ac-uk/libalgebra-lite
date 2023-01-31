@@ -622,15 +622,19 @@ public:
 
     algebra& operator=(const algebra& other)
     {
-        vector_type::operator=(other);
-        p_mult = other.p_mult;
+        if (&other != this) {
+            vector_type::operator=(other);
+            p_mult = other.p_mult;
+        }
         return *this;
     }
 
     algebra& operator=(algebra&& other) noexcept
     {
-        p_mult = std::move(other.p_mult);
-        vector_type::operator=(static_cast<vector_type&&>(other));
+        if (&other != this) {
+            p_mult = std::move(other.p_mult);
+            vector_type::operator=(static_cast<vector_type&&>(other));
+        }
         return *this;
     }
 

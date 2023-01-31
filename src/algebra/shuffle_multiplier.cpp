@@ -2,8 +2,9 @@
 // Created by sam on 03/09/22.
 //
 
-
+#include "libalgebra_lite/shuffle_tensor.h"
 #include "libalgebra_lite/free_tensor.h"
+
 
 #include <mutex>
 #include <unordered_map>

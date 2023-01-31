@@ -79,6 +79,14 @@ std::ostream& tensor_basis::print_key(std::ostream& os, const tensor_basis::key_
     return os;
 }
 
+void tensor_basis::advance_key(tensor_basis::key_type &key) const noexcept {
+    const auto degree = static_cast<deg_t>(key.degree());
+    ++key;
+    if (key.index() >= m_powers[degree]) {
+        key = key_type(degree+1, 0);
+    }
+}
+
 template class basis_registry<tensor_basis>;
 
 }

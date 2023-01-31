@@ -150,6 +150,8 @@ public:
     { return p_hallset->key_of_letter(letter); }
     let_t first_letter(const key_type& key) const noexcept
     { return p_hallset->get_letter((*p_hallset)[key].first.index()); }
+    let_t to_letter(const key_type& key) const noexcept
+    { return p_hallset->get_letter(key.index()); }
     dimn_t size(int deg) const noexcept
     {
         return p_hallset->size(deg < 0 ? m_depth : static_cast<deg_t>(deg));
@@ -174,6 +176,7 @@ public:
     std::ostream& print_key(std::ostream& os, key_type key) const;
 
 
+    void advance_key(key_type& key) const;
 };
 
 
@@ -196,6 +199,7 @@ hall_extension<Func, Binop, ReturnType>::operator()(
 {
     std::lock_guard<std::recursive_mutex> access(m_lock);
 
+    assert(key.degree() != 0);
     auto found = m_cache.find(key);
     if (found!=m_cache.end()) {
         return found->second;

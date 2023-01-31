@@ -7,6 +7,7 @@
 
 
 #include <libalgebra_lite/free_tensor.h>
+#include <libalgebra_lite/shuffle_tensor.h>
 
 #include <gtest/gtest.h>
 

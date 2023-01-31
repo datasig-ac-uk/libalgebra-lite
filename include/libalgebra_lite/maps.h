@@ -135,10 +135,12 @@ public:
         free_tensor<Coefficients, VectorType, StorageModel> result(p_tensor_basis);
         if (arg.basis().depth() <= max_deg) {
             for (auto outer : arg) {
-                    auto val = outer.value();
-                    for (auto inner : expand(outer.key())) {
-                        result.add_scal_prod(inner.first, scalar_type(inner.second) * val);
-                    }
+                auto val = outer.value();
+                for (auto inner : expand(outer.key())) {
+                    assert(inner.first.degree() == outer.key().degree());
+                    result.add_scal_prod(inner.first, scalar_type(inner.second) * val);
+                }
+
             }
         } else {
             for (auto outer : arg) {
@@ -146,6 +148,7 @@ public:
                 auto val = outer.value();
                 if (p_lie_basis->degree(key) <= max_deg) {
                     for (auto inner : expand(key)) {
+                        assert(outer.key().degree() == inner.first.degree());
                         result.add_scal_prod(inner.first, scalar_type(inner.second) * val);
                     }
                 }
@@ -161,6 +164,7 @@ public:
     tensor_to_lie(const free_tensor<Coefficients, VectorType, StorageModel>& arg) const
     {
         using scalar_type = typename Coefficients::scalar_type;
+        using rational_type = typename Coefficients::rational_type;
 
         if (arg.basis().width() != p_tensor_basis->width()) {
             throw std::invalid_argument("mismatched width");
@@ -170,18 +174,27 @@ public:
         lie<Coefficients, VectorType, StorageModel> result(p_lie_basis);
         if (arg.basis().depth() <= max_deg) {
             for (auto outer : arg) {
-                auto val = outer.value();
-                for (auto inner : rbracketing(outer.key())) {
-                    result.add_scal_prod(inner.first, Coefficients::mul(scalar_type(inner.second), val));
+                auto key = outer.key();
+                auto deg = key.degree();
+                if (deg > 0 ) {
+                    auto val = outer.value() / rational_type(deg);
+                    for (auto inner : rbracketing(key)) {
+                        assert(inner.first.degree() == deg);
+                        result.add_scal_prod(inner.first, Coefficients::mul(scalar_type(inner.second), val));
+                    }
                 }
             }
         } else {
             for (auto outer : arg) {
                 auto key = outer.key();
-                auto val = outer.value();
-                if (p_tensor_basis->degree(key) <= max_deg) {
-                    for (auto inner : rbracketing(key)) {
-                        result.add_scal_prod(inner.first, Coefficients::mul(scalar_type(inner.second), val));
+                auto deg = key.degree();
+                if (deg > 0 ){
+                    auto val = outer.value() / deg;
+                    if (deg <= max_deg) {
+                        for (auto inner : rbracketing(key)) {
+                            assert(inner.first.degree() == deg);
+                            result.add_scal_prod(inner.first, Coefficients::mul(scalar_type(inner.second), val));
+                        }
                     }
                 }
             }

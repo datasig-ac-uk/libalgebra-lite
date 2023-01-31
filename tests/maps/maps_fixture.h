@@ -80,7 +80,7 @@ private:
     lal::dimn_t lkey_to_word_fragment(lkey_type key) const
     {
         if (key.degree() == 1) {
-            return lal::dimn_t(lbasis->first_letter(key));
+            return lal::dimn_t(lbasis->to_letter(key));
         }
 
         auto parents = lbasis->parents(key);
@@ -126,12 +126,11 @@ public:
 
     dlie_t generic_lie(char prefix, lal::deg_t degree=3) const
     {
-        const auto& sizes = lbasis->sizes();
-
         dlie_t result(lbasis);
         for (lal::deg_t d=1; d<=degree; ++d) {
             lkey_type k(d, 0);
-            for (lal::dimn_t i=0; i<sizes[d]; ++i, ++k) {
+            auto size = lbasis->size_of_degree(d);
+            for (lal::dimn_t i=0; i<size; ++i, ++k) {
                 result[k] = poly_t(lkey_to_poly(prefix, k), rational_type(1));
             }
         }

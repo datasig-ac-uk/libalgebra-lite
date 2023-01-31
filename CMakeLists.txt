@@ -30,7 +30,7 @@ add_library(Libalgebra_lite SHARED
         include/libalgebra_lite/registry.h
         src/basis/polynomial_basis.cpp
         src/algebra/polynomial_ring.cpp
-        src/maps.cpp src/basis/unpacked_tensor_word.cpp include/libalgebra_lite/unpacked_tensor_word.h)
+        src/maps.cpp src/basis/unpacked_tensor_word.cpp include/libalgebra_lite/unpacked_tensor_word.h include/libalgebra_lite/shuffle_tensor.h include/libalgebra_lite/tensor_multipliers.h)
 generate_export_header(Libalgebra_lite)
 
 

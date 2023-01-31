@@ -95,6 +95,9 @@ public:
     dimn_t key_to_index(key_type arg) const noexcept;
     key_type index_to_key(dimn_t arg) const noexcept;
 
+    void advance_key(key_type& key) const noexcept;
+
+
 };
 
 

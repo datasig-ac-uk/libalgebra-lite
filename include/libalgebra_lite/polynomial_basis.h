@@ -134,6 +134,7 @@ class LIBALGEBRA_LITE_EXPORT basis_registry<polynomial_basis>
 public:
 
     static std::shared_ptr<const polynomial_basis> get();
+    static std::shared_ptr<const polynomial_basis> get(const polynomial_basis&) { return get(); }
 
 };
 

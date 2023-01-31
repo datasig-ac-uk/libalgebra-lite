@@ -109,14 +109,15 @@ TEST_F(MapsFixture, testLieToTensor) {
     const auto test_tensor = maps.lie_to_tensor(test_lie);
     const auto result_lie = maps.tensor_to_lie(test_tensor);
 
-    ASSERT_EQ(result_lie, test_lie) << (result_lie - test_lie);
+    ASSERT_EQ(result_lie, test_lie);
 }
 
-TEST_F(MapsFixture, testTensorToLie) {
-
-    const auto test_tensor = generic_dtensor('x');
-    const auto test_lie = maps.tensor_to_lie(test_tensor);
-    const auto result_tensor = maps.lie_to_tensor(test_lie);
-
-    ASSERT_EQ(result_tensor, test_tensor);
-}
+// This test doesn't pass because test_tensor is not log of a group-like element.
+//TEST_F(MapsFixture, testTensorToLie) {
+//
+//    const auto test_tensor = generic_dtensor('x');
+//    const auto test_lie = maps.tensor_to_lie(test_tensor);
+//    const auto result_tensor = maps.lie_to_tensor(test_lie);
+//
+//    ASSERT_EQ(result_tensor, test_tensor) << (result_tensor - test_tensor);
+//}

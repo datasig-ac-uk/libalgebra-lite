@@ -7,6 +7,8 @@
 
 #include "implementation_types.h"
 
+#include <boost/type_traits/is_detected.hpp>
+
 #include <algorithm>
 #include <functional>
 #include <utility>
@@ -47,6 +49,25 @@ class has_degree_tag_helper {
 public:
     using type = decltype(choose(nullptr));
 };
+
+template <typename B>
+using advance_key_t = decltype(std::declval<const B&>().advance_key(std::declval<typename B::key_type&>()));
+
+template <typename Basis, bool=boost::is_detected<advance_key_t, Basis>::value>
+struct advance_key_helper {
+
+    static void advance_key(const Basis& b, typename Basis::key_type& key) { ++key; }
+};
+
+template <typename Basis>
+struct advance_key_helper<Basis, true> {
+
+    static void advance_key(const Basis& b, typename Basis::key_type& key) {
+        b.advance_key(key);
+    }
+
+};
+
 
 
 } // namespace dtl
@@ -90,6 +111,10 @@ struct basis_trait {
         return { nullptr };
     }
 
+    static key_type advance_key(const Basis& basis, key_type& key)
+    {
+        dtl::advance_key_helper<Basis>::advance_key(basis, key);
+    }
 
 };
 

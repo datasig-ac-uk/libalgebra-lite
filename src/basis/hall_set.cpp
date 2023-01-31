@@ -130,15 +130,19 @@ bool hall_set::letter(const hall_set::key_type &key) const noexcept
 }
 const hall_set::parent_type &hall_set::operator[](const hall_set::key_type &key) const noexcept
 {
+    const auto degree = key.degree();
     auto index = key.index();
-    auto offset = size(deg_t(key.degree())-1);
-    return data[index + offset + 1];
+    auto offset = degree_ranges[degree].first;
+    assert(index + offset < degree_ranges[degree].second);
+    assert(degree == data[index+offset].first.degree() + data[index+offset].second.degree());
+    return data[index + offset];
 //    return data[key.index() + size(deg_t(key.degree()-1)) + 1];
 }
 const hall_set::key_type &hall_set::operator[](const hall_set::parent_type &parent) const
 {
     auto found = reverse_map.find(parent);
     if (found != reverse_map.end()) {
+        assert(found->second.degree() == parent.first.degree() +parent.second.degree());
         return found->second;
     }
     return root_element;
@@ -158,8 +162,10 @@ hall_set::key_type hall_set::key_of_index(hall_set::size_type index) const noexc
     if (found == m_sizes.end()) {
         return root_element;
     }
+    assert(found != m_sizes.begin());
     auto deg = static_cast<deg_t>(found - m_sizes.begin());
-    return key_type(deg, index - *(--found));
+    auto range_begin = *(--found);
+    return key_type(deg, index - range_begin);
 }
 
 std::string hall_basis::letter_to_string(let_t letter)
@@ -183,5 +189,14 @@ std::ostream& hall_basis::print_key(std::ostream& os, hall_basis::key_type key) 
     return os << m_key_to_string(key);
 }
 template class basis_registry<hall_basis>;
+
+void hall_basis::advance_key(hall_basis::key_type &key) const {
+    const auto degree = static_cast<deg_t>(key.degree());
+    const auto bound = p_hallset->size_of_degree(degree);
+    ++key;
+    if (key.index() >= bound) {
+        key = key_type(degree+1, 0);
+    }
+}
 
 } // namespace lal
