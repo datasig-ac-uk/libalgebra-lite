@@ -780,7 +780,7 @@ algebra<Basis, Coefficients, Multiplication, VectorType, StorageModel>::mul_scal
         const scalar_type& scal)
 {
     using traits = multiplication_traits<Multiplication>;
-    traits::multiply_inplace(*multiplication(), rhs, [scal](scalar_type s) { return s*scal; });
+    traits::multiply_inplace(*multiplication(), *this, rhs, [scal](scalar_type s) { return s*scal; });
     return *this;
 }
 template<typename Basis, typename Coefficients, typename Multiplication, template <typename, typename> class VectorType, template <typename> class StorageModel>
@@ -789,7 +789,7 @@ algebra<Basis, Coefficients, Multiplication, VectorType, StorageModel>::mul_scal
         const rational_type& scal)
 {
     using traits = multiplication_traits<Multiplication>;
-    traits::multiply_inplace(*multiplication(), rhs, [scal](scalar_type s) { return s / scal; });
+    traits::multiply_inplace(*multiplication(), *this, rhs, [scal](scalar_type s) { return s / scal; });
     return *this;
 }
 
