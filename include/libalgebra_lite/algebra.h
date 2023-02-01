@@ -643,8 +643,8 @@ public:
     algebra& add_mul(const algebra& lhs, const algebra& rhs);
     algebra& sub_mul(const algebra& lhs, const algebra& rhs);
 
-    algebra& mul_scal_prod(const algebra& lhs, const scalar_type& scal);
-    algebra& mul_scal_div(const algebra& lhs, const rational_type& scal);
+    algebra& mul_scal_prod(const algebra& rhs, const scalar_type& scal);
+    algebra& mul_scal_div(const algebra& rhs, const rational_type& scal);
 
 
 
@@ -757,28 +757,39 @@ multiply(const Multiplication& multiplication,
 }
 
 template<typename Basis, typename Coefficients, typename Multiplication, template <typename, typename> class VectorType, template <typename> class StorageModel>
-algebra<Basis, Coefficients, Multiplication, VectorType, StorageModel>& algebra<Basis, Coefficients, Multiplication, VectorType, StorageModel>::add_mul(const algebra& lhs,
+algebra<Basis, Coefficients, Multiplication, VectorType, StorageModel>&
+algebra<Basis, Coefficients, Multiplication, VectorType, StorageModel>::add_mul(const algebra& lhs,
         const algebra& rhs)
 {
-   return *this;
-}
-template<typename Basis, typename Coefficients, typename Multiplication, template <typename, typename> class VectorType, template <typename> class StorageModel>
-algebra<Basis, Coefficients, Multiplication, VectorType, StorageModel>& algebra<Basis, Coefficients, Multiplication, VectorType, StorageModel>::sub_mul(const algebra& lhs,
-        const algebra& rhs)
-{
-    return *this;
-}
-template<typename Basis, typename Coefficients, typename Multiplication, template <typename, typename> class VectorType, template <typename> class StorageModel>
-algebra<Basis, Coefficients, Multiplication, VectorType, StorageModel>& algebra<Basis, Coefficients, Multiplication, VectorType, StorageModel>::mul_scal_prod(const algebra& lhs,
-        const scalar_type& scal)
-{
+    using traits = multiplication_traits<Multiplication>;
+    traits::multiply_and_add(*multiplication(), lhs, rhs, [](scalar_type s) { return s; });
     return *this;
 }
 template<typename Basis, typename Coefficients, typename Multiplication, template <typename, typename> class VectorType, template <typename> class StorageModel>
 algebra<Basis, Coefficients, Multiplication, VectorType, StorageModel>&
-algebra<Basis, Coefficients, Multiplication, VectorType, StorageModel>::mul_scal_div(const algebra& lhs,
+algebra<Basis, Coefficients, Multiplication, VectorType, StorageModel>::sub_mul(const algebra& lhs,
+        const algebra& rhs)
+{
+    using traits = multiplication_traits<Multiplication>;
+    traits::multiply_and_add(*multiplication(), lhs, rhs, [](scalar_type s) { return -s; });
+    return *this;
+}
+template<typename Basis, typename Coefficients, typename Multiplication, template <typename, typename> class VectorType, template <typename> class StorageModel>
+algebra<Basis, Coefficients, Multiplication, VectorType, StorageModel>&
+algebra<Basis, Coefficients, Multiplication, VectorType, StorageModel>::mul_scal_prod(const algebra& rhs,
+        const scalar_type& scal)
+{
+    using traits = multiplication_traits<Multiplication>;
+    traits::multiply_inplace(*multiplication(), rhs, [scal](scalar_type s) { return s*scal; });
+    return *this;
+}
+template<typename Basis, typename Coefficients, typename Multiplication, template <typename, typename> class VectorType, template <typename> class StorageModel>
+algebra<Basis, Coefficients, Multiplication, VectorType, StorageModel>&
+algebra<Basis, Coefficients, Multiplication, VectorType, StorageModel>::mul_scal_div(const algebra& rhs,
         const rational_type& scal)
 {
+    using traits = multiplication_traits<Multiplication>;
+    traits::multiply_inplace(*multiplication(), rhs, [scal](scalar_type s) { return s / scal; });
     return *this;
 }
 

@@ -9,7 +9,7 @@
 
 namespace lal {
 
-template <typename Vector, typename Fibre>
+template <typename Vector, typename Fibre=Vector>
 class vector_bundle : public Vector
 {
     Fibre m_fibre;
