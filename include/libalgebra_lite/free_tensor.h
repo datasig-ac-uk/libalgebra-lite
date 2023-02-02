@@ -433,6 +433,7 @@ public:
     using base_type::base_type;
 
     using base_type::fma;
+    using base_type::fma_inplace;
 
     template<typename Coeff, typename Op>
     void fma(dense_tensor_vec<Coeff>& out, const dense_tensor_vec<Coeff>& lhs,
@@ -472,7 +473,7 @@ public:
     }
 
     template <typename Coeffs, typename Op>
-    void fma_inplace(dense_tensor_vec<Coeffs>& lhs, const dense_tensor_vec<Coeffs>& rhs, Op op, deg_t max_deg)
+    void fma_inplace(dense_tensor_vec<Coeffs>& lhs, const dense_tensor_vec<Coeffs>& rhs, Op op, deg_t max_deg) const
     {}
 
 };
@@ -520,6 +521,9 @@ public:
 
     free_tensor(basis_pointer basis, multiplication_pointer mul, scalar_type arg)
             :algebra_type(basis, mul, key_type(0, 0), std::move(arg)) { }
+
+    free_tensor(basis_pointer basis, scalar_type arg)
+            :algebra_type(basis, key_type(0, 0), std::move(arg)) { }
 
 
     free_tensor& fmexp_inplace(const free_tensor& exp_arg) {
@@ -604,7 +608,13 @@ log(const free_tensor<Coefficients, VectorType, StorageModel>& arg)
     return result;
 }
 
-
+template <typename Coefficients, template <typename, typename> class VectorType,
+         template <typename> class StorageModel>
+free_tensor<Coefficients, VectorType, StorageModel>
+    inverse(const free_tensor<Coefficients, VectorType, StorageModel>& arg)
+{
+    return arg;
+}
 
 
 

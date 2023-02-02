@@ -179,13 +179,16 @@ public:
     vector(vector&& other) noexcept : base_type(std::move(other))
     {}
 
+    template <typename Scalar>
+    explicit vector(key_type k, Scalar s) : base_type(k, s)
+    {}
 
 
-    template <typename Key, typename Scalar>
-    explicit vector(Key k, Scalar s) : base_type(p_basis,
-                                                 key_type(k),
-                                                 scalar_type(s)) {
-    }
+//    template <typename Key, typename Scalar>
+//    explicit vector(Key k, Scalar s) : base_type(p_basis,
+//                                                 key_type(k),
+//                                                 scalar_type(s)) {
+//    }
 
     template <typename Key, typename Scalar>
     explicit vector(basis_pointer basis, Key key, Scalar s)
@@ -222,6 +225,7 @@ public:
         return base_type::instance().dimension();
     }
 
+    deg_t degree() const noexcept { return base_type::instance().degree(); }
     bool empty() const noexcept {
         return base_type::instance().empty();
     }
@@ -233,7 +237,7 @@ public:
 
     template <typename KeyType>
     reference operator[](const KeyType &key) {
-        return base_type::instance()[key];
+        return base_type::instance()[key_type(key)];
     }
 
     void clear() {
@@ -328,11 +332,23 @@ public:
     template <typename Key, typename Scal>
     vector &add_scal_prod(const Key &key, const Scal &scal);
     template <typename Key, typename Rat>
-    vector &add_scal_div(const Key &key, const Rat &scal);
+    std::enable_if_t<!std::is_base_of<vector, Key>::value, vector&>
+    add_scal_div(const Key &key, const Rat &scal)
+    {
+        base_type::instance()[key_type(key)] +=
+            coefficient_ring::one() / rational_type(scal);
+        return *this;
+    }
     template <typename Key, typename Scal>
     vector &sub_scal_prod(const Key &key, const Scal &scal);
     template <typename Key, typename Rat>
-    vector &sub_scal_div(const Key &key, const Rat &scal);
+    std::enable_if_t<!std::is_base_of<vector, Key>::value, vector &>
+    sub_scal_div(const Key &key, const Rat &scal)
+    {
+        base_type::instance()[key_type(key)] -=
+            coefficient_ring::one() / rational_type(scal);
+        return *this;
+    }
 
     template <typename Scal>
     vector &add_scal_prod(const vector &rhs, const Scal &scal);
@@ -502,7 +518,7 @@ public:
     friend std::enable_if_t<std::is_base_of<vector, LVector>::value, LVector &>
     operator*=(LVector &lhs, const Scal &scal) {
         scalar_type m(scal);
-        lhs.instance().inplace_unary_op([m] (scalar_type& s) { return s *= m; });
+        lhs.instance().inplace_unary_op([m] (scalar_type& s) {  s *= m; });
         return lhs;
     }
 
@@ -510,7 +526,7 @@ public:
     friend std::enable_if_t<std::is_base_of<vector, LVector>::value, LVector &>
     operator/=(LVector &lhs, const Rat &scal) {
         rational_type m(scal);
-        lhs.instance().inplace_unary_op([m](scalar_type &s) { return s /= m; });
+        lhs.instance().inplace_unary_op([m](scalar_type &s) { s /= m; });
         return lhs;
     }
 
@@ -518,7 +534,7 @@ public:
     friend std::enable_if_t<std::is_base_of<vector, LVector>::value, LVector &>
     operator+=(LVector &lhs, const vector &rhs) {
         lhs.instance().inplace_binary_op(rhs.instance(), [](scalar_type& ls, const scalar_type& rs)
-        { return ls += rs; });
+        { ls += rs; });
         return lhs;
     }
 
@@ -526,7 +542,7 @@ public:
     friend std::enable_if_t<std::is_base_of<vector, LVector>::value, LVector &>
     operator-=(LVector &lhs, const vector &rhs) {
         lhs.instance()
-            .inplace_binary_op(rhs.instance(), [](scalar_type &ls, const scalar_type &rs) { return ls -= rs; });
+            .inplace_binary_op(rhs.instance(), [](scalar_type &ls, const scalar_type &rs) { ls -= rs; });
         return lhs;
     }
 
@@ -603,20 +619,20 @@ vector<Basis,
     base_type::instance()[key_type(key)] += scalar_type(scal);
     return *this;
 }
-template <typename Basis,
-    typename Coefficients,
-    template <typename, typename> class VectorType,
-    template <typename> class StorageModel>
-template <typename Key, typename Rat>
-vector<Basis, Coefficients, VectorType, StorageModel> &
-vector<Basis,
-       Coefficients,
-       VectorType,
-       StorageModel>::add_scal_div(const Key &key, const Rat &scal) {
-    base_type::instance()[key_type(key)] +=
-        coefficient_ring::one() / rational_type(scal);
-    return *this;
-}
+//template <typename Basis,
+//    typename Coefficients,
+//    template <typename, typename> class VectorType,
+//    template <typename> class StorageModel>
+//template <typename Key, typename Rat>
+//std::enable_if_t<!std::is_base_of<vector<Basis, Coefficients, VectorType, StorageModel>, Key>::value, vector<Basis, Coefficients, VectorType, StorageModel>> &
+//vector<Basis,
+//       Coefficients,
+//       VectorType,
+//       StorageModel>::add_scal_div(const Key &key, const Rat &scal) {
+//    base_type::instance()[key_type(key)] +=
+//        coefficient_ring::one() / rational_type(scal);
+//    return *this;
+//}
 template <typename Basis,
     typename Coefficients,
     template <typename, typename> class VectorType,
@@ -630,20 +646,20 @@ vector<Basis,
     base_type::instance()[key_type(key)] -= scalar_type(scal);
     return *this;
 }
-template <typename Basis,
-    typename Coefficients,
-    template <typename, typename> class VectorType,
-    template <typename> class StorageModel>
-template <typename Key, typename Rat>
-vector<Basis, Coefficients, VectorType, StorageModel> &
-vector<Basis,
-       Coefficients,
-       VectorType,
-       StorageModel>::sub_scal_div(const Key &key, const Rat &scal) {
-    base_type::instance()[key_type(key)] -=
-        coefficient_ring::one() / rational_type(scal);
-    return *this;
-}
+//template <typename Basis,
+//    typename Coefficients,
+//    template <typename, typename> class VectorType,
+//    template <typename> class StorageModel>
+//template <typename Key, typename Rat>
+//vector<Basis, Coefficients, VectorType, StorageModel> &
+//vector<Basis,
+//       Coefficients,
+//       VectorType,
+//       StorageModel>::sub_scal_div(const Key &key, const Rat &scal) {
+//    base_type::instance()[key_type(key)] -=
+//        coefficient_ring::one() / rational_type(scal);
+//    return *this;
+//}
 template <typename Basis,
     typename Coefficients,
     template <typename, typename> class VectorType,
@@ -656,7 +672,7 @@ vector<Basis,
        StorageModel>::add_scal_prod(const vector &rhs, const Scal &scal) {
     auto& self = base_vector();
     scalar_type m(scal);
-    self.inplace_binary_op(rhs.base_vector(), [m](scalar_type& ls, const scalar_type& rs) { return ls += rs*m; });
+    self.inplace_binary_op(rhs.base_vector(), [m](scalar_type& ls, const scalar_type& rs) {  ls += rs*m; });
     return *this;
 }
 template <typename Basis,
@@ -671,7 +687,7 @@ vector<Basis,
        StorageModel>::add_scal_div(const vector &rhs, const Rat &scal) {
     auto &self = base_vector();
     rational_type m(scal);
-    self.inplace_binary_op(rhs.base_vector(), [m](scalar_type &ls, const scalar_type &rs) { return ls += rs / m; });
+    self.inplace_binary_op(rhs.base_vector(), [m](scalar_type &ls, const scalar_type &rs) {  ls += rs / m; });
     return *this;
 }
 template <typename Basis,
@@ -687,7 +703,7 @@ vector<Basis,
 
     auto &self = base_vector();
     scalar_type m(scal);
-    self.inplace_binary_op(rhs.base_vector(), [m](scalar_type &ls, const scalar_type &rs) { return ls -= rs * m; });
+    self.inplace_binary_op(rhs.base_vector(), [m](scalar_type &ls, const scalar_type &rs) {  ls -= rs * m; });
     return *this;
 }
 template <typename Basis,
@@ -702,7 +718,7 @@ vector<Basis,
        StorageModel>::sub_scal_div(const vector &rhs, const Rat &scal) {
     auto &self = base_vector();
     rational_type m(scal);
-    self.inplace_binary_op(rhs.base_vector(), [m](scalar_type &ls, const scalar_type &rs) { return ls -= rs / m; });
+    self.inplace_binary_op(rhs.base_vector(), [m](scalar_type &ls, const scalar_type &rs) {  ls -= rs / m; });
     return *this;
 }
 template <typename Basis,

@@ -49,7 +49,7 @@ struct coefficient_ring
 
     static const scalar_type& zero() noexcept
     {
-        static const scalar_type zero;
+        static const scalar_type zero {};
         return zero;
     }
     static const scalar_type& one() noexcept

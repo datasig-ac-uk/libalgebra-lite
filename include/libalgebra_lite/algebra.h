@@ -142,15 +142,15 @@ public:
     {
         mult.fma_inplace(lhs.vector_type(), rhs.vector_type(), fn);
     }
-
-    template <typename Left, typename Right, typename Fn, typename Mult=Multiplication>
-    static std::enable_if_t<has_degree_t<Left>::value && has_fma_inplace<Left, Right, Fn, Mult>::value>
-    multiply_and_add_inplace(const Multiplication& mult, Left& lhs, const Right& rhs, Fn fn)
-    {
-        using traits = basis_trait<typename Left::basis_type>;
-        mult.fma_inplace(lhs.base_vector(), rhs.base_vector(), fn,
-                traits::max_degree(lhs.basis()));
-    }
+//
+//    template <typename Left, typename Right, typename Fn, typename Mult=Multiplication>
+//    static std::enable_if_t<has_degree_t<Left>::value && has_fma_inplace<Left, Right, Fn, Mult>::value>
+//    multiply_and_add_inplace(const Multiplication& mult, Left& lhs, const Right& rhs, Fn fn)
+//    {
+//        using traits = basis_trait<typename Left::basis_type>;
+//        mult.fma_inplace(lhs.base_vector(), rhs.base_vector(), fn,
+//                traits::max_degree(lhs.basis()));
+//    }
 
     template <typename Left, typename Right, typename Fn, typename Mult=Multiplication>
     static std::enable_if_t<has_degree_t<Left>::value && has_fma_inplace<Left, Right, Fn, Mult>::value>
@@ -163,7 +163,7 @@ public:
     static std::enable_if_t<!has_degree_t<Left>::value>
     multiply_inplace(const Multiplication& mult, Left& lhs, const Right& rhs, Fn fn)
     {
-        Left tmp(lhs.basis(), mult);
+        Left tmp(lhs.get_basis());
         mult.fma_inplace(lhs.base_vector(), rhs.base_vector(), fn);
         lhs.swap(tmp);
     }
@@ -173,16 +173,17 @@ public:
     static std::enable_if_t<has_degree_t<Left>::value>
     multiply_inplace(const Multiplication& mult, Left& lhs, const Right& rhs, Fn fn, deg_t max_deg)
     {
-        Left tmp(lhs.basis(), mult);
-        mult.fma_inplace(lhs.base_vector(), rhs.base_vector(), fn, max_deg);
-        lhs.swap(tmp);
+        Left tmp(lhs.get_basis());
+        mult.fma_inplace(tmp.base_vector(), rhs.base_vector(), fn, max_deg);
+        std::swap(lhs, tmp);
+//        lhs.swap(tmp);
     }
 
     template <typename Left, typename Right, typename Fn>
     static std::enable_if_t<has_degree_t<Left>::value>
     multiply_inplace(const Multiplication& mult, Left& lhs, const Right& rhs, Fn fn)
     {
-        auto max_deg = basis_trait<typename Left::basis_type>::max_degree(*lhs.mult());
+        auto max_deg = basis_trait<typename Left::basis_type>::max_degree(lhs.basis());
         multiply_inplace(mult, lhs, rhs, fn, max_deg);
     }
 
@@ -532,6 +533,10 @@ public:
         }
     }
 
+    template <typename LeftVector, typename RightVector, typename Fn>
+    void fma_inplace(LeftVector&, const RightVector&, Fn) const {}
+    template <typename LeftVector, typename RightVector, typename Fn>
+    void fma_inplace(LeftVector&, const RightVector&, Fn, deg_t) const {}
 
 
 
@@ -645,7 +650,12 @@ public:
 
     algebra& mul_scal_prod(const algebra& rhs, const scalar_type& scal);
     algebra& mul_scal_div(const algebra& rhs, const rational_type& scal);
-
+    algebra& mul_scal_div(const algebra& rhs, const rational_type& scal, deg_t degree)
+    {
+        using traits = multiplication_traits<Multiplication>;
+        traits::multiply_inplace(*multiplication(), *this, rhs, [scal](scalar_type s) { return s / scal; }, degree);
+        return *this;
+    }
 
 
 };
@@ -676,6 +686,7 @@ std::enable_if_t<dtl::is_algebra<Algebra>::value, Algebra>
 operator*(const Algebra& lhs, const Algebra& rhs)
 {
     using traits = multiplication_traits<typename Algebra::multiplication_type>;
+    using scalar_type = typename Algebra::scalar_type;
 
     auto multiplication = lhs.multiplication();
     if (!multiplication) {
@@ -683,7 +694,7 @@ operator*(const Algebra& lhs, const Algebra& rhs)
     }
     Algebra result(lhs.get_basis(), multiplication);
     if (multiplication && !lhs.empty() && !rhs.empty()) {
-        traits::multiply_and_add(*multiplication, result, lhs, rhs);
+        traits::multiply_and_add(*multiplication, result, lhs, rhs, [](scalar_type s) { return s; });
     }
     return result;
 }
@@ -762,7 +773,7 @@ algebra<Basis, Coefficients, Multiplication, VectorType, StorageModel>::add_mul(
         const algebra& rhs)
 {
     using traits = multiplication_traits<Multiplication>;
-    traits::multiply_and_add(*multiplication(), lhs, rhs, [](scalar_type s) { return s; });
+    traits::multiply_and_add(*multiplication(), *this, lhs, rhs, [](scalar_type s) { return s; });
     return *this;
 }
 template<typename Basis, typename Coefficients, typename Multiplication, template <typename, typename> class VectorType, template <typename> class StorageModel>
@@ -771,7 +782,7 @@ algebra<Basis, Coefficients, Multiplication, VectorType, StorageModel>::sub_mul(
         const algebra& rhs)
 {
     using traits = multiplication_traits<Multiplication>;
-    traits::multiply_and_add(*multiplication(), lhs, rhs, [](scalar_type s) { return -s; });
+    traits::multiply_and_add(*multiplication(), *this,  lhs, rhs, [](scalar_type s) { return -s; });
     return *this;
 }
 template<typename Basis, typename Coefficients, typename Multiplication, template <typename, typename> class VectorType, template <typename> class StorageModel>

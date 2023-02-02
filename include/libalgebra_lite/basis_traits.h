@@ -111,7 +111,7 @@ struct basis_trait {
         return { nullptr };
     }
 
-    static key_type advance_key(const Basis& basis, key_type& key)
+    static void advance_key(const Basis& basis, key_type& key)
     {
         dtl::advance_key_helper<Basis>::advance_key(basis, key);
     }

@@ -335,9 +335,21 @@ public:
         map_type data;
 //        data.reserve(m_data.size());
         for (const auto& item : m_data) {
-            data.emplace(item.first, op(item.second));
+            auto tmp(item.second);
+            op(tmp);
+            if (tmp != Coefficients::zero()) {
+                data.emplace(item.first, std::move(tmp));
+            }
         }
         return {p_basis, std::move(data)};
+    }
+    template <typename UnaryOp>
+    sparse_vector& inplace_unary_op(UnaryOp op)
+    {
+        sparse_vector tmp(*this);
+        tmp.unary_op(op);
+        std::swap(m_data, tmp.m_data);
+        return *this;
     }
 
     template <typename BinOp>

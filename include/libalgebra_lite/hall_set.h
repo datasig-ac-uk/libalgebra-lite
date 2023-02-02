@@ -140,6 +140,9 @@ public:
     static constexpr deg_t degree(const key_type& arg) noexcept
     { return deg_t(arg.degree()); }
 
+    bool letter(const key_type& arg) const noexcept {
+        return arg.degree() == 1;
+    }
     parent_type parents(const key_type& arg) const noexcept
     { return (*p_hallset)[arg]; }
     key_type lparent(const key_type& arg) const noexcept

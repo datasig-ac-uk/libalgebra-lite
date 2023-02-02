@@ -165,7 +165,7 @@ public:
     template <typename UnaryOp>
     dense_vector_base unary_op(UnaryOp op) const
     {
-        dense_vector_base result;
+        dense_vector_base result(p_basis);
         result.reserve(size());
 
         const auto begin = m_storage.begin();
@@ -238,9 +238,9 @@ public:
             op(m_storage[i], zero);
         }
 
-        difference_type rhs_max(std::min(size(), rhs_size()));
+        difference_type rhs_max(std::min(size(), rhs.size()));
         for (auto i=mid; i<rhs_max; ++i) {
-            op(m_storage, rhs.m_storage[i]);
+            op(m_storage[i], rhs.m_storage[i]);
         }
 
         return *this;
@@ -273,8 +273,11 @@ class dense_iterator_item
     {}
 
 public:
-    KeyRef key() noexcept { return m_key; }
-    ScaRef value() noexcept { return m_sca; }
+
+    dense_iterator_item* operator->() noexcept { return this; }
+
+    KeyRef key() const noexcept { return m_key; }
+    ScaRef value() const noexcept { return m_sca; }
 };
 
 template <typename Basis, typename Coefficients, typename Iterator>
@@ -319,12 +322,12 @@ public:
         return current;
     }
 
-    reference operator*() noexcept
+    reference operator*() const noexcept
     {
         return {m_key, *p_data};
     }
 
-    pointer operator->() noexcept
+    pointer operator->() const noexcept
     {
         return {m_key, *p_data};
     }
@@ -383,12 +386,12 @@ public:
         return current;
     }
 
-    reference operator*() noexcept
+    reference operator*() const noexcept
     {
         return {m_key, *p_data};
     }
 
-    pointer operator->() noexcept
+    pointer operator->() const noexcept
     {
         return {m_key, *p_data};
     }
