@@ -347,7 +347,7 @@ public:
     sparse_vector& inplace_unary_op(UnaryOp op)
     {
         sparse_vector tmp(*this);
-        tmp.unary_op(op);
+        tmp.unary_op([op] (scalar_type& arg) { auto tmp = arg; op(tmp); return tmp; });
         std::swap(m_data, tmp.m_data);
         return *this;
     }
