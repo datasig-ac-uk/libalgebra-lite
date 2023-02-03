@@ -334,10 +334,10 @@ public:
     {
         map_type data;
 //        data.reserve(m_data.size());
+        const auto &zero = Coefficients::zero();
         for (const auto& item : m_data) {
-            auto tmp(item.second);
-            op(tmp);
-            if (tmp != Coefficients::zero()) {
+            auto tmp(op(item.second));
+            if (tmp != zero) {
                 data.emplace(item.first, std::move(tmp));
             }
         }

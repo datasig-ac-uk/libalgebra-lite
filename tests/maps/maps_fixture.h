@@ -85,7 +85,7 @@ private:
 
         auto parents = lbasis->parents(key);
         // insert a 0 between groups of brackets
-        lal::dimn_t shift = pow(lal::dimn_t(10), parents.second.degree() + 1);
+        lal::dimn_t shift = pow(lal::dimn_t(10), 2*parents.second.degree());
         return lkey_to_word_fragment(parents.first)*shift + lkey_to_word_fragment(parents.second);
     }
 

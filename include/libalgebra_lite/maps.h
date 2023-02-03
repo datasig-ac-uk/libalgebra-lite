@@ -180,7 +180,7 @@ public:
                     auto val = outer.value() / rational_type(deg);
                     for (auto inner : rbracketing(key)) {
                         assert(inner.first.degree() == deg);
-                        result.add_scal_prod(inner.first, Coefficients::mul(scalar_type(inner.second), val));
+                        result.add_scal_prod(inner.first, scalar_type(inner.second)*val);
                     }
                 }
             }
