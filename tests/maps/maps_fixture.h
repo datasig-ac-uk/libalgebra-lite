@@ -82,11 +82,15 @@ private:
         if (key.degree() == 1) {
             return lal::dimn_t(lbasis->to_letter(key));
         }
-
         auto parents = lbasis->parents(key);
+        if (key.degree() == 2) {
+            return 900 + lkey_to_word_fragment(parents.first)*10 + lkey_to_word_fragment(parents.second);
+        }
+
         // insert a 0 between groups of brackets
-        lal::dimn_t shift = pow(lal::dimn_t(10), 2*parents.second.degree());
-        return lkey_to_word_fragment(parents.first)*shift + lkey_to_word_fragment(parents.second);
+        lal::dimn_t shift = pow(lal::dimn_t(10), parents.second.degree()+1);
+        auto top_shift = pow(lal::dimn_t(10), parents.first.degree())*shift;
+        return 9*top_shift + lkey_to_word_fragment(parents.first)*shift + lkey_to_word_fragment(parents.second);
     }
 
 
