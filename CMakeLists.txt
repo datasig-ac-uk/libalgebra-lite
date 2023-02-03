@@ -30,7 +30,12 @@ add_library(Libalgebra_lite SHARED
         include/libalgebra_lite/registry.h
         src/basis/polynomial_basis.cpp
         src/algebra/polynomial_ring.cpp
-        src/maps.cpp src/basis/unpacked_tensor_word.cpp include/libalgebra_lite/unpacked_tensor_word.h include/libalgebra_lite/shuffle_tensor.h)
+        src/maps.cpp
+        src/basis/unpacked_tensor_word.cpp
+        include/libalgebra_lite/unpacked_tensor_word.h
+        include/libalgebra_lite/shuffle_tensor.h)
+
+add_library(Libalgebra_lite::Libalgebra_lite ALIAS Libalgebra_lite)
 generate_export_header(Libalgebra_lite)
 
 
@@ -49,7 +54,17 @@ if (TARGET Libalgebra::Libalgebra)
     target_link_libraries(Libalgebra_lite PUBLIC Libalgebra::Libalgebra)
 endif()
 
-    configure_file(cmake/config.h.in config.h)
+configure_file(cmake/config.h.in config.h)
+
+
+install(TARGETS Libalgebra_lite
+        EXPORT Libalgebra_liteTargets
+        PUBLIC_HEADER DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}"
+        INCLUDES DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}"
+        RUNTIME DESTINATION "${CMAKE_INSTALL_BINDIR}"
+        LIBRARY DESTINATION "${CMAKE_INSTAL_LIBDIR}"
+        ARCHIVE DESTINATION "${CMAKE_INSTALL_LIBDIR}"
+        )
 
 
 enable_testing()
