@@ -356,10 +356,8 @@ public:
     sparse_vector binary_op(const sparse_vector& rhs, BinOp op) const
     {
         sparse_vector tmp(*this);
-        tmp.inplace_binary_op(rhs, [op](const scalar_type& l, const scalar_type& r) {
-            scalar_type tmp(l);
-            op(tmp, r);
-            return tmp;
+        tmp.inplace_binary_op(rhs, [op](scalar_type& l, const scalar_type& r) {
+            l = op(l, r);
         });
 
         return tmp;
