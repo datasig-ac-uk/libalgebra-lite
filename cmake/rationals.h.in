@@ -1,0 +1,26 @@
+
+
+#ifndef LIBALGEBRA_LITE_RATIONALS_H
+#define LIBALGEBRA_LITE_RATIONALS_H
+
+#include "config.h"
+
+#ifndef LAL_NO_USE_GMP
+#include <boost/multiprecision/@LAL_GMP_ALTERNATIVE_HEADER@>
+
+namespace lal { namespace dtl {
+using rational_scalar_type = boost::multiprecision::@LAL_GMP_ALTERNATIVE_TYPE@;
+} // namespace dtl
+} // namespace lal
+#else
+#include <boost/multiprecision/gmp.hpp>
+
+namespace lal { namespace dtl {
+using rational_scalar_type = boost::multiprecision::mpq_rational;
+} // namespace dtl
+} // namespace lal
+#endif
+
+
+
+#endif // LIBALGEBRA_LITE_RATIONALS_H

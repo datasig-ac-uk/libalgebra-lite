@@ -10,7 +10,8 @@
 
 #include <memory>
 
-#include <boost/multiprecision/cpp_int.hpp>
+#include "rationals.h"
+
 
 namespace lal {
 
@@ -90,14 +91,11 @@ extern template class LIBALGEBRA_LITE_EXPORT coefficient_field<float>;
 using double_field = coefficient_field<double>;
 using float_field = coefficient_field<float>;
 
-namespace dtl {
-    using fallback_rational = boost::multiprecision::cpp_rational;
-    using rational = fallback_rational;
-} // namespace dtl
 
-extern template class LIBALGEBRA_LITE_EXPORT coefficient_field<dtl::rational>;
 
-using rational_field = coefficient_field<dtl::rational>;
+extern template class LIBALGEBRA_LITE_EXPORT coefficient_field<dtl::rational_scalar_type>;
+
+using rational_field = coefficient_field<dtl::rational_scalar_type>;
 
 
 

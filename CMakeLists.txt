@@ -47,25 +47,56 @@ target_include_directories(Libalgebra_lite PUBLIC
         "$<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}>"
         "$<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>")
 
-target_link_libraries(Libalgebra_lite PRIVATE Boost::boost)
+target_link_libraries(Libalgebra_lite PUBLIC Boost::boost)
 
 if (TARGET Libalgebra::Libalgebra)
     set(LAL_USE_LIBALGEBRA ON)
     target_link_libraries(Libalgebra_lite PUBLIC Libalgebra::Libalgebra)
 endif()
 
-configure_file(cmake/config.h.in config.h)
+if (NOT DEFINED LAL_GMP_ALTERNATIVE_HEADER)
+    set(LAL_GMP_ALTERNATIVE_HEADER cpp_int.hpp)
+    set(LAL_GMP_ALTERNATIVE_TYPE cpp_rational)
+endif()
+
+configure_file(cmake/config.h.in config.h NO_SOURCE_PERMISSIONS @ONLY)
+configure_file(cmake/rationals.h.in rationals.h NO_SOURCE_PERMISSIONS @ONLY)
 
 
 install(TARGETS Libalgebra_lite
         EXPORT Libalgebra_liteTargets
-        PUBLIC_HEADER DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}"
-        INCLUDES DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}"
+        PUBLIC_HEADER DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}/libalgebra_lite"
         RUNTIME DESTINATION "${CMAKE_INSTALL_BINDIR}"
         LIBRARY DESTINATION "${CMAKE_INSTAL_LIBDIR}"
         ARCHIVE DESTINATION "${CMAKE_INSTALL_LIBDIR}"
         )
+install(DIRECTORY ${CMAKE_CURRENT_LIST_DIR}/include/libalgebra_lite
+        DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
+install(FILES ${CMAKE_CURRENT_BINARY_DIR}/config.h
+              ${CMAKE_CURRENT_BINARY_DIR}/rationals.h
+              ${CMAKE_CURRENT_BINARY_DIR}/libalgebra_lite_export.h
+        DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/libalgebra_lite)
+install(EXPORT Libalgebra_liteTargets
+        DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/Libalgebra_lite
+        NAMESPACE Libalgebra_lite::
+        )
 
+include(CMakePackageConfigHelpers)
+write_basic_package_version_file(Libalgebra_liteVersion.cmake
+        VERSION 1.0.0
+        COMPATIBILITY SameMajorVersion
+        )
+set(cmakeModulesDir cmake)
+configure_package_config_file(${CMAKE_CURRENT_LIST_DIR}/cmake/Libalgebra_liteConfig.cmake.in
+        Libalgebra_liteConfig.cmake
+        INSTALL_DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/Libalgebra_lite
+        PATH_VARS cmakeModulesDir
+        )
+
+install(FILES
+        ${CMAKE_CURRENT_BINARY_DIR}/Libalgebra_liteConfig.cmake
+        ${CMAKE_CURRENT_BINARY_DIR}/Libalgebra_liteVersion.cmake
+        DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/Libalgebra_lite)
 
 enable_testing()
 add_subdirectory(tests)
