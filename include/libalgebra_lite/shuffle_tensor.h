@@ -8,14 +8,11 @@
 #include "implementation_types.h"
 #include "libalgebra_lite_export.h"
 
-
-
 #include "algebra.h"
 #include "basis_traits.h"
 #include "coefficients.h"
 #include "free_tensor.h"
 #include "tensor_basis.h"
-
 
 namespace lal {
 
@@ -28,8 +25,6 @@ base_multiplier<left_half_shuffle_tensor_multiplier, tensor_basis>;
 
 extern template class LIBALGEBRA_LITE_EXPORT
 base_multiplier<right_half_shuffle_tensor_multiplier, tensor_basis>;
-
-
 
 #if 0
 class free_tensor_multiplication
@@ -343,7 +338,6 @@ public:
                          key_type rhs) const;
 };
 
-
 using half_shuffle_tensor_multiplier LAL_UNUSED = left_half_shuffle_tensor_multiplier;
 
 class LIBALGEBRA_LITE_EXPORT shuffle_tensor_multiplier
@@ -379,8 +373,18 @@ multiplication_registry<right_half_shuffle_multiplication>;
 extern template class LIBALGEBRA_LITE_EXPORT
 multiplication_registry<shuffle_tensor_multiplication>;
 
+template <typename Coefficients, template <typename, typename> class VectorType,
+    template <typename> class StorageModel>
+class shuffle_tensor : public unital_algebra<tensor_basis, Coefficients, shuffle_tensor_multiplication,
+                                      VectorType, StorageModel> {
+    using algebra_type = unital_algebra<tensor_basis, Coefficients, shuffle_tensor_multiplication,
+                                 VectorType, StorageModel>;
 
+public:
 
+    using algebra_type::algebra_type;
+
+};
 
 } // namespace lal
 

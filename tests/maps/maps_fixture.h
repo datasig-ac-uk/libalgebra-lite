@@ -20,8 +20,8 @@ public:
     deg_t width = 5;
     deg_t depth = 5;
 
-    std::shared_ptr<const lal::tensor_basis> tbasis;
-    std::shared_ptr<const lal::hall_basis> lbasis;
+    lal::basis_pointer<lal::tensor_basis> tbasis;
+    lal::basis_pointer<lal::hall_basis> lbasis;
     lal::maps maps;
 
     using poly_t = lal::polynomial_ring::scalar_type;
@@ -34,6 +34,12 @@ public:
           lbasis(new lal::hall_basis(width, depth)),
           maps(tbasis, lbasis)
     {}
+
+
+    ~MapsFixture() {
+        delete const_cast<lal::tensor_basis*>(static_cast<const lal::tensor_basis*>(tbasis));
+        delete const_cast<lal::hall_basis*>(static_cast<const lal::hall_basis*>(lbasis));
+    }
 
     using tkey_type = typename lal::tensor_basis::key_type;
     using lkey_type = typename lal::hall_basis::key_type;

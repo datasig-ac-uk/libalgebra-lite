@@ -15,14 +15,18 @@
 
 #include <boost/functional/hash.hpp>
 
+
+#include "basis.h"
+
 namespace lal {
 
 template <typename Basis>
 class basis_registry
 {
+    using basis_pointer = lal::basis_pointer<Basis>;
     static std::mutex m_lock;
     static std::unordered_map<std::pair<deg_t, deg_t>,
-        std::shared_ptr<const Basis>, boost::hash<std::pair<deg_t, deg_t>>> m_cache;
+        std::unique_ptr<const Basis>, boost::hash<std::pair<deg_t, deg_t>>> m_cache;
 
 public:
 
@@ -30,15 +34,16 @@ public:
      * Most of the basis types require a width and depth pair
      */
 
-    static std::shared_ptr<const Basis> get(deg_t width, deg_t depth)
+    static basis_pointer get(deg_t width, deg_t depth)
     {
         std::lock_guard<std::mutex> access(m_lock);
 
         auto& found = m_cache[{width, depth}];
-        if (found) {
-            return found;
+        if (!found) {
+            found = std::make_unique<const Basis>(width, depth);
         }
-        return found = std::make_shared<const Basis>(width, depth);
+
+        return basis_pointer(found);
     }
 
 };
@@ -47,7 +52,7 @@ template <typename Basis>
 std::mutex basis_registry<Basis>::m_lock;
 
 template <typename Basis>
-std::unordered_map<std::pair<deg_t, deg_t>, std::shared_ptr<const Basis>,
+std::unordered_map<std::pair<deg_t, deg_t>, std::unique_ptr<const Basis>,
         boost::hash<std::pair<deg_t, deg_t>>>
     basis_registry<Basis>::m_cache;
 

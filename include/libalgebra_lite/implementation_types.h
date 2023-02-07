@@ -25,6 +25,8 @@ using deg_t = std::int32_t;
 
 using let_t = std::size_t;
 
+
+
 } // namespace lal
 
 

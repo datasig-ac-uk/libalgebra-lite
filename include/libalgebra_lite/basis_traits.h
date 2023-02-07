@@ -105,16 +105,12 @@ struct basis_trait {
     using key_ordering = std::less<key_type>;
     using kv_ordering = dtl::key_value_ordering<key_type, key_ordering>;
 
-    template <typename... Args>
-    static std::shared_ptr<const Basis> basis_factory(Args... args)
-    {
-        return { nullptr };
-    }
-
     static void advance_key(const Basis& basis, key_type& key)
     {
         dtl::advance_key_helper<Basis>::advance_key(basis, key);
     }
+
+    static key_type first_key(const Basis& basis) { return basis.first_key(); }
 
 };
 

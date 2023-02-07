@@ -143,6 +143,14 @@ std::pair<unpacked_tensor_word, unpacked_tensor_word> unpacked_tensor_word::spli
     return {left, right};
 }
 
+unpacked_tensor_word unpacked_tensor_word::operator*(const unpacked_tensor_word &other) const {
+    vec_type new_data;
+    new_data.reserve(m_data.size() + other.m_data.size());
+    new_data.insert(new_data.end(), other.m_data.begin(), other.m_data.end());
+    new_data.insert(new_data.end(), m_data.begin(), m_data.end());
+    return {std::max(m_width, other.m_width), std::move(new_data)};
+}
+
 bool unpacked_tensor_word::operator==(const unpacked_tensor_word& other) const noexcept
 {
     return degree() == other.degree() && std::equal(m_data.begin(), m_data.end(), other.m_data.begin());

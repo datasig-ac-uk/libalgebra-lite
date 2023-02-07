@@ -16,6 +16,8 @@
 
 #include "basis_traits.h"
 #include "coefficients.h"
+#include "vector_base.h"
+
 
 
 namespace lal {
@@ -85,6 +87,14 @@ public:
     {
         return m_tmp;
     }
+//
+//    template <typename S>
+//    std::enable_if_t<std::is_constructible<scalar_type, S>::value, sparse_mutable_reference&>
+//    operator=(S val) {
+//       m_tmp = scalar_type(val);
+//        return *this;
+//    }
+
 
     LAL_MUTABLE_REF_iOP(=)
     LAL_MUTABLE_REF_iOP(+=)
@@ -104,6 +114,12 @@ public:
     LAL_MUTABLE_REF_COMPARE(<=)
     LAL_MUTABLE_REF_COMPARE(>)
     LAL_MUTABLE_REF_COMPARE(>=)
+
+    friend constexpr bool
+    operator==(const scalar_type lhs, const sparse_mutable_reference& rhs)
+    noexcept {
+        return lhs == rhs.m_tmp;
+    }
 
 };
 
@@ -232,31 +248,32 @@ public:
 
 
 template <typename Basis, typename Coefficients>
-class sparse_vector {
-    using basis_traits = basis_trait<Basis>;
-    using coeff_traits = coefficient_trait<Coefficients>;
+class sparse_vector : public vectors::vector_base<Basis, Coefficients>
+{
+    using vec_base = vectors::vector_base<Basis, Coefficients>;
+    using typename vec_base::basis_traits;
+    using typename vec_base::coeff_traits;
 public:
 
-    using basis_type = Basis;
-    using key_type = typename basis_traits::key_type;
-    using coefficient_ring = typename coeff_traits::coefficient_ring;
+    using typename vec_base::basis_type;
+    using typename vec_base::key_type;
+    using typename vec_base::basis_pointer;
+    using typename vec_base::coefficient_ring;
+    using typename vec_base::scalar_type;
+    using typename vec_base::rational_type;
 
-    using scalar_type = typename coeff_traits::scalar_type;
-    using rational_type = typename coeff_traits::rational_type;
 private:
 
 //    using map_type = boost::container::flat_map<key_type, scalar_type>;
     using map_type = std::map<key_type, scalar_type>;
     map_type m_data;
-    const basis_type* p_basis;
     deg_t m_degree = 0;
+    using vec_base::p_basis;
 
 protected:
-    sparse_vector(const basis_type* basis, map_type&& arg)
-        : m_data(arg), p_basis(basis)
-    {
-        assert(p_basis != nullptr);
-    }
+    sparse_vector(basis_pointer basis, map_type&& arg)
+        : vec_base(basis), m_data(arg)
+    {}
 
 public:
 
@@ -267,30 +284,31 @@ public:
     using const_iterator = dtl::sparse_iterator<const map_type, typename map_type::const_iterator>;
 
     template <typename Scalar>
-    explicit sparse_vector(const basis_type* basis, std::initializer_list<Scalar> args)
-        : p_basis(basis)
+    explicit sparse_vector(basis_pointer basis, std::initializer_list<Scalar> args)
+        : vec_base(basis)
     {
         assert(args.size() == 1);
         m_data[key_type()] = scalar_type(*args.begin());
     }
 
     template <typename Key, typename Scalar>
-    explicit sparse_vector(const basis_type* basis, Key k, Scalar s)
-        : p_basis(basis)
+    explicit sparse_vector(basis_pointer basis, Key k, Scalar s)
+        : vec_base(basis)
     {
-        m_data.insert(std::make_pair(key_type(k), scalar_type(s)));
+        scalar_type tmp(s);
+        if (tmp != coefficient_ring::zero()) {
+            m_data.insert(std::make_pair(key_type(k), tmp));
+        }
     }
 
-    explicit sparse_vector(const basis_type* basis) : p_basis(basis)
+    explicit sparse_vector(basis_pointer basis) : vec_base(basis)
     {
-        assert(p_basis != nullptr);
     }
 
 
     constexpr dimn_t size() const noexcept { return m_data.size(); }
     constexpr bool empty() const noexcept { return m_data.empty(); }
     constexpr dimn_t dimension() const noexcept { return size(); }
-    constexpr const basis_type& basis() const noexcept { return *p_basis; }
     deg_t degree() const noexcept
     {
         deg_t result = 0;
@@ -336,7 +354,7 @@ public:
 //        data.reserve(m_data.size());
         const auto &zero = Coefficients::zero();
         for (const auto& item : m_data) {
-            auto tmp(op(item.second));
+            auto tmp = op(item.second);
             if (tmp != zero) {
                 data.emplace(item.first, std::move(tmp));
             }
@@ -346,8 +364,7 @@ public:
     template <typename UnaryOp>
     sparse_vector& inplace_unary_op(UnaryOp op)
     {
-        sparse_vector tmp(*this);
-        tmp.unary_op([op] (const scalar_type& arg) { auto tmp = arg; op(tmp); return tmp; });
+        auto tmp = this->unary_op([op] (const scalar_type& arg) { auto tmp = arg; op(tmp); return tmp; });
         std::swap(m_data, tmp.m_data);
         return *this;
     }

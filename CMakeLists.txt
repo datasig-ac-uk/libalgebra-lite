@@ -9,7 +9,6 @@ include(GenerateExportHeader)
 include(GNUInstallDirs)
 
 
-
 find_package(Boost CONFIG REQUIRED COMPONENTS headers)
 
 add_library(Libalgebra_lite SHARED
@@ -33,7 +32,7 @@ add_library(Libalgebra_lite SHARED
         src/maps.cpp
         src/basis/unpacked_tensor_word.cpp
         include/libalgebra_lite/unpacked_tensor_word.h
-        include/libalgebra_lite/shuffle_tensor.h)
+        include/libalgebra_lite/shuffle_tensor.h include/libalgebra_lite/operators.h include/libalgebra_lite/detail/notnull.h include/libalgebra_lite/basis.h include/libalgebra_lite/vector_base.h)
 
 add_library(Libalgebra_lite::Libalgebra_lite ALIAS Libalgebra_lite)
 generate_export_header(Libalgebra_lite)
@@ -52,12 +51,12 @@ target_link_libraries(Libalgebra_lite PUBLIC Boost::boost)
 if (TARGET Libalgebra::Libalgebra)
     set(LAL_USE_LIBALGEBRA ON)
     target_link_libraries(Libalgebra_lite PUBLIC Libalgebra::Libalgebra)
-endif()
+endif ()
 
 if (NOT DEFINED LAL_GMP_ALTERNATIVE_HEADER)
     set(LAL_GMP_ALTERNATIVE_HEADER cpp_int.hpp)
     set(LAL_GMP_ALTERNATIVE_TYPE cpp_rational)
-endif()
+endif ()
 
 configure_file(cmake/config.h.in config.h NO_SOURCE_PERMISSIONS @ONLY)
 configure_file(cmake/rationals.h.in rationals.h NO_SOURCE_PERMISSIONS @ONLY)
@@ -73,8 +72,8 @@ install(TARGETS Libalgebra_lite
 install(DIRECTORY ${CMAKE_CURRENT_LIST_DIR}/include/libalgebra_lite
         DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
 install(FILES ${CMAKE_CURRENT_BINARY_DIR}/config.h
-              ${CMAKE_CURRENT_BINARY_DIR}/rationals.h
-              ${CMAKE_CURRENT_BINARY_DIR}/libalgebra_lite_export.h
+        ${CMAKE_CURRENT_BINARY_DIR}/rationals.h
+        ${CMAKE_CURRENT_BINARY_DIR}/libalgebra_lite_export.h
         DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/libalgebra_lite)
 install(EXPORT Libalgebra_liteTargets
         DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/Libalgebra_lite

@@ -82,6 +82,7 @@ public:
     unpacked_tensor_word split_left(deg_t left_degree);
     std::pair<unpacked_tensor_word, unpacked_tensor_word> split(deg_t left_letters) const;
 
+    unpacked_tensor_word operator*(const unpacked_tensor_word& other) const;
 
     bool operator==(const unpacked_tensor_word& other) const noexcept;
     bool operator!=(const unpacked_tensor_word& other) const noexcept;

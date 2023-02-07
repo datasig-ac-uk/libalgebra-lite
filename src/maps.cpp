@@ -12,9 +12,9 @@
 
 using namespace lal;
 
-maps::maps(std::shared_ptr<const tensor_basis> tbasis, std::shared_ptr<const hall_basis> lbasis)
+maps::maps(basis_pointer<tensor_basis> tbasis, basis_pointer<hall_basis> lbasis)
    : p_tensor_basis(std::move(tbasis)), p_lie_basis(std::move(lbasis)),
-   p_impl(new dtl::maps_implementation(p_tensor_basis.get(), p_lie_basis.get()))
+   p_impl(new dtl::maps_implementation(p_tensor_basis, p_lie_basis))
 {
 
 }
@@ -89,6 +89,6 @@ maps::maps(deg_t width, deg_t depth)
         p_impl = found.get();
     }
 
-    found = std::make_unique<const dtl::maps_implementation>(p_tensor_basis.get(), p_lie_basis.get());
+    found = std::make_unique<const dtl::maps_implementation>(p_tensor_basis, p_lie_basis);
     p_impl = found.get();
 }

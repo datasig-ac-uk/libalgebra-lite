@@ -64,10 +64,10 @@ std::ostream& polynomial_basis::print_key(std::ostream& os, const polynomial_bas
     return os << key;
 }
 
-std::shared_ptr<const polynomial_basis> basis_registry<polynomial_basis>::get()
+basis_pointer<polynomial_basis> basis_registry<polynomial_basis>::get()
 {
-    static const std::shared_ptr<const polynomial_basis> basis(new polynomial_basis);
-    return basis;
+    static const std::unique_ptr<const polynomial_basis> basis(new polynomial_basis);
+    return basis_pointer<polynomial_basis>(basis);
 }
 
 }

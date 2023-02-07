@@ -99,8 +99,8 @@ public:
 
 class LIBALGEBRA_LITE_EXPORT maps
 {
-    std::shared_ptr<const tensor_basis> p_tensor_basis;
-    std::shared_ptr<const hall_basis> p_lie_basis;
+    basis_pointer<tensor_basis> p_tensor_basis;
+    basis_pointer<hall_basis> p_lie_basis;
     const dtl::maps_implementation* p_impl;
 public:
 
@@ -112,7 +112,7 @@ public:
     using glie_ref = typename dtl::maps_implementation::glie_ref;
     using gtensor_ref = typename dtl::maps_implementation::gtensor_ref;
 
-    maps(std::shared_ptr<const tensor_basis> tbasis, std::shared_ptr<const hall_basis> lbasis);
+    maps(basis_pointer<tensor_basis> tbasis, basis_pointer<hall_basis> lbasis);
     maps(deg_t width, deg_t depth);
 
     glie_ref rbracketing(tkey_type tkey) const { return p_impl->rbracketing(tkey); }

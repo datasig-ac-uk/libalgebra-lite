@@ -6,12 +6,17 @@
 #define LIBALGEBRA_LITE_DENSE_VECTOR_H
 
 #include "implementation_types.h"
-#include "basis_traits.h"
-#include "coefficients.h"
-#include "vector_traits.h"
+
 
 #include <memory>
 #include <type_traits>
+
+#include "basis_traits.h"
+#include "coefficients.h"
+#include "vector_base.h"
+#include "vector_traits.h"
+
+
 
 namespace lal {
 
@@ -33,25 +38,28 @@ class key_range;
 template <typename Basis, typename Coefficients,
           template <typename, typename...> class VectorType,
           typename... Args>
-class dense_vector_base {
-    using coeff_traits = coefficient_trait<Coefficients>;
-    using basis_traits = basis_trait<Basis>;
+class dense_vector_base : public vectors::vector_base<Basis, Coefficients>
+{
+    using vec_base     = vectors::vector_base<Basis, Coefficients>;
+    using typename vec_base::coeff_traits;
+    using typename vec_base::basis_traits;
 public:
-
-    using coefficient_ring = typename coeff_traits::coefficient_ring;
-    using scalar_type = typename coeff_traits::scalar_type;
-    using rational_type = typename coeff_traits::rational_type;
+    using typename vec_base::basis_type;
+    using typename vec_base::key_type;
+    using typename vec_base::basis_pointer;
+    using typename vec_base::coefficient_ring;
+    using typename vec_base::scalar_type;
+    using typename vec_base::rational_type;
 
 private:
     using storage_type = VectorType<scalar_type, Args...>;
 
-    const Basis* p_basis;
+    using vec_base::p_basis;
     storage_type m_storage;
     deg_t m_degree;
 
 public:
-    using basis_type        = Basis;
-    using key_type          = typename basis_traits::key_type;
+
     using size_type         = typename storage_type::size_type;
     using difference_type   = typename storage_type::difference_type;
     using iterator          = dtl::dense_vector_iterator<Basis, scalar_type,
@@ -63,34 +71,35 @@ public:
     using reference         = typename storage_type::reference;
     using const_reference   = typename storage_type::const_reference;
 
-    dense_vector_base(const Basis* basis, key_type k, scalar_type s)
-        : p_basis(basis), m_storage()
+    dense_vector_base(basis_pointer basis, key_type k, scalar_type s)
+        : vec_base(basis), m_storage()
     {
         auto index = p_basis->key_to_index(k);
         resize(index);
         m_storage[index] = s;
     }
 
-    explicit dense_vector_base(const Basis* basis) : p_basis(basis)
+    explicit dense_vector_base(basis_pointer basis) : vec_base(basis)
     {}
 
-    dense_vector_base(const Basis* basis, std::initializer_list<scalar_type> args)
-            : p_basis(basis), m_storage(args)
-    { assert(basis != nullptr); }
+    dense_vector_base(basis_pointer basis, std::initializer_list<scalar_type> args)
+            : vec_base(basis), m_storage(args)
+    {}
 
     template<typename InputIt>
-    dense_vector_base(const Basis* basis, InputIt begin, InputIt end)
-            : m_storage(begin, end)
-    { assert(basis != nullptr); }
+    dense_vector_base(basis_pointer basis, InputIt begin, InputIt end)
+            : vec_base(basis), m_storage(begin, end)
+    {}
 
-    explicit dense_vector_base(const Basis* basis, size_type n)
-        : p_basis(basis), m_storage(n)
-    { assert(basis != nullptr); }
+    explicit dense_vector_base(basis_pointer basis, size_type n)
+        : vec_base(basis), m_storage(n)
+    {}
 
     template <typename S>
-    explicit dense_vector_base(const Basis* basis, size_type n, const S& val)
-        : p_basis(basis), m_storage(n, val)
-    { assert(basis != nullptr); }
+    explicit dense_vector_base(basis_pointer basis, size_type n, const S& val)
+        : vec_base(basis), m_storage(n, val)
+    {}
+
 
 private:
 
@@ -103,7 +112,6 @@ private:
 
 public:
 
-    const Basis& basis() const noexcept { return *p_basis; }
 
     void reserve(size_type n)
     {
@@ -126,12 +134,12 @@ public:
         m_degree = next.second;
     }
 
-    iterator begin() noexcept { return iterator(p_basis, m_storage.begin()); }
-    iterator end() noexcept { return iterator(p_basis, m_storage.end()); }
-    const_iterator begin() const noexcept { return const_iterator(p_basis, m_storage.begin()); }
-    const_iterator end() const noexcept { return const_iterator(p_basis, m_storage.end()); }
-    const_iterator cbegin() const noexcept { return const_iterator(p_basis, m_storage.begin()); }
-    const_iterator cend() const noexcept { return const_iterator(p_basis, m_storage.end()); }
+    iterator begin() noexcept { return iterator(&*p_basis, m_storage.begin()); }
+    iterator end() noexcept { return iterator(&*p_basis, m_storage.end()); }
+    const_iterator begin() const noexcept { return const_iterator(&*p_basis, m_storage.begin()); }
+    const_iterator end() const noexcept { return const_iterator(&*p_basis, m_storage.end()); }
+    const_iterator cbegin() const noexcept { return const_iterator(&*p_basis, m_storage.begin()); }
+    const_iterator cend() const noexcept { return const_iterator(&*p_basis, m_storage.end()); }
 
     size_type size() const noexcept {
         const auto& zero = Coefficients::zero();
@@ -287,6 +295,8 @@ class dense_vector_iterator
     using key_type = typename basis_traits::key_type;
     using coeff_traits = coefficient_trait<Coefficients>;
     using scalar_type = typename coeff_traits::scalar_type;
+    using basis_pointer = lal::basis_pointer<Basis>;
+//    using iterator_category = std::forward_iterator_tag;
 
     const Basis* p_basis = nullptr;
     Iterator p_data;
@@ -295,7 +305,7 @@ class dense_vector_iterator
     using it_traits = std::iterator_traits<Iterator>;
 
 public:
-
+    using difference_type = std::ptrdiff_t;
     using value_type = dtl::dense_iterator_item<const key_type&, typename it_traits::reference>;
     using reference = value_type;
     using pointer = value_type;
@@ -364,6 +374,7 @@ public:
     using value_type = dtl::dense_iterator_item<const key_type&, typename it_traits::reference>;
     using reference = value_type;
     using pointer = value_type;
+    using difference_type = std::ptrdiff_t;
     using iterator_category = std::forward_iterator_tag;
 
     dense_vector_const_iterator() = default;

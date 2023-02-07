@@ -7,12 +7,15 @@
 
 #include "implementation_types.h"
 
+#include <ostream>
 #include <memory>
 
+#include "basis.h"
 #include "vector_traits.h"
 #include "coefficients.h"
 #include "basis_traits.h"
 #include "registry.h"
+#include "vector_base.h"
 
 namespace lal {
 
@@ -30,7 +33,7 @@ struct storage_base {
     using basis_traits = basis_trait<basis_type>;
     using coeff_traits = coefficient_trait<coefficient_ring>;
 
-    using basis_pointer = std::shared_ptr<const basis_type>;
+    using basis_pointer = lal::basis_pointer<basis_type>;
     using key_type = typename basis_traits::key_type;
     using scalar_type = typename coeff_traits::scalar_type;
     using rational_type = typename coeff_traits::rational_type;
@@ -40,23 +43,8 @@ struct storage_base {
     using reference = typename vector_type::reference;
     using const_reference = typename vector_type::const_reference;
 
-    basis_pointer p_basis;
-
-    storage_base() : p_basis(registry::get()) {}
-    storage_base(const storage_base&) = default;
-    storage_base(storage_base&&) noexcept = default;
-
-    explicit storage_base(basis_pointer &&basis) noexcept: p_basis(std::move(basis)) {}
-
-
-    const basis_type &basis() const noexcept {
-        assert(static_cast<bool>(p_basis));
-        return *p_basis;
-    }
-
-    basis_pointer get_basis() const noexcept {
-        return p_basis;
-    }
+    static_assert(std::is_base_of<lal::vectors::vector_base<basis_type, coefficient_ring>, VectorType>::value,
+                  "vector type must derive from the vector_base class");
 
 };
 
@@ -70,7 +58,7 @@ public:
     using typename base::vect_traits;
     using typename base::basis_traits;
     using typename base::coeff_traits;
-
+    using typename base::registry;
     using typename base::basis_type;
     using typename base::key_type;
     using typename base::coefficient_ring;
@@ -83,7 +71,6 @@ public:
 
     using typename base::basis_pointer;
 
-    using base::p_basis;
 
 private:
     vector_type m_instance;
@@ -94,41 +81,37 @@ protected:
 
 public:
 
-    standard_storage() : base(), m_instance(&base::basis()) {}
+    standard_storage() : m_instance(registry::get()) {}
 
     standard_storage(const standard_storage& other)
-        : base(other), m_instance(other.m_instance)
+        : m_instance(other.m_instance)
     {}
 
     standard_storage(standard_storage&& other) noexcept
-        : base(std::move(other.p_basis)), m_instance(std::move(other.m_instance))
+        : m_instance(std::move(other.m_instance))
     {}
 
-    explicit standard_storage(basis_pointer basis) : base(std::move(basis)), m_instance(&base::basis()) {}
+    explicit standard_storage(basis_pointer basis) : m_instance(basis) {}
 
-    explicit standard_storage(basis_pointer basis, vector_type &&data)
-        : base(std::move(basis)), m_instance(std::move(data)) {
-        assert(&m_instance.basis() == &*p_basis);
+    explicit standard_storage(vector_type &&data)
+        :  m_instance(std::move(data)) {
     }
 
     template <typename... VArgs>
-    explicit standard_storage(basis_pointer basis, VArgs... args)
-        : base(std::move(basis)),
-          m_instance(&base::basis(), std::forward<VArgs>(args)...)
+    explicit standard_storage(basis_pointer basis, VArgs&&... args)
+        : m_instance(basis, std::forward<VArgs>(args)...)
     {}
 
     standard_storage& operator=(const standard_storage& other)
     {
         if (&other != this) {
-            p_basis = other.p_basis;
             m_instance = other.m_instance;
         }
         return *this;
     }
 
-    standard_storage& operator=(standard_storage&& other) {
+    standard_storage& operator=(standard_storage&& other) noexcept {
         if (&other != this) {
-            p_basis = std::move(other.p_basis);
             m_instance = std::move(other.m_instance);
         }
         return *this;
@@ -139,6 +122,10 @@ public:
 
 } // namespace dtl
 
+#define LAL_VECTYPE_AND_STORAGE_TEMPLATE_ARGS(VT, SM, EA) \
+    template <typename, typename> class VT, template <typename> class SM
+#define LAL_VECTOR_TEMPLATE_ARGS(B, C, VT, SM, EA) \
+    typename B, typename C, LAL_VECTYPE_AND_STORAGE_TEMPLATE_ARGS((SM), (EA))
 
 template <typename Basis,
     typename Coefficients,
@@ -156,6 +143,7 @@ public:
     using typename base_type::scalar_type;
     using typename base_type::rational_type;
 
+    using typename base_type::registry;
     using typename base_type::iterator;
     using typename base_type::const_iterator;
     using typename base_type::reference;
@@ -163,10 +151,8 @@ public:
 
 protected:
 
-    using base_type::p_basis;
-
-    vector(basis_pointer basis, vector_type &&arg)
-        : base_type(basis, std::move(arg)) {}
+    vector(vector_type &&arg)
+        : base_type(std::move(arg)) {}
 
 public:
 
@@ -182,7 +168,6 @@ public:
     template <typename Scalar>
     explicit vector(key_type k, Scalar s) : base_type(k, s)
     {}
-
 
 //    template <typename Key, typename Scalar>
 //    explicit vector(Key k, Scalar s) : base_type(p_basis,
@@ -201,7 +186,6 @@ public:
 
     vector(basis_pointer basis, const vector_type &arg)
         : base_type(basis, arg) {
-        assert(p_basis.get() == arg.p_basis);
     }
 
     vector& operator=(const vector&) = default;
@@ -210,9 +194,6 @@ public:
 
     vector clone() const {
     }
-
-    using base_type::basis;
-    using base_type::get_basis;
 
     vector_type &base_vector() noexcept { return base_type::instance(); }
     const vector_type &base_vector() const noexcept { return base_type::instance(); }
@@ -229,6 +210,9 @@ public:
     bool empty() const noexcept {
         return base_type::instance().empty();
     }
+
+    const basis_type& basis() const noexcept { return base_type::instance().basis(); }
+    basis_pointer get_basis() const noexcept { return base_type::instance().get_basis(); }
 
     template <typename KeyType>
     const_reference operator[](const KeyType &key) const {
@@ -330,7 +314,12 @@ public:
     }
 
     template <typename Key, typename Scal>
-    vector &add_scal_prod(const Key &key, const Scal &scal);
+    std::enable_if_t<std::is_constructible<key_type, const Key&>::value, vector&>
+    add_scal_prod(const Key &key, const Scal &scal)
+    {
+        base_type::instance()[key_type(key)] += scalar_type(scal);
+        return *this;
+    }
     template <typename Key, typename Rat>
     std::enable_if_t<!std::is_base_of<vector, Key>::value, vector&>
     add_scal_div(const Key &key, const Rat &scal)
@@ -340,7 +329,12 @@ public:
         return *this;
     }
     template <typename Key, typename Scal>
-    vector &sub_scal_prod(const Key &key, const Scal &scal);
+    std::enable_if_t<std::is_constructible<key_type, const Key&>::value, vector&>
+    sub_scal_prod(const Key &key, const Scal &scal)
+    {
+        base_type::instance()[key_type(key)] -= scalar_type(scal);
+        return *this;
+    }
     template <typename Key, typename Rat>
     std::enable_if_t<!std::is_base_of<vector, Key>::value, vector &>
     sub_scal_div(const Key &key, const Rat &scal)
@@ -351,13 +345,37 @@ public:
     }
 
     template <typename Scal>
-    vector &add_scal_prod(const vector &rhs, const Scal &scal);
+    vector &add_scal_prod(const vector &rhs, const Scal &scal)
+    {
+        auto &self = base_vector();
+        scalar_type m(scal);
+        self.inplace_binary_op(rhs.base_vector(), [m](scalar_type &ls, const scalar_type &rs) { ls += rs * m; });
+        return *this;
+    }
     template <typename Rat>
-    vector &add_scal_div(const vector &rhs, const Rat &scal);
+    vector &add_scal_div(const vector &rhs, const Rat &scal)
+    {
+        auto &self = base_vector();
+        rational_type m(scal);
+        self.inplace_binary_op(rhs.base_vector(), [m](scalar_type &ls, const scalar_type &rs) { ls += rs / m; });
+        return *this;
+    }
     template <typename Scal>
-    vector &sub_scal_prod(const vector &rhs, const Scal &scal);
+    vector &sub_scal_prod(const vector &rhs, const Scal &scal)
+    {
+        auto &self = base_vector();
+        scalar_type m(scal);
+        self.inplace_binary_op(rhs.base_vector(), [m](scalar_type &ls, const scalar_type &rs) { ls -= rs * m; });
+        return *this;
+    }
     template <typename Rat>
-    vector &sub_scal_div(const vector &rhs, const Rat &scal);
+    vector &sub_scal_div(const vector &rhs, const Rat &scal)
+    {
+        auto &self = base_vector();
+        rational_type m(scal);
+        self.inplace_binary_op(rhs.base_vector(), [m](scalar_type &ls, const scalar_type &rs) { ls -= rs / m; });
+        return *this;
+    }
 
     template <template <typename, typename> class AltVecType,
         template <typename> class AltStorageModel,
@@ -365,30 +383,62 @@ public:
     vector &add_scal_prod(
         const vector<Basis, Coefficients, AltVecType, AltStorageModel> &rhs,
         const Scal &scal
-    );
+    )
+    {
+        const auto &self = this->instance();
+        const scalar_type m(scal);
+        for (auto term : rhs.instance()) {
+            self[term.key()] += term.value() * m;
+        }
+        return *this;
+    }
     template <template <typename, typename> class AltVecType,
         template <typename> class AltStorageModel,
         typename Rat>
     vector &add_scal_div(
         const vector<Basis, Coefficients, AltVecType, AltStorageModel> &rhs,
         const Rat &scal
-    );
+    )
+    {
+        const auto &self = this->instance();
+        const rational_type m(scal);
+        for (auto term : rhs.instance()) {
+            self[term.key()] += term.value() / m;
+        }
+        return *this;
+    }
     template <template <typename, typename> class AltVecType,
         template <typename> class AltStorageModel,
         typename Scal>
     vector &sub_scal_prod(
         const vector<Basis, Coefficients, AltVecType, AltStorageModel> &rhs,
         const Scal &scal
-    );
+    )
+    {
+        const auto& self = this->instance();
+        const scalar_type m(scal);
+        for (auto term : rhs.instance()) {
+            self[term.key()] -= term.value()*m;
+        }
+        return *this;
+    }
     template <template <typename, typename> class AltVecType,
         template <typename> class AltStorageModel,
         typename Rat>
     vector &sub_scal_div(
         const vector<Basis, Coefficients, AltVecType, AltStorageModel> &rhs,
         const Rat &scal
-    );
+    )
+    {
+        const auto &self = this->instance();
+        const rational_type m(scal);
+        for (auto term : rhs.instance()) {
+            self[term.key()] -= term.value() / m;
+        }
+        return *this;
+    }
 
-    template <
+/*    template <
         typename AltBasis,
         typename AltCoeffs,
         template <typename, typename> class AltVecType,
@@ -397,7 +447,10 @@ public:
     vector &add_scal_prod(
         const vector<AltBasis, AltCoeffs, AltVecType, AltStorageModel> &rhs,
         const Scal &scal
-    );
+    )
+    {
+        return *this;
+    }
     template <
         typename AltBasis,
         typename AltCoeffs,
@@ -407,7 +460,10 @@ public:
     vector &add_scal_div(
         const vector<AltBasis, AltCoeffs, AltVecType, AltStorageModel> &rhs,
         const Rat &scal
-    );
+    )
+    {
+        return *this;
+    }
     template <
         typename AltBasis,
         typename AltCoeffs,
@@ -417,7 +473,10 @@ public:
     vector &sub_scal_prod(
         const vector<AltBasis, AltCoeffs, AltVecType, AltStorageModel> &rhs,
         const Scal &scal
-    );
+    )
+    {
+        return *this;
+    }
     template <
         typename AltBasis,
         typename AltCoeffs,
@@ -427,25 +486,28 @@ public:
     vector &sub_scal_div(
         const vector<AltBasis, AltCoeffs, AltVecType, AltStorageModel> &rhs,
         const Rat &scal
-    );
+    )
+    {
+        return *this;
+    }*/
 
     template <typename Vector>
     friend std::enable_if_t<std::is_base_of<vector, Vector>::value, Vector>
     operator-(const Vector &arg) {
         using coeffs = typename Vector::coefficient_ring;
-        vector result_inner(arg.p_basis,
-                            arg.instance()
+        vector result_inner(arg.instance()
                                 .unary_op([](const scalar_type &s) { return -s; }));
         return Vector(std::move(result_inner));
     }
 
     template <typename Vector, typename Scal>
-    friend std::enable_if_t<std::is_base_of<vector, Vector>::value, Vector>
+    friend std::enable_if_t<std::is_base_of<vector, Vector>::value && (
+        std::is_same<Scal, scalar_type>::value || std::is_constructible<scalar_type, const Scal&>::value),
+                            Vector>
     operator*(const Vector &arg, const Scal &scalar) {
         using coeffs = typename Vector::coefficient_ring;
         scalar_type m(scalar);
-        vector result_inner(arg.p_basis,
-                            arg.instance()
+        vector result_inner(arg.instance()
                                 .unary_op([m](const scalar_type &s) {
                                     return s * m;
                                 }));
@@ -453,12 +515,13 @@ public:
     };
 
     template <typename Vector, typename Scal>
-    friend std::enable_if_t<std::is_base_of<vector, Vector>::value, Vector>
+    friend std::enable_if_t<std::is_base_of<vector, Vector>::value &&
+        (std::is_same<Scal, scalar_type>::value || std::is_constructible<scalar_type, const Scal &>::value),
+    Vector>
     operator*(const Scal &scalar, const Vector &arg) {
         using coeffs = typename Vector::coefficient_ring;
         scalar_type m(scalar);
-        vector result_inner(arg.p_basis,
-                            arg.instance()
+        vector result_inner(arg.instance()
                                 .unary_op([m](const scalar_type &s) {
                                     return m * s;
                                 }));
@@ -470,7 +533,7 @@ public:
     operator/(const Vector &arg, const Rat &scalar) {
         using coeffs = typename Vector::coefficient_ring;
         rational_type m(scalar);
-        vector result_inner(arg.p_basis, arg.instance()
+        vector result_inner(arg.instance()
             .unary_op([m](const scalar_type &s) { return s / m; }));
         return Vector(std::move(result_inner));
     }
@@ -479,7 +542,7 @@ public:
     friend std::enable_if_t<std::is_base_of<vector, LVector>::value, LVector>
     operator+(const LVector &lhs, const vector &rhs) {
         using coeffs = typename LVector::coefficient_ring;
-        vector result_inner(lhs.p_basis, lhs.instance().binary_op(rhs.instance(),
+        vector result_inner(lhs.instance().binary_op(rhs.instance(),
                                                                          [](const scalar_type &ls,
                                                                             const scalar_type &rs) {
                                                                              return
@@ -492,27 +555,27 @@ public:
     friend std::enable_if_t<std::is_base_of<vector, LVector>::value, LVector>
     operator-(const LVector &lhs, const vector &rhs) {
         using coeffs = typename LVector::coefficient_ring;
-        vector result_inner(lhs.p_basis, lhs.instance().binary_op(rhs.instance(),
-                                                                         [](const scalar_type &ls, const scalar_type &
-                                                                         rs) { return ls - rs; }));
+        vector result_inner(lhs.instance().binary_op(rhs.instance(),
+                                                     [](const scalar_type &ls, const scalar_type & rs)
+                                                        { return ls - rs; }));
         return LVector(std::move(result_inner));
     }
-
-    template <typename LVector,
-        typename RCoefficients,
-        template <typename, typename> class RVecType,
-        template <typename> class RStorageModel>
-    friend std::enable_if_t<
-        std::is_base_of<vector, LVector>::value,
-        LVector
-    >
-    operator+(const LVector &lhs,
-              const vector<Basis, RCoefficients, RVecType, RStorageModel> &rhs) {
-        using rscalar_type = typename coefficient_trait<RCoefficients>::scalar_type;
-        // TODO: implement
-        return LVector(lhs.p_basis);
-
-    }
+//
+//    template <typename LVector,
+//        typename RCoefficients,
+//        template <typename, typename> class RVecType,
+//        template <typename> class RStorageModel>
+//    friend std::enable_if_t<
+//        std::is_base_of<vector, LVector>::value,
+//        LVector
+//    >
+//    operator+(const LVector &lhs,
+//              const vector<Basis, RCoefficients, RVecType, RStorageModel> &rhs) {
+//        using rscalar_type = typename coefficient_trait<RCoefficients>::scalar_type;
+//
+//        return LVector(lhs.p_basis);
+//
+//    }
 
     template <typename LVector, typename Scal>
     friend std::enable_if_t<std::is_base_of<vector, LVector>::value, LVector &>
@@ -548,7 +611,24 @@ public:
 
     template <typename Vector>
     static Vector new_like(const Vector &arg) {
-        return Vector(arg.p_basis);
+        return Vector(arg.get_basis());
+    }
+
+
+    friend std::ostream& operator<<(std::ostream& os, const vector& arg) {
+        const auto &basis = arg.basis();
+        const auto &zero = coefficient_ring::zero();
+        os << "{ ";
+        for (auto item : arg) {
+            auto val = item.value();
+            if (item.value() != zero) {
+                os << item.value() << '(';
+                basis.print_key(os, item.key());
+                os << ") ";
+            }
+        }
+        os << '}';
+        return os;
     }
 
 };
@@ -578,269 +658,31 @@ bool operator!=(const vector<B, C, VT, SM> &lhs,
                 const vector<B, C, VT, SM> &rhs) noexcept {
     return !(lhs == rhs);
 }
-
-template <typename Basis, typename Coeff,
-    template <typename, typename> class VectorType,
-    template <typename> class StorageModel>
-std::ostream &operator<<(std::ostream &os,
-                         const vector<Basis,
-                                      Coeff,
-                                      VectorType,
-                                      StorageModel> &vect) {
-    const auto &basis = vect.basis();
-    const auto &zero = coefficient_trait<Coeff>::coefficient_ring::zero();
-    os << "{ ";
-    for (auto item : vect) {
-        auto val = item.value();
-        if (item.value() != zero) {
-            os << item.value() << '(';
-            basis.print_key(os, item.key());
-            os << ") ";
-        }
-    }
-    os << '}';
-    return os;
-}
-
-
-// Implementations of inplace fused methods
-
-
-template <typename Basis,
-    typename Coefficients,
-    template <typename, typename> class VectorType,
-    template <typename> class StorageModel>
-template <typename Key, typename Scal>
-vector<Basis, Coefficients, VectorType, StorageModel> &
-vector<Basis,
-       Coefficients,
-       VectorType,
-       StorageModel>::add_scal_prod(const Key &key, const Scal &scal) {
-    base_type::instance()[key_type(key)] += scalar_type(scal);
-    return *this;
-}
-//template <typename Basis,
-//    typename Coefficients,
+//
+//template <typename Basis, typename Coeff,
 //    template <typename, typename> class VectorType,
 //    template <typename> class StorageModel>
-//template <typename Key, typename Rat>
-//std::enable_if_t<!std::is_base_of<vector<Basis, Coefficients, VectorType, StorageModel>, Key>::value, vector<Basis, Coefficients, VectorType, StorageModel>> &
-//vector<Basis,
-//       Coefficients,
-//       VectorType,
-//       StorageModel>::add_scal_div(const Key &key, const Rat &scal) {
-//    base_type::instance()[key_type(key)] +=
-//        coefficient_ring::one() / rational_type(scal);
-//    return *this;
+//std::ostream &operator<<(std::ostream &os,
+//                         const vector<Basis,
+//                                      Coeff,
+//                                      VectorType,
+//                                      StorageModel> &vect) {
+//    const auto &basis = vect.basis();
+//    const auto &zero = coefficient_trait<coeff>::coefficient_ring::zero();
+//    os << "{ ";
+//    for (auto item : vect) {
+//        auto val = item.value();
+//        if (item.value() != zero) {
+//            os << item.value() << '(';
+//            basis.print_key(os, item.key());
+//            os << ") ";
+//        }
+//    }
+//    os << '}';
+//    return os;
 //}
-template <typename Basis,
-    typename Coefficients,
-    template <typename, typename> class VectorType,
-    template <typename> class StorageModel>
-template <typename Key, typename Scal>
-vector<Basis, Coefficients, VectorType, StorageModel> &
-vector<Basis,
-       Coefficients,
-       VectorType,
-       StorageModel>::sub_scal_prod(const Key &key, const Scal &scal) {
-    base_type::instance()[key_type(key)] -= scalar_type(scal);
-    return *this;
-}
-//template <typename Basis,
-//    typename Coefficients,
-//    template <typename, typename> class VectorType,
-//    template <typename> class StorageModel>
-//template <typename Key, typename Rat>
-//vector<Basis, Coefficients, VectorType, StorageModel> &
-//vector<Basis,
-//       Coefficients,
-//       VectorType,
-//       StorageModel>::sub_scal_div(const Key &key, const Rat &scal) {
-//    base_type::instance()[key_type(key)] -=
-//        coefficient_ring::one() / rational_type(scal);
-//    return *this;
-//}
-template <typename Basis,
-    typename Coefficients,
-    template <typename, typename> class VectorType,
-    template <typename> class StorageModel>
-template <typename Scal>
-vector<Basis, Coefficients, VectorType, StorageModel> &
-vector<Basis,
-       Coefficients,
-       VectorType,
-       StorageModel>::add_scal_prod(const vector &rhs, const Scal &scal) {
-    auto& self = base_vector();
-    scalar_type m(scal);
-    self.inplace_binary_op(rhs.base_vector(), [m](scalar_type& ls, const scalar_type& rs) {  ls += rs*m; });
-    return *this;
-}
-template <typename Basis,
-    typename Coefficients,
-    template <typename, typename> class VectorType,
-    template <typename> class StorageModel>
-template <typename Rat>
-vector<Basis, Coefficients, VectorType, StorageModel> &
-vector<Basis,
-       Coefficients,
-       VectorType,
-       StorageModel>::add_scal_div(const vector &rhs, const Rat &scal) {
-    auto &self = base_vector();
-    rational_type m(scal);
-    self.inplace_binary_op(rhs.base_vector(), [m](scalar_type &ls, const scalar_type &rs) {  ls += rs / m; });
-    return *this;
-}
-template <typename Basis,
-    typename Coefficients,
-    template <typename, typename> class VectorType,
-    template <typename> class StorageModel>
-template <typename Scal>
-vector<Basis, Coefficients, VectorType, StorageModel> &
-vector<Basis,
-       Coefficients,
-       VectorType,
-       StorageModel>::sub_scal_prod(const vector &rhs, const Scal &scal) {
+//
 
-    auto &self = base_vector();
-    scalar_type m(scal);
-    self.inplace_binary_op(rhs.base_vector(), [m](scalar_type &ls, const scalar_type &rs) {  ls -= rs * m; });
-    return *this;
-}
-template <typename Basis,
-    typename Coefficients,
-    template <typename, typename> class VectorType,
-    template <typename> class StorageModel>
-template <typename Rat>
-vector<Basis, Coefficients, VectorType, StorageModel> &
-vector<Basis,
-       Coefficients,
-       VectorType,
-       StorageModel>::sub_scal_div(const vector &rhs, const Rat &scal) {
-    auto &self = base_vector();
-    rational_type m(scal);
-    self.inplace_binary_op(rhs.base_vector(), [m](scalar_type &ls, const scalar_type &rs) {  ls -= rs / m; });
-    return *this;
-}
-template <typename Basis,
-    typename Coefficients,
-    template <typename, typename> class VectorType,
-    template <typename> class StorageModel>
-template <template <typename, typename> class AltVecType,
-    template <typename> class AltStorageModel,
-    typename Scal>
-vector<Basis, Coefficients, VectorType, StorageModel> &
-vector<Basis, Coefficients, VectorType, StorageModel>::add_scal_prod(
-    const vector<Basis, Coefficients, AltVecType, AltStorageModel> &rhs,
-    const Scal &scal) {
-    // TODO: Implement
-    return *this;
-}
-template <typename Basis,
-    typename Coefficients,
-    template <typename, typename> class VectorType,
-    template <typename> class StorageModel>
-template <template <typename, typename> class AltVecType,
-    template <typename> class AltStorageModel,
-    typename Rat>
-vector<Basis, Coefficients, VectorType, StorageModel> &
-vector<Basis, Coefficients, VectorType, StorageModel>::add_scal_div(
-    const vector<Basis, Coefficients, AltVecType, AltStorageModel> &rhs,
-    const Rat &scal) {
-    // TODO: implement
-    return *this;
-}
-template <typename Basis,
-    typename Coefficients,
-    template <typename, typename> class VectorType,
-    template <typename> class StorageModel>
-template <template <typename, typename> class AltVecType,
-    template <typename> class AltStorageModel,
-    typename Scal>
-vector<Basis, Coefficients, VectorType, StorageModel> &
-vector<Basis, Coefficients, VectorType, StorageModel>::sub_scal_prod(
-    const vector<Basis, Coefficients, AltVecType, AltStorageModel> &rhs,
-    const Scal &scal) {
-    // TODO: implement
-    return *this;
-}
-template <typename Basis,
-    typename Coefficients,
-    template <typename, typename> class VectorType,
-    template <typename> class StorageModel>
-template <template <typename, typename> class AltVecType,
-    template <typename> class AltStorageModel,
-    typename Rat>
-vector<Basis, Coefficients, VectorType, StorageModel> &
-vector<Basis, Coefficients, VectorType, StorageModel>::sub_scal_div(
-    const vector<Basis, Coefficients, AltVecType, AltStorageModel> &rhs,
-    const Rat &scal) {
-    // TODO: implement
-    return *this;
-}
-template <typename Basis,
-    typename Coefficients,
-    template <typename, typename> class VectorType,
-    template <typename> class StorageModel>
-template <typename AltBasis,
-    typename AltCoeffs,
-    template <typename, typename> class AltVecType,
-    template <typename> class AltStorageModel,
-    typename Scal>
-vector<Basis, Coefficients, VectorType, StorageModel> &
-vector<Basis, Coefficients, VectorType, StorageModel>::add_scal_prod(
-    const vector<AltBasis, AltCoeffs, AltVecType, AltStorageModel> &rhs,
-    const Scal &scal) {
-    // TODO: implement
-    return *this;
-}
-template <typename Basis,
-    typename Coefficients,
-    template <typename, typename> class VectorType,
-    template <typename> class StorageModel>
-template <typename AltBasis,
-    typename AltCoeffs,
-    template <typename, typename> class AltVecType,
-    template <typename> class AltStorageModel,
-    typename Rat>
-vector<Basis, Coefficients, VectorType, StorageModel> &
-vector<Basis, Coefficients, VectorType, StorageModel>::add_scal_div(
-    const vector<AltBasis, AltCoeffs, AltVecType, AltStorageModel> &rhs,
-    const Rat &scal) {
-    // TODO: implement
-    return *this;
-}
-template <typename Basis,
-    typename Coefficients,
-    template <typename, typename> class VectorType,
-    template <typename> class StorageModel>
-template <typename AltBasis,
-    typename AltCoeffs,
-    template <typename, typename> class AltVecType,
-    template <typename> class AltStorageModel,
-    typename Scal>
-vector<Basis, Coefficients, VectorType, StorageModel> &
-vector<Basis, Coefficients, VectorType, StorageModel>::sub_scal_prod(
-    const vector<AltBasis, AltCoeffs, AltVecType, AltStorageModel> &rhs,
-    const Scal &scal) {
-    // TODO: implement
-    return *this;
-}
-template <typename Basis,
-    typename Coefficients,
-    template <typename, typename> class VectorType,
-    template <typename> class StorageModel>
-template <typename AltBasis,
-    typename AltCoeffs,
-    template <typename, typename> class AltVecType,
-    template <typename> class AltStorageModel,
-    typename Rat>
-vector<Basis, Coefficients, VectorType, StorageModel> &
-vector<Basis, Coefficients, VectorType, StorageModel>::sub_scal_div(
-    const vector<AltBasis, AltCoeffs, AltVecType, AltStorageModel> &rhs,
-    const Rat &scal) {
-    // TODO: implement
-    return *this;
-}
 
 } // namespace alg
 

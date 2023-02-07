@@ -256,8 +256,8 @@ public:
 };
 
 class LIBALGEBRA_LITE_EXPORT free_tensor_multiplication
-        : public base_multiplication<free_tensor_multiplier> {
-    using base_type = base_multiplication<free_tensor_multiplier>;
+        : public base_multiplication<free_tensor_multiplier, free_tensor_multiplication> {
+    using base_type = base_multiplication<free_tensor_multiplier, free_tensor_multiplication>;
 
     template<typename C> using ctraits = coefficient_trait<C>;
 
@@ -433,7 +433,7 @@ public:
     using base_type::base_type;
 
     using base_type::fma;
-    using base_type::fma_inplace;
+    using base_type::multiply_inplace;
 
     template<typename Coeff, typename Op>
     void fma(dense_tensor_vec<Coeff>& out, const dense_tensor_vec<Coeff>& lhs,
@@ -472,9 +472,6 @@ public:
         //        }
     }
 
-    template <typename Coeffs, typename Op>
-    void fma_inplace(dense_tensor_vec<Coeffs>& lhs, const dense_tensor_vec<Coeffs>& rhs, Op op, deg_t max_deg) const
-    {}
 
 };
 
@@ -493,7 +490,6 @@ class free_tensor
             algebra<tensor_basis, Coefficients, free_tensor_multiplication,
                     VectorType, StorageModel>;
 
-    using algebra_type::algebra_type;
 
     static void resize_to_degree(free_tensor<Coefficients, dense_vector, StorageModel>& arg, deg_t degree) {
         auto size = arg.basis().size(degree);
@@ -518,6 +514,8 @@ public:
 
     using typename algebra_type::basis_pointer;
     using typename algebra_type::multiplication_pointer;
+
+    using algebra_type::algebra_type;
 
     free_tensor(basis_pointer basis, multiplication_pointer mul, scalar_type arg)
             :algebra_type(basis, mul, key_type(0, 0), std::move(arg)) { }
@@ -557,64 +555,70 @@ public:
         return result;
     }
 
+    friend free_tensor exp(const free_tensor &arg) {
+        free_tensor result(arg.get_basis(), arg.multiplication(), scalar_type(1));
+        free_tensor one(arg.get_basis(), arg.multiplication(), scalar_type(1));
+
+        const auto degree = arg.basis().depth();
+        resize_to_degree(result, degree);
+        for (deg_t i = degree; i >= 1; --i) {
+            result.mul_scal_div(arg, rational_type(i));
+            result += one;
+        }
+
+        return result;
+    }
+
+    friend free_tensor log(const free_tensor &arg) {
+
+        auto x = arg;
+        x[typename tensor_basis::key_type(0, 0)] = scalar_type(0);
+
+        free_tensor result(arg.get_basis(), arg.multiplication());
+        const auto degree = arg.basis().depth();
+        resize_to_degree(result, degree);
+
+        free_tensor one(arg.get_basis(), arg.multiplication(), scalar_type(1));
+        for (deg_t i = degree; i >= 1; --i) {
+            if (i % 2 == 0) {
+                result.sub_scal_div(one, rational_type(i));
+            } else {
+                result.add_scal_div(one, rational_type(i));
+            }
+            result *= x;
+        }
+
+        return result;
+    }
+
+    friend free_tensor inverse(const free_tensor &arg) {
+
+        const auto &a = arg[key_type(0, 0)];
+        assert(a != Coefficients::zero());
+        auto x = arg;
+        x[key_type(0, 0)] = Coefficients::zero();
+
+        const auto degree = arg.basis().depth();
+        free_tensor a_inverse(arg.get_basis(), arg.multiplication(), scalar_type(1) / a);
+        free_tensor result(a_inverse);
+        resize_to_degree(result, degree);
+
+        auto z = x / a;
+        for (deg_t d=0; d<degree; ++d) {
+            result = a_inverse + z*result;
+        }
+
+        return result;
+    }
+
+    friend free_tensor antipode(const free_tensor& arg) {
+        // TODO: replace with implementation of antipode.
+        return inverse(arg);
+    }
 
 };
 
-template<typename Coefficients, template<typename, typename> class VectorType,
-        template<typename> class StorageModel>
-free_tensor<Coefficients, VectorType, StorageModel>
-exp(const free_tensor<Coefficients, VectorType, StorageModel>& arg)
-{
-    using free_tensor_t = free_tensor<Coefficients, VectorType, StorageModel>;
-    using scalar_type = typename free_tensor_t::scalar_type;
-    using rational_type = typename free_tensor_t::rational_type;
-    free_tensor_t result(arg.get_basis(), arg.multiplication(), scalar_type(1));
-    free_tensor_t one(arg.get_basis(), arg.multiplication(), scalar_type(1));
 
-    auto degree = arg.basis().depth();
-    for (deg_t i = degree; i>=1; --i) {
-        result.mul_scal_div(arg, rational_type(i));
-        result += one;
-    }
-
-    return result;
-}
-
-
-template<typename Coefficients, template<typename, typename> class VectorType,
-        template<typename> class StorageModel>
-free_tensor<Coefficients, VectorType, StorageModel>
-log(const free_tensor<Coefficients, VectorType, StorageModel>& arg)
-{
-    using free_tensor_t = free_tensor<Coefficients, VectorType, StorageModel>;
-    using scalar_type = typename free_tensor_t::scalar_type;
-    using rational_type = typename free_tensor_t::rational_type;
-
-    auto x = arg;
-    x[typename tensor_basis::key_type(0, 0)] = scalar_type(0);
-
-    free_tensor_t result(arg.get_basis(), arg.multiplication());
-    free_tensor_t one(arg.get_basis(), arg.multiplication(), scalar_type(1));
-    auto degree = arg.basis().depth();
-    for (deg_t i = degree; i>=1; --i) {
-        if (i % 2 == 0) {
-            result.sub_scal_div(one, rational_type(i));
-        } else {
-            result.add_scal_div(one, rational_type(i));
-        }
-        result *= x;
-    }
-
-    return result;
-}
-
-template <typename Coefficients, template <typename, typename> class VectorType,
-         template <typename> class StorageModel>
-free_tensor<Coefficients, VectorType, StorageModel>
-    inverse(const free_tensor<Coefficients, VectorType, StorageModel>& arg)
-{
-    return arg;
-}
 
 
 

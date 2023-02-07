@@ -24,38 +24,6 @@ public:
         : multiplication(lal::multiplication_registry<lal::free_tensor_multiplication>::get(TensorFixture::width))
     {}
 
-    rational_type one() const { return rational_type(1); }
-
-    lal::monomial key_to_monomial(char letter, key_type arg) const
-    {
-        using letter_type = typename lal::monomial::letter_type;
-
-        auto idx = arg.index();
-        typename letter_type::integral_type tmp(0);
-        auto pow = 1;
-        for (auto i=0; i<arg.degree(); ++i) {
-            tmp += (1 + idx % width)*pow;
-            pow *= 10;
-            idx /= width;
-        }
-        return lal::monomial(letter_type(letter, tmp));
-    }
-
-    tensor_type generic_tensor(char letter) const
-    {
-        const auto& powers = basis->powers();
-
-        tensor_type result(basis, multiplication);
-
-        for (lal::deg_t d=0; d<=basis->depth(); ++d) {
-            for (lal::dimn_t i=0; i<powers[d]; ++i) {
-                key_type key(d, i);
-                result[key_type(d, i)] = scalar_type(key_to_monomial(letter, key), 1);
-            }
-        }
-        return result;
-    }
-
     std::vector<lal::monomial> deconstruct_key(char left, char right, key_type key)
     {
         using letter_type = typename lal::monomial::letter_type;
@@ -90,6 +58,9 @@ public:
         return result;
     }
 
+    tensor_type generic_tensor(char letter) const
+    { return TensorFixture::template generic_tensor<tensor_type>(letter); }
+
 
 };
 
@@ -97,12 +68,9 @@ public:
 TYPED_TEST_SUITE_P(FreeTensorMultiplicationFixture);
 
 TYPED_TEST_P(FreeTensorMultiplicationFixture, testMultiplication) {
-
     auto lhs = this->generic_tensor('x');
     auto rhs = this->generic_tensor('y');
-
     const auto result = lhs*rhs;
-
 
     const auto& powers = this->basis->powers();
 
@@ -129,15 +97,45 @@ TYPED_TEST_P(FreeTensorMultiplicationFixture, testMultiplication) {
             for (const auto& item : val) {
                 EXPECT_EQ(item.key(), components[k++]);
             }
-
         }
-
     }
-
 }
 
+TYPED_TEST_P(FreeTensorMultiplicationFixture, testInplaceMultiplication) {
+    auto lhs = this->generic_tensor('x');
+    auto rhs = this->generic_tensor('y');
+
+    lhs *= rhs;
+
+    auto x0 = this->key_to_monomial('x', TensorFixture::key_type(0, 0));
+    auto y0 = this->key_to_monomial('y', TensorFixture::key_type(0, 0));
+
+    const auto &powers = this->basis->powers();
+    const auto &first = lhs[TensorFixture::key_type(0, 0)];
+    const auto first_key = x0 * y0;
+    const auto first_item = first[first_key];
+    EXPECT_EQ(first[x0 * y0], this->one());
+
+    for (auto d = 1; d <= this->basis->depth(); ++d) {
+        for (auto i = 0; i < powers[d]; ++i) {
+            TensorFixture::key_type key(d, i);
+            const auto &val = lhs[key];
+            auto components = this->deconstruct_key('x', 'y', key);
+
+            ASSERT_EQ(val.size(), components.size());
+
+            auto k = 0;
+            for (const auto &item : val) {
+                EXPECT_EQ(item.key(), components[k++]);
+            }
+        }
+    }
+}
+
+
+
 REGISTER_TYPED_TEST_SUITE_P(FreeTensorMultiplicationFixture,
-        testMultiplication);
+        testMultiplication, testInplaceMultiplication);
 
 //REGISTER_TYPED_TEST_SUITE_P(
 //        FreeTensorMultiplication,
