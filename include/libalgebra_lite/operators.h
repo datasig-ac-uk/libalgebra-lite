@@ -9,6 +9,7 @@
 
 #include <utility>
 #include <type_traits>
+#include <tuple>
 
 #include "vector.h"
 
@@ -28,11 +29,19 @@ namespace dtl {
 template <typename Impl1, typename Impl2>
 class sum_operator;
 
-template <typename Impl, typename ArgumentType>
-class left_scalar_multiply_operator;
 
-template <typename Impl, typename ArgumentType>
-class right_scalar_multiply_operator;
+template <typename Impl, typename Multiplier>
+class scalar_multiply_operator;
+
+template <typename Scalar>
+class left_scalar_multiply;
+
+template <typename Scalar>
+class right_scalar_multiply;
+
+
+template <typename... Impl>
+class composition_operator;
 
 template <typename Operator>
 struct operator_traits;
@@ -46,9 +55,7 @@ class linear_operator : protected Impl
 {
     using traits = dtl::operator_traits<Impl>;
 public:
-    using result_type       = typename traits::result_type;
-    using argument_type     = typename traits::argument_type;
-
+    using scalar_type = typename traits::scalar_type;
 
 protected:
     using implementation_type = Impl;
@@ -63,7 +70,7 @@ public:
 
 
     template <typename Impl2>
-    friend dtl::sum_operator<Impl, Impl2>
+    friend linear_operator<dtl::sum_operator<Impl, Impl2>>
     operator+(const linear_operator& left,
               const linear_operator<Impl2>& right)
     {
@@ -71,15 +78,27 @@ public:
         return { static_cast<const Impl&>(left), static_cast<const Impl2&>(right) };
     }
 
-//    template <typename Scalar>
-//    friend dtl::left_scalar_multiply_operator<Impl, ArgumentType>
-//    operator*(const linear_operator& op, Scalar scal)
-//    {
-//        return { scal, static_cast<const Impl&>(op) };
-//    }
+    template <typename Scalar>
+    friend linear_operator<dtl::scalar_multiply_operator<Impl, dtl::left_scalar_multiply<scalar_type>>>
+    operator*(const Scalar& scalar, const linear_operator& op)
+    {
+        return { static_cast<const Impl&>(op), scalar_type(scalar) };
+    }
+
+    template <typename Scalar>
+    friend linear_operator<dtl::scalar_multiply_operator<Impl, dtl::right_scalar_multiply<scalar_type>>>
+    operator*(const linear_operator& op, const Scalar& scalar)
+    {
+        return { static_cast<const Impl&>(op), scalar_type(scalar) };
+    }
 
 
-
+    template <typename... Impls>
+    std::enable_if_t<(sizeof...(Impls) > 1), linear_operator<dtl::composition_operator<Impls...>>>
+    compose(const linear_operator<Impls>&... operators)
+    {
+        return { static_cast<Impls>(operators)... };
+    }
 
 };
 
@@ -126,64 +145,136 @@ public:
 
 };
 
-
-template <typename Impl, typename ArgumentType>
-class left_scalar_multiply_operator
-{
-    static_assert(lal::dtl::is_vector<ArgumentType>::value,
-        "argument type must be a vector");
-
-    using scalar_type = typename ArgumentType::scalar_type;
-
-    Impl m_operator;
-    scalar_type m_scalar;
+template <typename Scalar>
+class left_scalar_multiply {
+    Scalar m_scalar;
 
 public:
-    using argument_type = ArgumentType;
-    using result_type = LAL_LO_DECLRESULT(Impl);
 
-    template <typename Scalar>
-    left_scalar_multiply_operator(Scalar&& s, Impl&& op)
-        : m_operator(std::move(op)), m_scalar(std::forward<Scalar>(s))
+    using scalar_type = Scalar;
+
+    explicit left_scalar_multiply(Scalar&& scal) : m_scalar(std::move(scal))
     {}
 
-    result_type operator()(const argument_type& arg) const
+    template <typename Vector>
+    Vector multiply(Vector&& arg) const
     {
-        return m_scalar*m_operator(arg);
+        return m_scalar * arg;
     }
 
 };
 
-template <typename Impl, typename ArgumentType>
-class right_scalar_multiply_operator
-{
-    static_assert(lal::dtl::is_vector<ArgumentType>::value,
-        "argument type must be a vector");
 
-    using scalar_type = typename ArgumentType::scalar_type;
-
-    Impl m_operator;
-    scalar_type m_scalar;
+template <typename Scalar>
+class right_scalar_multiply {
+    Scalar m_scalar;
 
 public:
-    using argument_type = ArgumentType;
-    using result_type = LAL_LO_DECLRESULT(Impl);
 
-    template <typename Scalar>
-    right_scalar_multiply_operator(Scalar &&s, const Impl &op)
-        : m_operator(op), m_scalar(std::forward<Scalar>(s)) {}
+    using scalar_type = Scalar;
 
-    template <typename Scalar>
-    right_scalar_multiply_operator(Scalar&& s, Impl&& op)
-        : m_operator(std::move(op)), m_scalar(std::forward<Scalar>(s))
+    explicit right_scalar_multiply(Scalar&& scal) : m_scalar(std::move(scal))
     {}
 
-    result_type operator()(const argument_type& arg) const
+    template <typename Vector>
+    Vector multiply(Vector&& arg) const
     {
-        return m_operator(arg) * m_scalar;
+        arg *= m_scalar;
+        return arg;
     }
 
 };
+
+
+template <typename Impl, typename Multiplier>
+class scalar_multiply_operator : private Multiplier
+{
+    Impl m_operator;
+
+public:
+
+    explicit scalar_multiply_operator(const Impl& op, const typename Multiplier::scalar_type& s)
+        : Multiplier(s), m_operator(op)
+    {}
+
+    explicit scalar_multiply_operator(Impl&& op, typename Multiplier::scalar_type&& s)
+        : Multiplier(std::move(s)), m_operator(std::move(op))
+    {}
+
+    template <typename Argument>
+    auto operator()(const Argument& arg) const -> decltype(m_operator(arg))
+    {
+        return Multiplier::multiply(m_operator(arg));
+    }
+
+};
+
+template <std::size_t I, typename Argument, typename... Impl>
+static constexpr auto eval_recursive(const Argument &arg, const std::tuple<Impl...>& ops)
+        -> decltype(std::get<I>(ops)(arg)) {
+    return eval_recursive<I+1>(std::get<I>(ops)(arg), ops);
+}
+
+
+template <typename Argument, typename... Impl>
+static constexpr auto eval_recursive<sizeof...(Impl)-1, Argument, Impl...>(
+    const Argument &arg, const std::tuple<Impl...>& ops)
+        -> decltype(std::get<sizeof...(Impl)-1>(ops)(arg)) {
+    return std::get<sizeof...(Impl)-1>(ops)(arg), ops);
+}
+
+
+
+template <typename... Impl>
+class composition_operator
+{
+    static_assert(sizeof...(Impl) > 1, "composition of a single operator is not allowed");
+
+    using operator_tuple = std::tuple<Impl...>;
+    std::tuple<Impl...> m_operators;
+
+    template <std::size_t I>
+    struct eval_recursive
+    {
+        using next = eval_recursive<I+1>;
+
+        template <typename Arg>
+        constexpr auto eval(const Arg& arg, const operator_tuple& ops)
+            -> decltype(std::get<I>(ops)(next::eval(arg, ops)))
+        {
+            return std::get<I>(ops)(next::eval(arg, ops));
+        }
+    };
+
+    template <>
+    struct eval_recursive<sizeof...(Impl)>
+    {
+        template <typename Arg>
+        constexpr const Arg& eval(const Arg& arg, const operator_tuple& ops)
+        {
+            return arg;
+        }
+    };
+
+    using evaluator = eval_recursive<0>;
+
+
+public:
+
+    composition_operator(const Impl&... impls) : m_operators(impls...)
+    {}
+
+    composition_operator(Impl&&... impls) : m_operators(std::forward<Impl>(impls)...)
+    {}
+
+    template <typename Argument>
+    auto operator()(const Argument& arg) const -> decltype(evaluator::eval(arg, m_operators))
+    {
+        return evaluator::eval(arg, m_operators);
+    }
+
+};
+
 
 
 
