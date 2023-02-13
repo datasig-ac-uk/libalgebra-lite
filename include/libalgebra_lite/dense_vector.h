@@ -55,8 +55,8 @@ private:
     using storage_type = VectorType<scalar_type, Args...>;
 
     using vec_base::p_basis;
-    storage_type m_storage;
-    deg_t m_degree;
+    storage_type m_storage {};
+    deg_t m_degree = 0;
 
 public:
 
