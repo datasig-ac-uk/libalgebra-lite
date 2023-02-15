@@ -288,7 +288,7 @@ class LIBALGEBRA_LITE_EXPORT free_tensor_multiplication
 
             auto* out_ptr = helper.fwd_write(key_type(out_deg, 0));
 
-            for (deg_t lh_deg = lhs_deg_max; lh_deg>=0; --lh_deg) {
+            for (deg_t lh_deg = lhs_deg_max; lh_deg>=lhs_deg_min; --lh_deg) {
                 auto rh_deg = out_deg-lh_deg;
 
                 auto lhs_ptr = helper.left_fwd_read(key_type(lh_deg, 0));
