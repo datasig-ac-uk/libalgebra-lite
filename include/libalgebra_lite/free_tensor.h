@@ -529,7 +529,7 @@ public:
 
         x[key_type(0, 0)] = scalar_type(0);
 
-        auto degree = this->p_basis->depth();
+        auto degree = this->basis().depth();
         resize_to_degree(*this, degree);
         for (deg_t i=degree; i >= 1; --i) {
             this->mul_scal_div(x, rational_type(i), degree - i + 1);
@@ -544,7 +544,7 @@ public:
 
         x[key_type(0, 0)] = scalar_type(0);
 
-        auto degree = this->p_basis->depth();
+        auto degree = this->basis().depth();
         resize_to_degree(result, degree);
 
         for (deg_t i=degree; i>= 1; --i) {
