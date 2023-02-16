@@ -213,8 +213,8 @@ public:
     {
         dense_vector_base result(p_basis);
 
-        const difference_type lhs_size(size());
-        const difference_type rhs_size(arg.size());
+        const difference_type lhs_size(m_storage.size());
+        const difference_type rhs_size(arg.m_storage.size());
 
         result.reserve_exact(std::max(lhs_size, rhs_size), std::max(m_degree, arg.m_degree));
 
