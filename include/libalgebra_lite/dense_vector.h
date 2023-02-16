@@ -239,8 +239,8 @@ public:
     template <typename InplaceBinaryOp>
     dense_vector_base& inplace_binary_op(const dense_vector_base& rhs, InplaceBinaryOp op)
     {
-        const difference_type lhs_size(size());
-        const difference_type rhs_size(rhs.size());
+        const difference_type lhs_size(m_storage.size());
+        const difference_type rhs_size(rhs.m_storage.size());
 
         if (rhs_size > lhs_size) {
             resize_exact(rhs_size, rhs.m_degree);
