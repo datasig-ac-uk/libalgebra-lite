@@ -48,10 +48,10 @@ target_include_directories(Libalgebra_lite PUBLIC
 
 target_link_libraries(Libalgebra_lite PUBLIC Boost::boost)
 
-if (TARGET Libalgebra::Libalgebra)
-    set(LAL_USE_LIBALGEBRA ON)
-    target_link_libraries(Libalgebra_lite PUBLIC Libalgebra::Libalgebra)
-endif ()
+#if (TARGET Libalgebra::Libalgebra)
+#    set(LAL_USE_LIBALGEBRA ON)
+#    target_link_libraries(Libalgebra_lite PUBLIC Libalgebra::Libalgebra)
+#endif ()
 
 if (NOT DEFINED LAL_GMP_ALTERNATIVE_HEADER)
     set(LAL_GMP_ALTERNATIVE_HEADER cpp_int.hpp)

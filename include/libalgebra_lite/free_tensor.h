@@ -288,7 +288,7 @@ class LIBALGEBRA_LITE_EXPORT free_tensor_multiplication
 
             auto* out_ptr = helper.fwd_write(key_type(out_deg, 0));
 
-            for (deg_t lh_deg = lhs_deg_max; lh_deg>=0; --lh_deg) {
+            for (deg_t lh_deg = lhs_deg_max; lh_deg>=lhs_deg_min; --lh_deg) {
                 auto rh_deg = out_deg-lh_deg;
 
                 auto lhs_ptr = helper.left_fwd_read(key_type(lh_deg, 0));
@@ -529,7 +529,7 @@ public:
 
         x[key_type(0, 0)] = scalar_type(0);
 
-        auto degree = this->p_basis->depth();
+        auto degree = this->basis().depth();
         resize_to_degree(*this, degree);
         for (deg_t i=degree; i >= 1; --i) {
             this->mul_scal_div(x, rational_type(i), degree - i + 1);
@@ -544,7 +544,7 @@ public:
 
         x[key_type(0, 0)] = scalar_type(0);
 
-        auto degree = this->p_basis->depth();
+        auto degree = this->basis().depth();
         resize_to_degree(result, degree);
 
         for (deg_t i=degree; i>= 1; --i) {
