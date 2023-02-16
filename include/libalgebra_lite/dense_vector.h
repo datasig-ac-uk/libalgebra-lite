@@ -112,26 +112,37 @@ private:
 
 public:
 
+    void reserve_exact(size_type n, deg_t degree=0) {
+        m_storage.reserve(n);
+        m_degree = degree;
+    }
+
+    void resize_exact(size_type n, deg_t degree=0) {
+        m_storage.resize(n, coefficient_ring::zero());
+        m_degree = degree;
+    }
+
+    void resize_exact(size_type n, const scalar_type& scalar, deg_t degree=0) {
+        m_storage.resize(n, scalar);
+        m_degree = degree;
+    }
 
     void reserve(size_type n)
     {
         auto next = basis_traits::get_next_dimension(*p_basis, n);
-        m_storage.reserve(next.first);
-        m_degree = next.second;
+        reserve_exact(next.first, next.second);
     }
     void resize(size_type n)
     {
         auto next = basis_traits::get_next_dimension(*p_basis, n);
-        m_storage.resize(next.first);
-        m_degree = next.second;
+        resize_exact(next.first, next.second);
     }
 
     template <typename S>
     void resize(size_type n, const S& val)
     {
         auto next = basis_traits::get_next_dimension(*p_basis, n);
-        m_storage.resize(next.first, val);
-        m_degree = next.second;
+        resize_exact(next.first, val, next.second);
     }
 
     iterator begin() noexcept { return iterator(&*p_basis, m_storage.begin()); }
@@ -174,7 +185,7 @@ public:
     dense_vector_base unary_op(UnaryOp op) const
     {
         dense_vector_base result(p_basis);
-        result.reserve(size());
+        result.reserve_exact(m_storage.size(), m_degree);
 
         const auto begin = m_storage.begin();
         const auto end = m_storage.end();
@@ -205,7 +216,7 @@ public:
         const difference_type lhs_size(size());
         const difference_type rhs_size(arg.size());
 
-        result.reserve(std::max(lhs_size, rhs_size));
+        result.reserve_exact(std::max(lhs_size, rhs_size), std::max(m_degree, arg.m_degree));
 
         const auto mid = std::min(lhs_size, rhs_size);
         const auto& zero = coefficient_ring::zero();
@@ -232,7 +243,7 @@ public:
         const difference_type rhs_size(rhs.size());
 
         if (rhs_size > lhs_size) {
-            resize(rhs_size);
+            resize_exact(rhs_size, rhs.m_degree);
         }
 
         const auto& zero = coefficient_ring::zero();
