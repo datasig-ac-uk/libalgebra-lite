@@ -84,21 +84,29 @@ public:
 
     dense_vector_base(basis_pointer basis, std::initializer_list<scalar_type> args)
             : vec_base(basis), m_storage(args)
-    {}
+    {
+        resize(args.size());
+    }
 
     template<typename InputIt>
     dense_vector_base(basis_pointer basis, InputIt begin, InputIt end)
             : vec_base(basis), m_storage(begin, end)
-    {}
+    {
+        resize(m_storage.size());
+    }
 
     explicit dense_vector_base(basis_pointer basis, size_type n)
-        : vec_base(basis), m_storage(n)
-    {}
+        : vec_base(basis), m_storage()
+    {
+        resize(n);
+    }
 
     template <typename S>
     explicit dense_vector_base(basis_pointer basis, size_type n, const S& val)
-        : vec_base(basis), m_storage(n, val)
-    {}
+        : vec_base(basis), m_storage()
+    {
+        resize(n, val);
+    }
 
 
 private:
