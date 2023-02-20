@@ -273,6 +273,32 @@ public:
         return *this;
     }
 
+    bool operator==(const dense_vector_base& rhs) const noexcept {
+        auto mid = std::min(m_storage.size(), rhs.m_storage.size());
+
+        for (dimn_t i=0; i<mid; ++i) {
+            if (m_storage[i] != rhs.m_storage[i]) {
+                return false;
+            }
+        }
+
+        const auto& zero = coefficient_ring::zero();
+
+        for (dimn_t i=mid; i<m_storage.size(); ++i) {
+            if (m_storage[i] != zero) {
+                return false;
+            }
+        }
+
+        for (dimn_t i=mid; i<rhs.m_storage.size(); ++i) {
+            if (rhs.m_storage[i] != zero) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
 };
 
 

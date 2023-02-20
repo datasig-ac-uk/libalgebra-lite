@@ -407,6 +407,21 @@ public:
     }
 
 
+    bool operator==(const sparse_vector& rhs) const noexcept {
+
+        if (m_data.size() != rhs.m_data.size()) {
+            return false;
+        }
+
+        for (auto&& ritem : rhs.m_data) {
+            auto found = m_data.find(ritem.first);
+            if (found == m_data.end() || found->second != ritem.second) {
+                return false;
+            }
+        }
+
+        return true;
+    }
 
 };
 
