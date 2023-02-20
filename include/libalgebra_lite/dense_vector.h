@@ -265,8 +265,7 @@ public:
             op(m_storage[i], zero);
         }
 
-        difference_type rhs_max(std::min(size(), rhs.size()));
-        for (auto i=mid; i<rhs_max; ++i) {
+        for (auto i=mid; i<rhs_size; ++i) {
             op(m_storage[i], rhs.m_storage[i]);
         }
 
