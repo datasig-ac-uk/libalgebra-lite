@@ -637,20 +637,7 @@ template <typename B, typename C, template <typename, typename> class VT,
     template <typename> class SM>
 bool operator==(const vector<B, C, VT, SM> &lhs,
                 const vector<B, C, VT, SM> &rhs) noexcept {
-    if (lhs.dimension() != rhs.dimension()) {
-        return false;
-    }
-
-    const auto &lhs_bv = lhs.base_vector();
-    const auto &rhs_bv = rhs.base_vector();
-
-    for (auto right : rhs_bv) {
-        if (lhs[right.key()] != right.value()) {
-            return false;
-        }
-    }
-    return true;
-
+    return lhs.base_vector() == rhs.base_vector();
 }
 template <typename B, typename C, template <typename, typename> class VT,
     template <typename> class SM>

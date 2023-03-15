@@ -84,21 +84,29 @@ public:
 
     dense_vector_base(basis_pointer basis, std::initializer_list<scalar_type> args)
             : vec_base(basis), m_storage(args)
-    {}
+    {
+        resize(args.size());
+    }
 
     template<typename InputIt>
     dense_vector_base(basis_pointer basis, InputIt begin, InputIt end)
             : vec_base(basis), m_storage(begin, end)
-    {}
+    {
+        resize(m_storage.size());
+    }
 
     explicit dense_vector_base(basis_pointer basis, size_type n)
-        : vec_base(basis), m_storage(n)
-    {}
+        : vec_base(basis), m_storage()
+    {
+        resize(n);
+    }
 
     template <typename S>
     explicit dense_vector_base(basis_pointer basis, size_type n, const S& val)
-        : vec_base(basis), m_storage(n, val)
-    {}
+        : vec_base(basis), m_storage()
+    {
+        resize(n, val);
+    }
 
 
 private:
@@ -112,26 +120,37 @@ private:
 
 public:
 
+    void reserve_exact(size_type n, deg_t degree=0) {
+        m_storage.reserve(n);
+        m_degree = degree;
+    }
+
+    void resize_exact(size_type n, deg_t degree=0) {
+        m_storage.resize(n, coefficient_ring::zero());
+        m_degree = degree;
+    }
+
+    void resize_exact(size_type n, const scalar_type& scalar, deg_t degree=0) {
+        m_storage.resize(n, scalar);
+        m_degree = degree;
+    }
 
     void reserve(size_type n)
     {
         auto next = basis_traits::get_next_dimension(*p_basis, n);
-        m_storage.reserve(next.first);
-        m_degree = next.second;
+        reserve_exact(next.first, next.second);
     }
     void resize(size_type n)
     {
         auto next = basis_traits::get_next_dimension(*p_basis, n);
-        m_storage.resize(next.first);
-        m_degree = next.second;
+        resize_exact(next.first, next.second);
     }
 
     template <typename S>
     void resize(size_type n, const S& val)
     {
         auto next = basis_traits::get_next_dimension(*p_basis, n);
-        m_storage.resize(next.first, val);
-        m_degree = next.second;
+        resize_exact(next.first, val, next.second);
     }
 
     iterator begin() noexcept { return iterator(&*p_basis, m_storage.begin()); }
@@ -174,7 +193,7 @@ public:
     dense_vector_base unary_op(UnaryOp op) const
     {
         dense_vector_base result(p_basis);
-        result.reserve(size());
+        result.reserve_exact(m_storage.size(), m_degree);
 
         const auto begin = m_storage.begin();
         const auto end = m_storage.end();
@@ -202,10 +221,10 @@ public:
     {
         dense_vector_base result(p_basis);
 
-        const difference_type lhs_size(size());
-        const difference_type rhs_size(arg.size());
+        const difference_type lhs_size(m_storage.size());
+        const difference_type rhs_size(arg.m_storage.size());
 
-        result.reserve(std::max(lhs_size, rhs_size));
+        result.reserve_exact(std::max(lhs_size, rhs_size), std::max(m_degree, arg.m_degree));
 
         const auto mid = std::min(lhs_size, rhs_size);
         const auto& zero = coefficient_ring::zero();
@@ -228,11 +247,11 @@ public:
     template <typename InplaceBinaryOp>
     dense_vector_base& inplace_binary_op(const dense_vector_base& rhs, InplaceBinaryOp op)
     {
-        const difference_type lhs_size(size());
-        const difference_type rhs_size(rhs.size());
+        const difference_type lhs_size(m_storage.size());
+        const difference_type rhs_size(rhs.m_storage.size());
 
         if (rhs_size > lhs_size) {
-            resize(rhs_size);
+            resize_exact(rhs_size, rhs.m_degree);
         }
 
         const auto& zero = coefficient_ring::zero();
@@ -246,12 +265,37 @@ public:
             op(m_storage[i], zero);
         }
 
-        difference_type rhs_max(std::min(size(), rhs.size()));
-        for (auto i=mid; i<rhs_max; ++i) {
+        for (auto i=mid; i<rhs_size; ++i) {
             op(m_storage[i], rhs.m_storage[i]);
         }
 
         return *this;
+    }
+
+    bool operator==(const dense_vector_base& rhs) const noexcept {
+        auto mid = std::min(m_storage.size(), rhs.m_storage.size());
+
+        for (dimn_t i=0; i<mid; ++i) {
+            if (m_storage[i] != rhs.m_storage[i]) {
+                return false;
+            }
+        }
+
+        const auto& zero = coefficient_ring::zero();
+
+        for (dimn_t i=mid; i<m_storage.size(); ++i) {
+            if (m_storage[i] != zero) {
+                return false;
+            }
+        }
+
+        for (dimn_t i=mid; i<rhs.m_storage.size(); ++i) {
+            if (rhs.m_storage[i] != zero) {
+                return false;
+            }
+        }
+
+        return true;
     }
 
 };
