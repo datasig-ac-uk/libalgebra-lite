@@ -171,8 +171,8 @@ public:
         return result;
     }
 
-    Parent& operator*() const noexcept { return static_cast<const Parent&>(*this); }
-    Parent* operator->() const noexcept { return static_cast<const Parent*>(this); }
+    const Parent& operator*() const noexcept { return static_cast<const Parent&>(*this); }
+    const Parent* operator->() const noexcept { return static_cast<const Parent*>(this); }
 
     bool operator==(const sparse_iterator_base& other) const noexcept
     {
