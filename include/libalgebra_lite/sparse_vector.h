@@ -264,8 +264,8 @@ public:
 
 private:
 
-//    using map_type = boost::container::flat_map<key_type, scalar_type>;
-    using map_type = std::map<key_type, scalar_type>;
+    using map_type = boost::container::flat_map<key_type, scalar_type>;
+//    using map_type = std::map<key_type, scalar_type>;
     map_type m_data;
     deg_t m_degree = 0;
     using vec_base::p_basis;
