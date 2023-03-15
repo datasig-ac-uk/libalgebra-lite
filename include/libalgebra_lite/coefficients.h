@@ -115,6 +115,13 @@ struct coefficient_trait<double>
     using rational_type = double;
 };
 
+template <>
+struct coefficient_trait<dtl::rational_scalar_type>
+{
+    using coefficient_ring = rational_field;
+    using scalar_type = dtl::rational_scalar_type;
+    using rational_type = dtl::rational_scalar_type;
+};
 
 } // namespace lal
 
