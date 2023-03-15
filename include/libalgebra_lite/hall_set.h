@@ -33,8 +33,8 @@ public:
     using parent_type = std::pair<key_type, key_type>;
 private:
     using data_type = std::vector<parent_type>;
-//    using reverse_map_type = boost::container::flat_map<parent_type, key_type>;
-    using reverse_map_type = std::map<parent_type, key_type>;
+    using reverse_map_type = boost::container::flat_map<parent_type, key_type>;
+//    using reverse_map_type = std::map<parent_type, key_type>;
     using l2k_map_type = std::vector<key_type>;
     using size_vector_type = std::vector<size_type>;
     using degree_range_map_type = std::vector<std::pair<size_type, size_type>>;
