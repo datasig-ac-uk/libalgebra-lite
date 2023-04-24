@@ -134,13 +134,13 @@ public:
                 reverse_buffer.data()+k.index()*tile_width+offset;
         std::copy(reverse_ptr, reverse_ptr+tile_width, left_read_buffer.data());
     }
-    void read_right_tile(key_type k) noexcept
+    void read_right_tile(key_type k)
     {
         auto offset = p_basis->start_of_degree(static_cast<deg_t>(k.degree()));
         const auto* fwd_ptr = right_ptr+k.index()*tile_width+offset;
         std::copy(fwd_ptr, fwd_ptr+tile_width, right_read_buffer.data());
     }
-    void write_tile_in(key_type k, key_type kr) noexcept
+    void write_tile_in(key_type k, key_type kr)
     {
         const auto offset = p_basis->start_of_degree(k.degree()+2*tile_letters);
         const auto* in_ptr = out_ptr+k.index()*tile_width+offset;
@@ -154,7 +154,7 @@ public:
         }
     }
 
-    void write_tile_out(key_type k, key_type kr) noexcept
+    void write_tile_out(key_type k, key_type kr)
     {
         const auto deg = k.degree();
         const auto offset = p_basis->start_of_degree(deg+2*tile_letters);
@@ -239,7 +239,7 @@ public:
         : m_width(width) {}
 
     static key_type concat_product(const tensor_basis &basis, key_type lhs,
-                                   key_type rhs) noexcept {
+                                   key_type rhs) {
         const auto lhs_deg = lhs.degree();
         const auto rhs_deg = rhs.degree();
         const auto shift = basis.powers()[rhs_deg];
@@ -252,7 +252,7 @@ public:
         boost::container::small_vector<std::pair<key_type, int>, 1>;
 
     product_type operator()(const tensor_basis &basis, key_type lhs,
-                            key_type rhs) const noexcept;
+                            key_type rhs) const ;
 };
 
 class LIBALGEBRA_LITE_EXPORT free_tensor_multiplication
@@ -277,7 +277,7 @@ class LIBALGEBRA_LITE_EXPORT free_tensor_multiplication
     template<typename Coefficients, typename Fn>
     void
     fma_dense_traditional(dtl::dense_multiplication_helper<Coefficients>& helper,
-            Fn fn, deg_t out_degree) const noexcept
+            Fn fn, deg_t out_degree) const
     {
         auto lhs_deg = helper.lhs_degree();
         auto rhs_deg = helper.rhs_degree();
@@ -332,7 +332,7 @@ class LIBALGEBRA_LITE_EXPORT free_tensor_multiplication
 
     template<typename Coefficients, typename Fn>
     void fma_dense_tiled(dtl::dense_multiplication_helper<Coefficients>& helper,
-            Fn fn, deg_t out_degree) const noexcept
+            Fn fn, deg_t out_degree) const
     {
         using key_type = tensor_basis::key_type;
 
