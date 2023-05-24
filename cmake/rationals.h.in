@@ -5,7 +5,7 @@
 
 #include "config.h"
 
-#ifndef LAL_NO_USE_GMP
+#ifdef LAL_NO_USE_GMP
 #include <boost/multiprecision/@LAL_GMP_ALTERNATIVE_HEADER@>
 
 namespace lal { namespace dtl {

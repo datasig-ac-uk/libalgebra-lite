@@ -37,6 +37,13 @@ add_library(Libalgebra_lite SHARED
 add_library(Libalgebra_lite::Libalgebra_lite ALIAS Libalgebra_lite)
 generate_export_header(Libalgebra_lite)
 
+find_package(Bignum QUIET)
+if (NOT TARGET Bignum::Bignum)
+    set(LAL_NO_USE_GMP ON)
+else()
+    target_link_libraries(Libalgebra_lite PUBLIC Bignum::Bignum)
+    set(LAL_NO_USE_GMP OFF)
+endif()
 
 target_include_directories(Libalgebra_lite PRIVATE
         ${CMAKE_CURRENT_LIST_DIR}
