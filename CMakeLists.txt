@@ -60,6 +60,10 @@ target_link_libraries(Libalgebra_lite PUBLIC Boost::boost)
 #    target_link_libraries(Libalgebra_lite PUBLIC Libalgebra::Libalgebra)
 #endif ()
 
+set_target_properties(Libalgebra_lite PROPERTIES
+        INSTALL_RPATH $ORIGIN)
+
+
 if (NOT DEFINED LAL_GMP_ALTERNATIVE_HEADER)
     set(LAL_GMP_ALTERNATIVE_HEADER cpp_int.hpp)
     set(LAL_GMP_ALTERNATIVE_TYPE cpp_rational)
