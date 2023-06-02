@@ -2,7 +2,10 @@ cmake_minimum_required(VERSION 3.18)
 
 
 include(GoogleTest)
-find_package(GTest CONFIG REQUIRED)
+find_package(GTest CONFIG QUIET)
+if (NOT GTest_FOUND)
+    return()
+endif()
 
 
 
