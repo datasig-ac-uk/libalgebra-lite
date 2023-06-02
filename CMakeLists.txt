@@ -9,7 +9,7 @@ include(GenerateExportHeader)
 include(GNUInstallDirs)
 
 
-find_package(Boost CONFIG REQUIRED COMPONENTS headers)
+find_package(Boost REQUIRED)
 
 add_library(Libalgebra_lite SHARED
         src/basis/hall_set.cpp
