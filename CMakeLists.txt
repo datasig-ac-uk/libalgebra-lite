@@ -9,7 +9,7 @@ include(GenerateExportHeader)
 include(GNUInstallDirs)
 
 
-find_package(Boost CONFIG REQUIRED COMPONENTS headers)
+find_package(Boost REQUIRED)
 
 add_library(Libalgebra_lite SHARED
         src/basis/hall_set.cpp
@@ -60,6 +60,10 @@ target_link_libraries(Libalgebra_lite PUBLIC Boost::boost)
 #    target_link_libraries(Libalgebra_lite PUBLIC Libalgebra::Libalgebra)
 #endif ()
 
+set_target_properties(Libalgebra_lite PROPERTIES
+        INSTALL_RPATH $ORIGIN)
+
+
 if (NOT DEFINED LAL_GMP_ALTERNATIVE_HEADER)
     set(LAL_GMP_ALTERNATIVE_HEADER cpp_int.hpp)
     set(LAL_GMP_ALTERNATIVE_TYPE cpp_rational)
@@ -73,7 +77,7 @@ install(TARGETS Libalgebra_lite
         EXPORT Libalgebra_liteTargets
         PUBLIC_HEADER DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}/libalgebra_lite"
         RUNTIME DESTINATION "${CMAKE_INSTALL_BINDIR}"
-        LIBRARY DESTINATION "${CMAKE_INSTAL_LIBDIR}"
+        LIBRARY DESTINATION "${CMAKE_INSTALL_LIBDIR}"
         ARCHIVE DESTINATION "${CMAKE_INSTALL_LIBDIR}"
         )
 install(DIRECTORY ${CMAKE_CURRENT_LIST_DIR}/include/libalgebra_lite
