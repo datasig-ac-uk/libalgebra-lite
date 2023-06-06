@@ -33,6 +33,8 @@ using let_t = std::size_t;
 #if BOOST_COMP_MSVC
 #define LAL_INLINE_ALWAYS
 #define LAL_INLINE_NEVER
+#define LAL_RESTRICT
+#define LAL_UNUSED
 #elif BOOST_COMP_GNUC
 #define LAL_INLINE_ALWAYS __attribute__((always_inline))
 #define LAL_INLINE_NEVER __attribute__((noinline))
