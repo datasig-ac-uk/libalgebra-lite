@@ -1,0 +1,30 @@
+{
+  "name" : "libalgebra-lite",
+  "version-string" : "1.0.0",
+  "builtin-baseline" : "d8e5ba9b4513ee2088c0cf17834e771300d156bd",
+  "dependencies" : [ {
+    "name" : "boost-align",
+    "version>=" : "1.82.0#1"
+  }, {
+    "name" : "boost-predef",
+    "version>=" : "1.82.0#1"
+  }, {
+    "name" : "boost-container",
+    "version>=" : "1.82.0#1"
+  }, {
+    "name" : "boost-mpl",
+    "version>=" : "1.82.0#1"
+  }, {
+    "name" : "boost-type-traits",
+    "version>=" : "1.82.0#1"
+  }, {
+    "name" : "boost-functional",
+    "version>=" : "1.82.0#1"
+  }, {
+    "name" : "boost-multiprecision",
+    "version>=" : "1.82.0#1"
+  }, {
+    "name" : "gtest",
+    "version>=" : "1.13.0"
+  } ]
+}
