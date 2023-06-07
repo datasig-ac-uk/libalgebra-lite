@@ -456,7 +456,7 @@ public:
 
     using compatible_bases = boost::mpl::vector<typename Multiplier::basis_type>;
 
-    explicit base_multiplication(Multiplier&& mult) : m_mult(mult)
+    explicit base_multiplication(Multiplier&& mult) : m_mult(std::move(mult))
     {}
 
     template <typename... Args>
