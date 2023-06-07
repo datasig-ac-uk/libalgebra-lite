@@ -193,6 +193,7 @@ public:
 
 
     vector clone() const {
+        return vector(*this);
     }
 
     vector_type &base_vector() noexcept { return base_type::instance(); }

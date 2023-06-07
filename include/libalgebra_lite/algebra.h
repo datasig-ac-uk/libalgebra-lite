@@ -172,6 +172,17 @@ public:
         mult.multiply_inplace(lhs.base_vector(), rhs.base_vector(), fn, max_deg);
     }
 
+
+    template <typename Left, typename Right, typename Fn>
+    static std::enable_if_t<!has_degree_t<Left>::value>
+    multiply_inplace(const Multiplication &mult, Left &lhs, const Right &rhs, Fn fn, deg_t) {
+//        Left tmp(lhs.get_basis());
+//        mult.fma(tmp.base_vector(), lhs.base_vector(), rhs.base_vector(), fn, max_deg);
+//        std::swap(lhs, tmp);
+//        lhs.swap(tmp);
+        mult.multiply_inplace(lhs.base_vector(), rhs.base_vector(), fn);
+    }
+
     template <typename Left, typename Right, typename Fn>
     static std::enable_if_t<has_degree_t<Left>::value>
     multiply_inplace(const Multiplication &mult, Left &lhs, const Right &rhs, Fn fn) {
@@ -380,20 +391,18 @@ namespace dtl {
 template <typename Derived>
 struct derived_or_this {
     template <typename Base>
-    static const Derived& cast(const Base& arg) noexcept
-    {
-        return static_cast<const Derived&>(arg);
-    }
-};
-template <>
-struct derived_or_this<void> {
-    template <typename Base>
-    static const Base& cast(const Base& arg) noexcept
-    {
-        return arg;
+    static const Derived &cast(const Base &arg) noexcept {
+        return static_cast<const Derived &>(arg);
     }
 };
 
+template <>
+struct derived_or_this<void> {
+    template <typename Base>
+    static const Base &cast(const Base &arg) noexcept {
+        return arg;
+    }
+};
 
 } // namespace dtl
 
@@ -456,8 +465,7 @@ public:
 
     using compatible_bases = boost::mpl::vector<typename Multiplier::basis_type>;
 
-    explicit base_multiplication(Multiplier&& mult) : m_mult(std::move(mult))
-    {}
+    explicit base_multiplication(Multiplier &&mult) : m_mult(std::move(mult)) {}
 
     template <typename... Args>
     explicit base_multiplication(Args &&... args)
@@ -524,8 +532,7 @@ public:
     }
 
     template <typename LeftVector, typename RightVector, typename Fn>
-    void multiply_inplace(LeftVector &left, const RightVector &right, Fn op) const
-    {
+    void multiply_inplace(LeftVector &left, const RightVector &right, Fn op) const {
         if (!left.empty() && !right.empty()) {
             LeftVector tmp(left.get_basis());
             caster::cast(*this).fma(tmp, left, right, op);
@@ -535,8 +542,7 @@ public:
         }
     }
     template <typename LeftVector, typename RightVector, typename Fn>
-    void multiply_inplace(LeftVector &left, const RightVector &right, Fn op, deg_t max_deg) const
-    {
+    void multiply_inplace(LeftVector &left, const RightVector &right, Fn op, deg_t max_deg) const {
         if (!left.empty() && !right.empty()) {
             LeftVector tmp(left.get_basis());
             caster::cast(*this).fma(tmp, left, right, op, max_deg);
@@ -554,10 +560,10 @@ template <typename Basis,
     template <typename, typename> class VectorType,
     template <typename> class StorageModel,
     template <typename,
-              typename,
-              template <typename, typename> class,
-              template <typename> class,
-              typename...> class Base=vector,
+    typename,
+    template <typename, typename> class,
+    template <typename> class,
+    typename...> class Base=vector,
     typename... BaseArgs>
 class algebra : public Base<Basis, Coefficients, VectorType, StorageModel, BaseArgs...> {
     using base_type = Base<Basis, Coefficients, VectorType, StorageModel, BaseArgs...>;
@@ -566,7 +572,7 @@ public:
 
     using vector_type = vector<Basis, Coefficients, VectorType, StorageModel>;
     static_assert(std::is_same<base_type, vector_type>::value || std::is_base_of<vector_type, base_type>::value,
-        "algebra must derive from vector");
+                  "algebra must derive from vector");
 
     using multiplication_type = Multiplication;
 
@@ -590,8 +596,8 @@ public:
                 p_mult(multiplication_registry<Multiplication>::get(vector_type::basis())) {}
 
     explicit algebra(basis_pointer basis) : vector_type(std::move(basis)),
-                                                                p_mult(multiplication_registry<Multiplication>::get(
-                                                                    vector_type::basis())) {}
+                                            p_mult(multiplication_registry<Multiplication>::get(
+                                                vector_type::basis())) {}
 
     explicit algebra(vector_type &&arg) : vector_type(std::move(arg)),
                                           p_mult(multiplication_registry<Multiplication>::get(vector_type::basis())) {}
@@ -607,13 +613,13 @@ public:
     algebra(const vector_type &base, std::shared_ptr<const Multiplication> mult)
         : vector_type(base), p_mult(std::move(mult)) {}
 
-    template <typename... Args>
+    template <typename... Args, typename=std::enable_if_t<std::is_constructible<vector_type, Args...>::value>>
     explicit algebra(basis_pointer basis, Args... args) : vector_type(std::move(basis),
-                                                                                          std::forward<Args>(args)...),
-                                                                              p_mult(multiplication_registry<
-                                                                                  Multiplication>::get(vector_type::basis())) {}
+                                                                      std::forward<Args>(args)...),
+                                                          p_mult(multiplication_registry<
+                                                              Multiplication>::get(vector_type::basis())) {}
 
-    template <typename... Args>
+    template <typename... Args, typename=std::enable_if_t<std::is_constructible<vector_type, Args...>::value>>
     explicit algebra(basis_pointer basis, std::shared_ptr<const Multiplication> mul,
                      Args &&... args) : vector_type(std::move(basis), std::forward<Args>(args)...),
                                         p_mult(std::move(mul)) {}
@@ -667,6 +673,7 @@ public:
         traits::multiply_inplace(*multiplication(), *this, rhs, [scal](scalar_type s) { return s / scal; });
         return *this;
     }
+
     algebra &mul_scal_div(const algebra &rhs, const rational_type &scal, deg_t degree) {
         using traits = multiplication_traits<Multiplication>;
         traits::multiply_inplace(*multiplication(), *this, rhs, [scal](scalar_type s) { return s / scal; }, degree);
@@ -682,8 +689,8 @@ class unital_algebra : public Base {
     using algebra_base = algebra<Basis, Coefficients, Multiplication, VectorType, StorageModel>;
 
     static_assert(std::is_same<Base, algebra_base>::value || std::is_base_of<algebra_base, Base>::value,
-        "algebra types must derive from algebra"
-        );
+                  "algebra types must derive from algebra"
+    );
 public:
     using typename algebra_base::basis_pointer;
     using typename algebra_base::scalar_type;
@@ -694,22 +701,19 @@ public:
     explicit unital_algebra(basis_pointer basis, Scalar val)
         : algebra_base(std::move(basis),
                        basis_trait<Basis>::first_key(*algebra_base::p_basis),
-                       scalar_type(val))
-    {}
+                       scalar_type(val)) {}
 
     template <typename Scalar, typename=std::enable_if_t<std::is_constructible<scalar_type, Scalar>::value>>
     explicit unital_algebra(Scalar val)
         : algebra_base(basis_trait<Basis>::first_key(*algebra_base::p_basis),
-                       scalar_type(val))
-    {}
+                       scalar_type(val)) {}
 };
 
 template <typename Basis, typename Coefficients, typename Multiplication,
     template <typename, typename> class VectorType,
     template <typename> class StorageModel,
     typename Base=algebra<Basis, Coefficients, Multiplication, VectorType, StorageModel>>
-class graded_algebra : public Base
-{
+class graded_algebra : public Base {
 
     using algebra_base = algebra<Basis, Coefficients, Multiplication, VectorType, StorageModel>;
 
@@ -722,13 +726,11 @@ public:
 
 };
 
-
 template <typename Basis, typename Coefficients, typename Multiplication,
     template <typename, typename> class VectorType, template <typename> class StorageModel>
 using graded_unital_algebra = unital_algebra<Basis, Coefficients, Multiplication, VectorType, StorageModel,
-                                            graded_algebra<Basis, Coefficients, Multiplication, VectorType,
-                                            StorageModel>>;
-
+                                             graded_algebra<Basis, Coefficients, Multiplication, VectorType,
+                                                            StorageModel>>;
 
 namespace dtl {
 
