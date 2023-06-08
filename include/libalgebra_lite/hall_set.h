@@ -88,7 +88,7 @@ public:
 template<typename Func,
         typename Binop,
         typename ReturnType=decltype(std::declval<Func>()(std::declval<let_t>()))>
-class LIBALGEBRA_LITE_EXPORT hall_extension {
+class hall_extension {
 public:
     using key_type = typename hall_set::key_type;
     using return_type = ReturnType;
