@@ -182,10 +182,10 @@ public:
     explicit vector(basis_pointer basis) : base_type(std::move(basis)) {}
 
     vector(basis_pointer basis, std::initializer_list<scalar_type> args)
-        : base_type(basis, vector_type(basis.get(), args)) {}
+        : base_type(vector_type(basis, args)) {}
 
     vector(basis_pointer basis, const vector_type &arg)
-        : base_type(basis, arg) {
+        : base_type(vectotr_type(arg)) {
     }
 
     vector& operator=(const vector&) = default;
