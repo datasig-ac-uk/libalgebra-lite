@@ -67,14 +67,13 @@ template <typename Scalar>
 struct coefficient_field : public coefficient_ring<Scalar, Scalar> {
 };
 
-extern template class LIBALGEBRA_LITE_EXPORT coefficient_field<double>;
-extern template class LIBALGEBRA_LITE_EXPORT coefficient_field<float>;
+LAL_EXPORT_TEMPLATE(coefficient_field, double)
+LAL_EXPORT_TEMPLATE(coefficient_field, float)
 
 using double_field = coefficient_field<double>;
 using float_field = coefficient_field<float>;
 
-extern template class LIBALGEBRA_LITE_EXPORT coefficient_field<dtl::rational_scalar_type>;
-
+LAL_EXPORT_TEMPLATE(coefficient_field, dtl::rational_scalar_type)
 using rational_field = coefficient_field<dtl::rational_scalar_type>;
 
 template <>
