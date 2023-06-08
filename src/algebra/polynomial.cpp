@@ -8,5 +8,6 @@ namespace lal {
 
 template class polynomial<double_field>;
 template class polynomial<float_field>;
+template class polynomial<rational_field>;
 
 }
