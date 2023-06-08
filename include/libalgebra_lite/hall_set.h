@@ -24,7 +24,7 @@ namespace lal {
 
 
 
-class hall_set {
+class LIBALGEBRA_LITE_EXPORT hall_set {
 public:
     using letter_type = let_t;
     using degree_type = deg_t;
@@ -88,7 +88,7 @@ public:
 template<typename Func,
         typename Binop,
         typename ReturnType=decltype(std::declval<Func>()(std::declval<let_t>()))>
-class hall_extension {
+class LIBALGEBRA_LITE_EXPORT hall_extension {
 public:
     using key_type = typename hall_set::key_type;
     using return_type = ReturnType;
