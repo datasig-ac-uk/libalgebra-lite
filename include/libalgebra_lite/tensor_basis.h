@@ -101,8 +101,8 @@ public:
 };
 
 
-extern template class LIBALGEBRA_LITE_EXPORT basis_registry<tensor_basis>;
 
+LAL_EXPORT_TEMPLATE(basis_registry, tensor_basis)
 
 } // namespace lal
 

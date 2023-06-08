@@ -109,7 +109,7 @@ public:
 };
 
 
-class hall_basis
+class LIBALGEBRA_LITE_EXPORT hall_basis
 {
     std::shared_ptr<const hall_set> p_hallset;
     deg_t m_width;
@@ -217,8 +217,8 @@ hall_extension<Func, Binop, ReturnType>::operator()(
 }
 
 
-extern template class LIBALGEBRA_LITE_EXPORT basis_registry<hall_basis>;
 
+LAL_EXPORT_TEMPLATE(basis_registry, hall_basis)
 
 } // namespace lal
 

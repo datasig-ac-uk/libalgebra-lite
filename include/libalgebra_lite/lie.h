@@ -50,7 +50,8 @@ public:
 
 };
 
-extern template class LIBALGEBRA_LITE_EXPORT base_multiplier<lie_multiplier, hall_basis>;
+LAL_EXPORT_TEMPLATE(base_multiplier, lie_multiplier, hall_basis)
+
 
 
 struct LIBALGEBRA_LITE_EXPORT lie_multiplication : public base_multiplication<lie_multiplier>
@@ -70,9 +71,7 @@ using lie = algebra<hall_basis,
                     VectorType,
                     StorageModel>;
 
-
-
-extern template class LIBALGEBRA_LITE_EXPORT multiplication_registry<lie_multiplication>;
+LAL_EXPORT_TEMPLATE(multiplication_registry, lie_multiplication)
 
 } // namespace lal
 

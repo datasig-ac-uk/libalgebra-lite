@@ -20,11 +20,8 @@ class left_half_shuffle_tensor_multiplier;
 
 class right_half_shuffle_tensor_multiplier;
 
-extern template class LIBALGEBRA_LITE_EXPORT
-base_multiplier<left_half_shuffle_tensor_multiplier, tensor_basis>;
-
-extern template class LIBALGEBRA_LITE_EXPORT
-base_multiplier<right_half_shuffle_tensor_multiplier, tensor_basis>;
+LAL_EXPORT_TEMPLATE(base_multiplier, left_half_shuffle_tensor_multiplier, tensor_basis)
+LAL_EXPORT_TEMPLATE(base_multiplier, right_half_shuffle_tensor_multiplier, tensor_basis)
 
 #if 0
 class free_tensor_multiplication
@@ -364,14 +361,10 @@ using right_half_shuffle_multiplication =
 using shuffle_tensor_multiplication =
     base_multiplication<shuffle_tensor_multiplier>;
 
-extern template class LIBALGEBRA_LITE_EXPORT
-multiplication_registry<left_half_shuffle_multiplication>;
+LAL_EXPORT_TEMPLATE(multiplication_registry, left_half_shuffle_multiplication)
+LAL_EXPORT_TEMPLATE(multiplication_registry, right_half_shuffle_multiplication)
+LAL_EXPORT_TEMPLATE(multiplication_registry, shuffle_tensor_multiplication)
 
-extern template class LIBALGEBRA_LITE_EXPORT
-multiplication_registry<right_half_shuffle_multiplication>;
-
-extern template class LIBALGEBRA_LITE_EXPORT
-multiplication_registry<shuffle_tensor_multiplication>;
 
 template <typename Coefficients, template <typename, typename> class VectorType,
     template <typename> class StorageModel>

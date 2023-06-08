@@ -48,7 +48,12 @@ using let_t = std::size_t;
 #endif
 
 
-
-
+#if BOOST_COMP_MSVC
+#define LAL_EXPORT_TEMPLATE(TMPL, ...) \
+    extern template class TMPL<__VA_ARGS__>;
+#else
+#define LAL_EXPORT_TEMPLATE(TMPL, ...) \
+    extern template class LIBALGEBRA_LITE_EXPORT TMPL<__VA_ARGS__>;
+#endif
 
 #endif //LIBALGEBRA_LITE_IMPLEMENTATION_TYPES_H
