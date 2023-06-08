@@ -14,7 +14,7 @@ target_sources(test_lie PRIVATE
 
 if (WIN32)
     add_custom_command(TARGET test_lie POST_BUILD
-            COMMAND ${CMAKE_COMMAND} -E copy_if_different $<TARGET_RUNTIME_DILLS:test_lie> $<TARGET_FILE_DIR:test_lie>
+            COMMAND ${CMAKE_COMMAND} -E copy_if_different $<TARGET_RUNTIME_DLLS:test_lie> $<TARGET_FILE_DIR:test_lie>
             COMMAND_EXPAND_LISTS
             )
 endif()

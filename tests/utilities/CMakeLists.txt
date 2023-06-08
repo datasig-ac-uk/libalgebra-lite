@@ -13,7 +13,7 @@ include(GoogleTest)
 
 if (WIN32)
     add_custom_command(TARGET utilities_tests POST_BUILD
-            COMMAND ${CMAKE_COMMAND} -E copy_if_different $<TARGET_RUNTIME_DILLS:utilities_tests> $<TARGET_FILE_DIR:utilities_tests>
+            COMMAND ${CMAKE_COMMAND} -E copy_if_different $<TARGET_RUNTIME_DLLS:utilities_tests> $<TARGET_FILE_DIR:utilities_tests>
             COMMAND_EXPAND_LISTS
             )
 endif ()
