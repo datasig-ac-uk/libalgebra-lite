@@ -465,9 +465,7 @@ public:
 
     using compatible_bases = boost::mpl::vector<typename Multiplier::basis_type>;
 
-    explicit base_multiplication(Multiplier &&mult) : m_mult(std::move(mult)) {}
-
-    template <typename... Args>
+    template <typename... Args, typename=std::enable_if_t<std::is_constructible<Multiplier, Args...>::value>>
     explicit base_multiplication(Args &&... args)
         : m_mult(std::forward<Args>(args)...) {}
 
