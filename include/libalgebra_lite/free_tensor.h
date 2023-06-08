@@ -622,8 +622,7 @@ public:
 
 
 
-extern template class LIBALGEBRA_LITE_EXPORT
-multiplication_registry<free_tensor_multiplication>;
+LAL_EXPORT_TEMPLATE(multiplication_registry, free_tensor_multiplication)
 
 
 } // namespace lal
