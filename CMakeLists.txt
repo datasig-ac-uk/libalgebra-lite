@@ -32,7 +32,11 @@ add_library(Libalgebra_lite SHARED
         src/maps.cpp
         src/basis/unpacked_tensor_word.cpp
         include/libalgebra_lite/unpacked_tensor_word.h
-        include/libalgebra_lite/shuffle_tensor.h include/libalgebra_lite/operators.h include/libalgebra_lite/detail/notnull.h include/libalgebra_lite/basis.h include/libalgebra_lite/vector_base.h)
+        include/libalgebra_lite/shuffle_tensor.h
+        include/libalgebra_lite/operators.h
+        include/libalgebra_lite/detail/notnull.h
+        include/libalgebra_lite/basis.h
+        include/libalgebra_lite/vector_base.h)
 
 add_library(Libalgebra_lite::Libalgebra_lite ALIAS Libalgebra_lite)
 generate_export_header(Libalgebra_lite)
@@ -40,10 +44,10 @@ generate_export_header(Libalgebra_lite)
 find_package(Bignum QUIET)
 if (NOT TARGET Bignum::Bignum)
     set(LAL_NO_USE_GMP ON)
-else()
+else ()
     target_link_libraries(Libalgebra_lite PUBLIC Bignum::Bignum)
     set(LAL_NO_USE_GMP OFF)
-endif()
+endif ()
 
 target_include_directories(Libalgebra_lite PRIVATE
         ${CMAKE_CURRENT_LIST_DIR}
