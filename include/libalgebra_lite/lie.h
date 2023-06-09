@@ -50,7 +50,7 @@ public:
 
 };
 
-LAL_EXPORT_TEMPLATE(base_multiplier, lie_multiplier, hall_basis)
+LAL_EXPORT_TEMPLATE(base_multiplier, lie_multiplier, hall_basis, 2)
 
 
 
