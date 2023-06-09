@@ -20,7 +20,9 @@
 
 namespace lal {
 
+class lie_multiplier;
 
+LAL_EXPORT_TEMPLATE(base_multiplier, lie_multiplier, hall_basis, 2)
 
 class LIBALGEBRA_LITE_EXPORT lie_multiplier : public base_multiplier<lie_multiplier, hall_basis, 2>
 {
@@ -49,9 +51,6 @@ public:
 
 
 };
-
-LAL_EXPORT_TEMPLATE(base_multiplier, lie_multiplier, hall_basis, 2)
-
 
 
 struct LIBALGEBRA_LITE_EXPORT lie_multiplication : public base_multiplication<lie_multiplier>
