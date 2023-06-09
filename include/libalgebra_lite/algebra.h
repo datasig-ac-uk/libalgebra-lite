@@ -790,6 +790,8 @@ template <typename Algebra>
 std::enable_if_t<dtl::is_algebra<Algebra>::value, Algebra>
 commutator(const Algebra &lhs, const Algebra &rhs) {
     using traits = multiplication_traits<typename Algebra::multiplication_type>;
+    using cring = typename Algebra::coefficient_ring;
+
     auto multiplication = lhs.multiplication();
     if (!multiplication) {
         multiplication = rhs.multiplication();
@@ -798,7 +800,7 @@ commutator(const Algebra &lhs, const Algebra &rhs) {
     Algebra result(lhs.get_basis(), multiplication);
     if (multiplication && !lhs.empty() && !rhs.empty()) {
         traits::multiply_and_add(*multiplication, result, lhs, rhs);
-        traits::multiply_and_add(*multiplication, result, rhs, lhs, Algebra::coefficient_ring::uminus);
+        traits::multiply_and_add(*multiplication, result, rhs, lhs, cring::uminus);
     }
     return result;
 }
