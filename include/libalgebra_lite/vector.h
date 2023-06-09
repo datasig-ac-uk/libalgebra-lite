@@ -185,7 +185,7 @@ public:
         : base_type(vector_type(basis, args)) {}
 
     vector(basis_pointer basis, const vector_type &arg)
-        : base_type(vectotr_type(arg)) {
+        : base_type(vector_type(arg)) {
     }
 
     vector& operator=(const vector&) = default;
