@@ -172,8 +172,9 @@ public:
         auto max_deg = p_tensor_basis->depth();
 
         lie<Coefficients, VectorType, StorageModel> result(p_lie_basis);
+
         if (arg.basis().depth() <= max_deg) {
-            for (auto outer : arg) {
+            for (auto&& outer : arg) {
                 auto key = outer.key();
                 auto deg = key.degree();
                 if (deg > 0 ) {

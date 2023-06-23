@@ -38,33 +38,34 @@ namespace dtl {
     }
 
 
-template <typename MapType, typename KeyType>
+template <typename Vector>
 class sparse_mutable_reference
 {
-    using iterator_type = typename MapType::iterator;
+    using map_type = typename Vector::map_type;
+    using iterator_type = typename map_type::iterator;
 
-    MapType& m_map;
+    Vector& m_vector;
     iterator_type m_it;
-    typename MapType::mapped_type m_tmp;
-    KeyType m_key;
+    typename Vector::scalar_type m_tmp;
+    typename Vector::key_type m_key;
 
     using Self = sparse_mutable_reference;
 
 public:
 
-    using key_type = KeyType;
-    using scalar_type = typename MapType::mapped_type;
+    using key_type = typename Vector::key_type;
+    using scalar_type = typename Vector::scalar_type;
 
-    sparse_mutable_reference(MapType& map, iterator_type it)
-        : m_map(map), m_it(it), m_key(it->first), m_tmp(it->second)
+    sparse_mutable_reference(Vector& vect, iterator_type it)
+        : m_vector(vect), m_it(it), m_key(it->first), m_tmp(it->second)
     {
-        assert(it != m_map.end());
+        assert(it != m_vector.m_data.end());
     }
 
-    sparse_mutable_reference(MapType& map, KeyType key)
-        : m_map(map), m_key(key), m_it(map.find(key)), m_tmp(0)
+    sparse_mutable_reference(Vector& vect, const key_type& key)
+        : m_vector(vect), m_key(key), m_it(vect.m_data.find(key)), m_tmp(0)
     {
-        if (m_it != m_map.end()) {
+        if (m_it != m_vector.m_data.end()) {
             m_tmp = m_it->second;
         }
     }
@@ -72,13 +73,13 @@ public:
     ~sparse_mutable_reference()
     {
         if (m_tmp != scalar_type(0)) {
-            if (m_it != m_map.end()) {
+            if (m_it != m_vector.m_data.end()) {
                 m_it->second = m_tmp;
             } else {
-                m_map[m_key] = m_tmp;
+                m_vector.insert_new_value(m_key, m_tmp);
             }
-        } else if (m_it != m_map.end()) {
-            m_map.erase(m_it);
+        } else if (m_it != m_vector.m_data.end()) {
+            m_vector.m_data.erase(m_it);
         }
     }
 
@@ -125,11 +126,11 @@ public:
 #undef LAL_MUTABLE_REF_COMPARE
 #undef LAL_MUTABLE_REF_iOP
 
-template <typename MapType, typename Iterator, typename Parent>
+template <typename Vector, typename Iterator, typename Parent>
 class sparse_iterator_base
 {
 protected:
-    MapType* p_map = nullptr;
+    Vector* p_vector = nullptr;
     Iterator m_it;
 
     using traits = std::iterator_traits<Iterator>;
@@ -149,23 +150,23 @@ public:
 
 
 
-    sparse_iterator_base() : p_map(nullptr), m_it()
+    sparse_iterator_base() : p_vector(nullptr), m_it()
     {}
 
-    sparse_iterator_base(MapType* map, Iterator it)
-        : p_map(map), m_it(it)
+    sparse_iterator_base(Vector* vector, Iterator it)
+        : p_vector(vector), m_it(it)
     {
-        assert(map != nullptr);
+        assert(vector != nullptr);
     }
 
-    sparse_iterator_base(MapType& map, Iterator it)
-        : p_map(&map), m_it(it)
+    sparse_iterator_base(Vector& vector, Iterator it)
+        : p_vector(&vector), m_it(it)
     {}
 
     Parent& operator++() noexcept { ++m_it; return static_cast<Parent&>(*this); }
     const Parent operator++(int) noexcept
     {
-        auto result = Parent(p_map, m_it);
+        Parent result(p_vector, m_it);
         ++m_it;
         return result;
     }
@@ -185,17 +186,20 @@ public:
 
 
 
-template <typename MapType, typename Iterator>
+template <typename Vector, typename Iterator>
 class sparse_iterator;
 
-template <typename MapType>
-class sparse_iterator<MapType, typename MapType::iterator>
+template <typename Vector>
+class sparse_iterator<Vector, typename Vector::map_type::iterator>
         : public sparse_iterator_base<
-                MapType,
-                typename MapType::iterator,
-                sparse_iterator<MapType, typename MapType::iterator>>
+                Vector,
+                typename Vector::map_type::iterator,
+                sparse_iterator<Vector, typename Vector::map_type::iterator>>
 {
-    using base = sparse_iterator_base<MapType, typename MapType::iterator, sparse_iterator>;
+    using base = sparse_iterator_base<Vector,
+                                      typename Vector::iterator,
+                                      sparse_iterator>;
+    using base_iterator = typename Vector::map_type::iterator;
 public:
     using difference_type = std::ptrdiff_t;
     using value_type = sparse_iterator;
@@ -203,28 +207,33 @@ public:
     using pointer = sparse_iterator*;
     using iterator_category = std::forward_iterator_tag;
 
-    using value_reference = sparse_mutable_reference<MapType, const typename base::key_type&>;
+    using value_reference = sparse_mutable_reference<Vector>;
+
     using base::base;
 
     const typename base::key_type& key() const noexcept
     {
-        assert(base::p_map != nullptr);
+        assert(base::p_vector != nullptr);
         return base::m_it->first;
     }
 
     value_reference value() const noexcept
     {
-        assert(base::p_map != nullptr);
+        assert(base::p_vector != nullptr);
         return value_reference(*base::p_map, base::m_it);
     }
 };
 
-template <typename MapType>
-class sparse_iterator<MapType, typename MapType::const_iterator>
-        : public sparse_iterator_base<MapType, typename MapType::const_iterator,
-        sparse_iterator<MapType, typename MapType::const_iterator>>
+template <typename Vector>
+class sparse_iterator<Vector, typename Vector::map_type::const_iterator>
+    : public sparse_iterator_base<Vector,
+                                  typename Vector::map_type::const_iterator,
+        sparse_iterator<Vector, typename Vector::map_type::const_iterator>>
 {
-    using base = sparse_iterator_base<MapType, typename MapType::const_iterator, sparse_iterator>;
+    using base = sparse_iterator_base<Vector,
+                                      typename Vector::map_type::const_iterator,
+                                      sparse_iterator>;
+    using base_iterator = typename Vector::map_type::const_iterator;
 public:
     using difference_type = std::ptrdiff_t;
     using iterator_category = std::forward_iterator_tag;
@@ -252,6 +261,10 @@ class sparse_vector : public vectors::vector_base<Basis, Coefficients>
     using vec_base = vectors::vector_base<Basis, Coefficients>;
     using typename vec_base::basis_traits;
     using typename vec_base::coeff_traits;
+
+    friend class dtl::sparse_mutable_reference<sparse_vector>;
+
+
 public:
 
     using typename vec_base::basis_type;
@@ -268,6 +281,9 @@ private:
     deg_t m_degree = 0;
     using vec_base::p_basis;
 
+    friend class dtl::sparse_iterator<sparse_vector, typename map_type::iterator>;
+    friend class dtl::sparse_iterator<const sparse_vector, typename map_type::const_iterator>;
+
 protected:
     sparse_vector(basis_pointer basis, map_type&& arg)
         : vec_base(basis), m_data(arg)
@@ -275,11 +291,11 @@ protected:
 
 public:
 
-    using reference = dtl::sparse_mutable_reference<map_type, key_type>;
+    using reference = dtl::sparse_mutable_reference<sparse_vector>;
     using const_reference = const scalar_type&;
 
-    using iterator = dtl::sparse_iterator<map_type, typename map_type::iterator>;
-    using const_iterator = dtl::sparse_iterator<const map_type, typename map_type::const_iterator>;
+    using iterator = dtl::sparse_iterator<sparse_vector, typename map_type::iterator>;
+    using const_iterator = dtl::sparse_iterator<const sparse_vector, typename map_type::const_iterator>;
 
     template <typename Scalar>
     explicit sparse_vector(basis_pointer basis, std::initializer_list<Scalar> args)
@@ -296,6 +312,7 @@ public:
         scalar_type tmp(s);
         if (tmp != coefficient_ring::zero()) {
             m_data.insert(std::make_pair(key_type(k), tmp));
+            update_degree_for_key(k);
         }
     }
 
@@ -320,10 +337,12 @@ public:
     }
     dimn_t capacity() const noexcept { return basis_traits::max_dimension(*p_basis); }
 
-    iterator begin() noexcept { return {m_data, m_data.begin()}; }
-    iterator end() noexcept { return {m_data, m_data.end()}; }
-    const_iterator begin() const noexcept { return {m_data, m_data.begin()}; }
-    const_iterator end() const noexcept { return {m_data, m_data.end()}; }
+    void update_degree(deg_t degree) noexcept { m_degree = degree; }
+
+    iterator begin() noexcept { return {*this, m_data.begin()}; }
+    iterator end() noexcept { return {*this, m_data.end()}; }
+    const_iterator begin() const noexcept { return {*this, m_data.begin()}; }
+    const_iterator end() const noexcept { return {*this, m_data.end()}; }
 
     const_iterator cbegin() const noexcept { return begin(); }
     const_iterator cend() const noexcept { return end(); }
@@ -339,7 +358,34 @@ public:
 
     reference operator[](const key_type& key) noexcept
     {
-        return reference(m_data, key);
+        return reference(*this, key);
+    }
+
+private:
+
+    template <typename Tag=typename basis_traits::degree_tag>
+    std::enable_if_t<
+        std::is_same<
+            Tag,
+            with_degree_tag
+        >::value
+    >
+    update_degree_for_key(const key_type& key) {
+        auto degree = p_basis->degree(key);
+        if (m_degree < degree && degree < basis_traits::max_degree(*p_basis)) {
+            m_degree = degree;
+        }
+    }
+
+    void update_degree_for_key(...) {
+        // Do Nothing
+    }
+
+public:
+
+    void insert_new_value(const key_type& key, const scalar_type& value) {
+        m_data[key] = value;
+        update_degree_for_key(key);
     }
 
     void clear() noexcept
@@ -393,10 +439,12 @@ public:
                 op(it->second, rit->second);
                 if (it->second == zero) {
                     m_data.erase(it);
+                } else {
+                    update_degree_for_key(it->first);
                 }
             } else {
                 assert(rit->second != zero);
-                m_data.insert(*rit);
+                insert_new_value(rit->first, rit->second);
             }
         }
 

@@ -516,7 +516,7 @@ public:
         const auto &basis = out.basis();
 
         auto out_deg = std::min(out_basis_traits::max_degree(basis), lhs.degree() + rhs.degree());
-
+        out.update_degree(out_deg);
         const auto &lhs_basis = lhs.basis();
         for (auto litem : lhs) {
             auto lkey = litem.key();
@@ -543,6 +543,7 @@ public:
     void multiply_inplace(LeftVector &left, const RightVector &right, Fn op, deg_t max_deg) const {
         if (!left.empty() && !right.empty()) {
             LeftVector tmp(left.get_basis());
+            tmp.update_degree(std::min(left.degree() + right.degree(), max_deg));
             caster::cast(*this).fma(tmp, left, right, op, max_deg);
             left = std::move(tmp);
         } else {

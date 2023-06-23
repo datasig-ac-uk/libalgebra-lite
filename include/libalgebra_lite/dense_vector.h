@@ -120,6 +120,8 @@ private:
 
 public:
 
+    void update_degree(deg_t degree) noexcept { m_degree = degree; }
+
     void reserve_exact(size_type n, deg_t degree=0) {
         m_storage.reserve(n);
         m_degree = degree;

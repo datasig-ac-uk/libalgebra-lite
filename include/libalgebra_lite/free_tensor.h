@@ -492,6 +492,7 @@ class free_tensor
 
 
     static void resize_to_degree(free_tensor<Coefficients, dense_vector, StorageModel>& arg, deg_t degree) {
+        assert(degree <= basis_trait<tensor_basis>::max_degree(arg.basis()));
         auto size = arg.basis().size(degree);
         /*
          * The resize function will look for the smallest dimension larger than
@@ -500,10 +501,13 @@ class free_tensor
          * sure the next smallest dimension is equal to size.
          */
         arg.base_vector().resize(size-1);
+        arg.base_vector().update_degree(degree);
     }
 
     template <template <typename, typename> class OVT>
-    static void resize_to_degree(free_tensor<Coefficients, OVT, StorageModel>& arg, deg_t degree) {}
+    static void resize_to_degree(free_tensor<Coefficients, OVT, StorageModel>& arg, deg_t degree) {
+        arg.base_vector().update_degree(degree);
+    }
 
 public:
     using typename algebra_type::basis_type;
