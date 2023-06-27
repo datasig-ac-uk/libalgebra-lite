@@ -83,8 +83,8 @@ public:
     maps_implementation(const tensor_basis* tbasis, const hall_basis* lbasis)
         : p_tensor_basis(tbasis),
           p_lie_basis(lbasis),
-          p_ftensor_mul(multiplication_registry<free_tensor_multiplication>::get(tbasis->width())),
           p_lie_mul(multiplication_registry<lie_multiplication>::get(lbasis->width())),
+          p_ftensor_mul(multiplication_registry<free_tensor_multiplication>::get(tbasis->width())),
           m_expand(p_lie_basis->get_hall_set(), &expand_letter, generic_commutator(*p_tensor_basis, *p_ftensor_mul))
     { }
 
@@ -188,12 +188,12 @@ public:
         } else {
             for (auto outer : arg) {
                 auto key = outer.key();
-                auto deg = key.degree();
+                auto deg = static_cast<deg_t>(key.degree());
                 if (deg > 0 ){
                     auto val = outer.value() / deg;
                     if (deg <= max_deg) {
                         for (auto inner : rbracketing(key)) {
-                            assert(inner.first.degree() == deg);
+                            assert(inner.first.degree() == static_cast<dimn_t>(deg));
                             result.add_scal_prod(inner.first, Coefficients::mul(scalar_type(inner.second), val));
                         }
                     }

@@ -48,8 +48,8 @@ struct TensorFixture : public ::testing::Test
 
         auto idx = arg.index();
         typename letter_type::integral_type tmp(0);
-        auto pow = 1;
-        for (auto i = 0; i < arg.degree(); ++i) {
+        decltype(idx) pow = 1;
+        for (decltype(idx) i = 0; i < arg.degree(); ++i) {
             tmp += (1 + idx % width) * pow;
             pow *= 10;
             idx /= width;

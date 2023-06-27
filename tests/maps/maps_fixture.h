@@ -108,7 +108,7 @@ private:
     lal::monomial tkey_to_poly(char prefix, tkey_type key) const
     {
         lal::dimn_t word = 0;
-        auto deg = key.degree();
+        auto deg = static_cast<deg_t>(key.degree());
         auto index = key.index();
         for (deg_t i=0; i<deg; ++i) {
             word *= 10;

@@ -495,7 +495,6 @@ public:
     template <typename Vector>
     friend std::enable_if_t<std::is_base_of<vector, Vector>::value, Vector>
     operator-(const Vector &arg) {
-        using coeffs = typename Vector::coefficient_ring;
         vector result_inner(arg.instance()
                                 .unary_op([](const scalar_type &s) { return -s; }));
         return Vector(std::move(result_inner));
@@ -506,33 +505,30 @@ public:
         std::is_same<Scal, scalar_type>::value || std::is_constructible<scalar_type, const Scal&>::value),
                             Vector>
     operator*(const Vector &arg, const Scal &scalar) {
-        using coeffs = typename Vector::coefficient_ring;
         scalar_type m(scalar);
         vector result_inner(arg.instance()
                                 .unary_op([m](const scalar_type &s) {
                                     return s * m;
                                 }));
         return Vector(std::move(result_inner));
-    };
+    }
 
     template <typename Vector, typename Scal>
     friend std::enable_if_t<std::is_base_of<vector, Vector>::value &&
         (std::is_same<Scal, scalar_type>::value || std::is_constructible<scalar_type, const Scal &>::value),
     Vector>
     operator*(const Scal &scalar, const Vector &arg) {
-        using coeffs = typename Vector::coefficient_ring;
         scalar_type m(scalar);
         vector result_inner(arg.instance()
                                 .unary_op([m](const scalar_type &s) {
                                     return m * s;
                                 }));
         return Vector(std::move(result_inner));
-    };
+    }
 
     template <typename Vector, typename Rat>
     friend std::enable_if_t<std::is_base_of<vector, Vector>::value, Vector>
     operator/(const Vector &arg, const Rat &scalar) {
-        using coeffs = typename Vector::coefficient_ring;
         rational_type m(scalar);
         vector result_inner(arg.instance()
             .unary_op([m](const scalar_type &s) { return s / m; }));
@@ -542,7 +538,6 @@ public:
     template <typename LVector>
     friend std::enable_if_t<std::is_base_of<vector, LVector>::value, LVector>
     operator+(const LVector &lhs, const vector &rhs) {
-        using coeffs = typename LVector::coefficient_ring;
         vector result_inner(lhs.instance().binary_op(rhs.instance(),
                                                                          [](const scalar_type &ls,
                                                                             const scalar_type &rs) {
@@ -555,7 +550,6 @@ public:
     template <typename LVector>
     friend std::enable_if_t<std::is_base_of<vector, LVector>::value, LVector>
     operator-(const LVector &lhs, const vector &rhs) {
-        using coeffs = typename LVector::coefficient_ring;
         vector result_inner(lhs.instance().binary_op(rhs.instance(),
                                                      [](const scalar_type &ls, const scalar_type & rs)
                                                         { return ls - rs; }));
@@ -622,8 +616,8 @@ public:
         os << "{ ";
         for (auto item : arg) {
             auto val = item.value();
-            if (item.value() != zero) {
-                os << item.value() << '(';
+            if (val != zero) {
+                os << val << '(';
                 basis.print_key(os, item.key());
                 os << ") ";
             }

@@ -18,7 +18,7 @@ free_tensor_multiplier::operator()(
 {
     // Note that product_type is small and the product only ever
     // has 1 element (if any) so no allocation takes place
-    if (lhs.degree() + rhs.degree() <= basis.depth()) {
+    if (lhs.degree() + rhs.degree() <= static_cast<dimn_t>(basis.depth())) {
         return product_type{{concat_product(basis, lhs, rhs), 1}};
     }
     return {};

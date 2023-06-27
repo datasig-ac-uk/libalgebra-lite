@@ -43,10 +43,9 @@ public:
         result.reserve(key.degree()+1);
 
 
-        const auto& powers = basis->powers();
 
         lal::unpacked_tensor_word tword(width, key);
-        for (auto lh_deg = 0; lh_deg <= key.degree(); ++lh_deg) {
+        for (lal::dimn_t lh_deg = 0; lh_deg <= key.degree(); ++lh_deg) {
 
             std::map<letter_type, lal::deg_t> tmp;
             auto split = tword.split(lh_deg);
@@ -86,7 +85,7 @@ TYPED_TEST_P(FreeTensorMultiplicationFixture, testMultiplication) {
     EXPECT_EQ(first[x0 * y0], this->one());
 
     for (auto d=1; d<=this->basis->depth(); ++d) {
-        for (auto i=0; i<powers[d]; ++i) {
+        for (lal::dimn_t i=0; i<powers[d]; ++i) {
             TensorFixture::key_type key(d, i);
             const auto& val = result[key];
             auto components = this->deconstruct_key('x', 'y', key);
@@ -117,7 +116,7 @@ TYPED_TEST_P(FreeTensorMultiplicationFixture, testInplaceMultiplication) {
     EXPECT_EQ(first[x0 * y0], this->one());
 
     for (auto d = 1; d <= this->basis->depth(); ++d) {
-        for (auto i = 0; i < powers[d]; ++i) {
+        for (lal::dimn_t i = 0; i < powers[d]; ++i) {
             TensorFixture::key_type key(d, i);
             const auto &val = lhs[key];
             auto components = this->deconstruct_key('x', 'y', key);

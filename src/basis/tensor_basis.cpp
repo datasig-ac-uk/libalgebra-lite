@@ -17,11 +17,11 @@ tensor_basis::tensor_basis(deg_t width, deg_t depth) :
     m_powers.push_back(1);
     m_sizes.push_back(1);
 
-    for (dimn_t d = 1; d<=depth; ++d) {
-        m_powers.push_back(m_powers.back()*width);
-        m_sizes.push_back(1+width*m_sizes.back());
+    for (deg_t d = 1; d<=depth; ++d) {
+        m_powers.push_back(m_powers.back()*static_cast<dimn_t>(width));
+        m_sizes.push_back(1+static_cast<dimn_t>(width)*m_sizes.back());
     }
-    m_sizes.push_back(1+width*m_sizes.back());
+    m_sizes.push_back(1+static_cast<dimn_t>(width)*m_sizes.back());
 }
 
 dimn_t tensor_basis::key_to_index(tensor_basis::key_type arg) const noexcept
@@ -58,7 +58,7 @@ std::string tensor_basis::key_to_string(const tensor_basis::key_type& key) const
 std::ostream& tensor_basis::print_key(std::ostream& os, const tensor_basis::key_type& key) const
 {
     std::vector<let_t> tmp;
-    auto deg = key.degree();
+    auto deg = static_cast<deg_t>(key.degree());
     tmp.reserve(deg);
     auto idx = key.index();
     for (deg_t i=0; i<deg; ++i) {

@@ -46,8 +46,8 @@ class sparse_mutable_reference
 
     Vector& m_vector;
     iterator_type m_it;
-    typename Vector::scalar_type m_tmp;
     typename Vector::key_type m_key;
+    typename Vector::scalar_type m_tmp;
 
     using Self = sparse_mutable_reference;
 
@@ -63,7 +63,7 @@ public:
     }
 
     sparse_mutable_reference(Vector& vect, const key_type& key)
-        : m_vector(vect), m_key(key), m_it(vect.m_data.find(key)), m_tmp(0)
+        : m_vector(vect), m_it(vect.m_data.find(key)), m_key(key), m_tmp(0)
     {
         if (m_it != m_vector.m_data.end()) {
             m_tmp = m_it->second;

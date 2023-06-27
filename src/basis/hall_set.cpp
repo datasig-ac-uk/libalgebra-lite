@@ -27,7 +27,7 @@ hall_set::hall_set(hall_set::degree_type width, hall_set::degree_type depth)
     degree_ranges.push_back({0, 1});
     m_sizes.push_back(0);
 
-    for (letter_type l = 1; l <= width; ++l) {
+    for (letter_type l = 1; l <= static_cast<letter_type>(width); ++l) {
         key_type key(1, l-1);
 //        std::cout << zero_key << ' ' << key << ' ' << key << '\n';
         parent_type parents{zero_key, key};
@@ -96,10 +96,10 @@ hall_set::key_type hall_set::key_of_letter(let_t let) const noexcept
 }
 hall_set::size_type hall_set::size(deg_t deg) const noexcept
 {
-    if (deg >= 0 && deg < m_sizes.size()) {
+    if (deg >= 0 && static_cast<dimn_t>(deg) < m_sizes.size()) {
         return m_sizes[deg];
     }
-    if (deg < 0 && deg >= -m_sizes.size()) {
+    if (deg < 0 && deg >= -static_cast<idimn_t>(m_sizes.size())) {
         return m_sizes[m_sizes.size() + deg];
     }
     return m_sizes.back();

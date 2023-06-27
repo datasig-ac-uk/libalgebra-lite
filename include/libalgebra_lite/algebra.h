@@ -446,7 +446,6 @@ class base_multiplication {
     template <typename OutVector, typename ProductType, typename PSca>
     void asp_helper(OutVector &out, ProductType &&key_prod, PSca &&scalar) const {
         using scalar_type = scal_t<OutVector>;
-        using ring = typename OutVector::coefficient_ring;
         scalar_type s(std::forward<PSca>(scalar));
 
         for (const auto &kv_pair : key_prod) {

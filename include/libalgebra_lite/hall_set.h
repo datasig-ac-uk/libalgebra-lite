@@ -111,9 +111,9 @@ public:
 
 class LIBALGEBRA_LITE_EXPORT hall_basis
 {
-    std::shared_ptr<const hall_set> p_hallset;
     deg_t m_width;
     deg_t m_depth;
+    std::shared_ptr<const hall_set> p_hallset;
 
     static std::string letter_to_string(let_t letter);
     static std::string key_to_string_op(const std::string& left, const std::string& right);

@@ -11,7 +11,7 @@ namespace lal {
 unpacked_tensor_word::unpacked_tensor_word(deg_t width, tensor_basis::key_type key)
     : m_data(), m_width(width)
 {
-    auto deg = key.degree();
+    auto deg = static_cast<deg_t>(key.degree());
     m_data.reserve(deg);
     auto index = key.index();
     for (deg_t i = 0; i<deg; ++i) {
@@ -53,7 +53,7 @@ unpacked_tensor_word::unpacked_tensor_word(deg_t width, deg_t depth)
 void unpacked_tensor_word::advance(deg_t number)
 {
     assert(number < std::numeric_limits<letter_type>::max());
-    auto position = 0;
+    dimn_t position = 0;
     do {
         auto& let = m_data[position++];
         let += number;
@@ -88,7 +88,7 @@ unpacked_tensor_word::index_type unpacked_tensor_word::pack_with_base(deg_t base
     assert(base >= m_width);
     index_type result = 0;
     auto degree = m_data.size();
-    for (auto i=1; i<=degree; ++i) {
+    for (dimn_t i=1; i<=degree; ++i) {
         result *= base;
         result += offset + m_data[degree - i];
     }

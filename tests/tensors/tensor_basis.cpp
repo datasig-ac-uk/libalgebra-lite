@@ -115,7 +115,7 @@ TEST_F(TensorFixture, testSizeOfDegreeVsSize) {
 }
 
 TEST_F(TensorFixture, testLetterToKey) {
-    for (lal::let_t l=1; l<=width; ++l) {
+    for (lal::let_t l=1; l<=static_cast<lal::let_t>(width); ++l) {
         EXPECT_EQ(key(l), basis->key_of_letter(l));
     }
 }
