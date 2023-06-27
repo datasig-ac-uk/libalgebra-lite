@@ -273,10 +273,9 @@ public:
     using typename vec_base::coefficient_ring;
     using typename vec_base::scalar_type;
     using typename vec_base::rational_type;
+    using map_type = std::map<key_type, scalar_type>;
 
 private:
-
-    using map_type = std::map<key_type, scalar_type>;
     map_type m_data;
     deg_t m_degree = 0;
     using vec_base::p_basis;
@@ -377,7 +376,14 @@ private:
         }
     }
 
-    void update_degree_for_key(...) {
+    template <typename Tag=typename basis_traits::degree_tag>
+    std::enable_if_t<
+        std::is_same<
+            Tag,
+            without_degree_tag
+        >::value
+    >
+    update_degree_for_key(const key_type&) {
         // Do Nothing
     }
 
