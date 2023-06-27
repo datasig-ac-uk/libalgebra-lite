@@ -197,8 +197,8 @@ class sparse_iterator<Vector, typename Vector::map_type::iterator>
                 sparse_iterator<Vector, typename Vector::map_type::iterator>>
 {
     using base = sparse_iterator_base<Vector,
-                                      typename Vector::iterator,
-                                      sparse_iterator>;
+                                      typename Vector::map_type::iterator,
+                                      sparse_iterator<Vector, typename Vector::map_type::iterator>>;
     using base_iterator = typename Vector::map_type::iterator;
 public:
     using difference_type = std::ptrdiff_t;
@@ -232,7 +232,7 @@ class sparse_iterator<Vector, typename Vector::map_type::const_iterator>
 {
     using base = sparse_iterator_base<Vector,
                                       typename Vector::map_type::const_iterator,
-                                      sparse_iterator>;
+                                      sparse_iterator<Vector, typename Vector::map_type::const_interator>>;
     using base_iterator = typename Vector::map_type::const_iterator;
 public:
     using difference_type = std::ptrdiff_t;
