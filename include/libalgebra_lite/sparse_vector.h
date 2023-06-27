@@ -232,7 +232,7 @@ class sparse_iterator<Vector, typename Vector::map_type::const_iterator>
 {
     using base = sparse_iterator_base<Vector,
                                       typename Vector::map_type::const_iterator,
-                                      sparse_iterator<Vector, typename Vector::map_type::const_interator>>;
+                                      sparse_iterator<Vector, typename Vector::map_type::const_iterator>>;
     using base_iterator = typename Vector::map_type::const_iterator;
 public:
     using difference_type = std::ptrdiff_t;
