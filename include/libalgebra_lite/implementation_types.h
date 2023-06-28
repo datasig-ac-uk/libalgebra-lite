@@ -54,7 +54,7 @@ using let_t = std::size_t;
     extern template class TMPL<__VA_ARGS__>;
 #else
 #define LAL_EXPORT_TEMPLATE(TMPL, ...) \
-    template class LIBALGEBRA_LITE_EXPORT TMPL<__VA_ARGS__>;
+    extern template class TMPL<__VA_ARGS__>;
 #endif
 #else
 #define LAL_EXPORT_TEMPLATE(TMPL, ...) \
