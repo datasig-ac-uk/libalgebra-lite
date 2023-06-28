@@ -19,6 +19,10 @@ maps::maps(basis_pointer<tensor_basis> tbasis, basis_pointer<hall_basis> lbasis)
 
 }
 
+maps::~maps() {
+    delete p_impl;
+}
+
 dtl::generic_commutator::tensor_type dtl::generic_commutator::operator()(
         ref_type lhs,
         ref_type rhs) const
