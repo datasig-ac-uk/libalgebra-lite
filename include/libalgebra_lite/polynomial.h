@@ -94,19 +94,17 @@ public:
 
 };
 
-
-
-LAL_EXPORT_TEMPLATE(polynomial, double_field)
-LAL_EXPORT_TEMPLATE(polynomial, float_field)
-LAL_EXPORT_TEMPLATE(polynomial, rational_field)
+LAL_EXPORT_TEMPLATE_CLASS(polynomial, double_field)
+LAL_EXPORT_TEMPLATE_CLASS(polynomial, float_field)
+LAL_EXPORT_TEMPLATE_CLASS(polynomial, rational_field)
 
 using double_poly = polynomial<double_field>;
 using float_poly = polynomial<float_field>;
 using rational_poly = polynomial<rational_field>;
 
-LAL_EXPORT_TEMPLATE(coefficient_ring, double_poly, double)
-LAL_EXPORT_TEMPLATE(coefficient_ring, float_poly, float)
-LAL_EXPORT_TEMPLATE(coefficient_ring, rational_poly, typename rational_field::scalar_type)
+LAL_EXPORT_TEMPLATE_STRUCT(coefficient_ring, double_poly, double)
+LAL_EXPORT_TEMPLATE_STRUCT(coefficient_ring, float_poly, float)
+LAL_EXPORT_TEMPLATE_STRUCT(coefficient_ring, rational_poly, typename rational_field::scalar_type)
 
 
 

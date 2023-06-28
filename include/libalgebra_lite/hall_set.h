@@ -216,9 +216,7 @@ hall_extension<Func, Binop, ReturnType>::operator()(
     return m_cache[key] = m_binop(operator()(parents.first), operator()(parents.second));
 }
 
-
-
-LAL_EXPORT_TEMPLATE(basis_registry, hall_basis)
+LAL_EXPORT_TEMPLATE_CLASS(basis_registry, hall_basis)
 
 } // namespace lal
 

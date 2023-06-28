@@ -22,7 +22,7 @@ namespace lal {
 
 class lie_multiplier;
 
-LAL_EXPORT_TEMPLATE(base_multiplier, lie_multiplier, hall_basis, 2)
+LAL_EXPORT_TEMPLATE_CLASS(base_multiplier, lie_multiplier, hall_basis, 2)
 
 class LIBALGEBRA_LITE_EXPORT lie_multiplier : public base_multiplier<lie_multiplier, hall_basis, 2>
 {
@@ -70,7 +70,7 @@ using lie = algebra<hall_basis,
                     VectorType,
                     StorageModel>;
 
-LAL_EXPORT_TEMPLATE(multiplication_registry, lie_multiplication)
+LAL_EXPORT_TEMPLATE_CLASS(multiplication_registry, lie_multiplication)
 
 } // namespace lal
 

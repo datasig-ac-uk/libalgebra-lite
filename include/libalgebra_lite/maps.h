@@ -114,6 +114,7 @@ public:
 
     maps(basis_pointer<tensor_basis> tbasis, basis_pointer<hall_basis> lbasis);
     maps(deg_t width, deg_t depth);
+    ~maps();
 
     glie_ref rbracketing(tkey_type tkey) const { return p_impl->rbracketing(tkey); }
     gtensor_ref expand(lkey_type lkey) const { return p_impl->expand(lkey); }

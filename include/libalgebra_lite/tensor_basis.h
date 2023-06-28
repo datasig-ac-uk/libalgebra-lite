@@ -100,9 +100,7 @@ public:
 
 };
 
-
-
-LAL_EXPORT_TEMPLATE(basis_registry, tensor_basis)
+LAL_EXPORT_TEMPLATE_CLASS(basis_registry, tensor_basis)
 
 } // namespace lal
 

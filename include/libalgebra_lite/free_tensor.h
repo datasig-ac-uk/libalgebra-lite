@@ -622,11 +622,7 @@ public:
 
 };
 
-
-
-
-
-LAL_EXPORT_TEMPLATE(multiplication_registry, free_tensor_multiplication)
+LAL_EXPORT_TEMPLATE_CLASS(multiplication_registry, free_tensor_multiplication)
 
 
 } // namespace lal

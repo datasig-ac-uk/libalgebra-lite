@@ -50,15 +50,22 @@ using let_t = std::size_t;
 
 #if WIN32
 #ifdef Libalgebra_Lite_EXPORTS
-#define LAL_EXPORT_TEMPLATE(TMPL, ...) \
+#define LAL_EXPORT_TEMPLATE_CLASS(TMPL, ...) \
     extern template class TMPL<__VA_ARGS__>;
+#define LAL_EXPORT_TEMPLATE_STRUCT(TMPL, ...) \
+    extern template struct TMPL<__VA_ARGS__>;
 #else
-#define LAL_EXPORT_TEMPLATE(TMPL, ...) \
+#define LAL_EXPORT_TEMPLATE_CLASS(TMPL, ...) \
     template class LIBALGEBRA_LITE_EXPORT TMPL<__VA_ARGS__>;
+#define LAL_EXPORT_TEMPLATE_STRUCT(TMPL, ...) \
+    template struct LIBALGEBRA_LITE_EXPORT TMPL<__VA_ARGS__>;
 #endif
 #else
-#define LAL_EXPORT_TEMPLATE(TMPL, ...) \
+#define LAL_EXPORT_TEMPLATE_CLASS(TMPL, ...) \
     extern template class LIBALGEBRA_LITE_EXPORT TMPL<__VA_ARGS__>;
+#define LAL_EXPORT_TEMPLATE_STRUCT(TMPL, ...) \
+    extern template struct LIBALGEBRA_LITE_EXPORT TMPL<__VA_ARGS__>;
 #endif
+
 
 #endif //LIBALGEBRA_LITE_IMPLEMENTATION_TYPES_H
