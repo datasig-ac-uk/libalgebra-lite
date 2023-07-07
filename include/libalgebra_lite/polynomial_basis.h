@@ -70,6 +70,10 @@ public:
     {}
 
     deg_t degree() const noexcept;
+    deg_t type() const noexcept { return m_data.size(); }
+
+    deg_t operator[](letter_type let) const noexcept;
+    deg_t& operator[](letter_type let) noexcept { return m_data[let]; }
 
     iterator begin() noexcept { return m_data.begin(); }
     iterator end() noexcept { return m_data.end(); }

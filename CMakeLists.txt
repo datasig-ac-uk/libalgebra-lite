@@ -14,29 +14,32 @@ find_package(Boost REQUIRED)
 add_library(Libalgebra_lite SHARED
         src/basis/hall_set.cpp
         src/basis/tensor_basis.cpp
+        src/basis/monomial.cpp
+        src/basis/polynomial_basis.cpp
+        src/basis/unpacked_tensor_word.cpp
+        src/algebra/lie_multiplier.cpp
+        src/algebra/polynomial_multiplier.cpp
+        src/algebra/polynomial.cpp
+        src/algebra/half_shuffle_multiplier.cpp
+        src/algebra/free_tensor_multiplier.cpp
+        src/algebra/shuffle_multiplier.cpp
+        src/algebra/polynomial_ring.cpp
+        src/maps.cpp
         include/libalgebra_lite/free_tensor.h
         include/libalgebra_lite/lie.h
         include/libalgebra_lite/maps.h
         include/libalgebra_lite/vector_bundle.h
-        src/algebra/lie_multiplier.cpp
+        include/libalgebra_lite/packed_integer.h
         include/libalgebra_lite/polynomial_basis.h
         include/libalgebra_lite/polynomial.h
-        src/algebra/polynomial_multiplier.cpp
-        src/algebra/polynomial.cpp
-        src/algebra/half_shuffle_multiplier.cpp
-        src/algebra/shuffle_multiplier.cpp
-        src/algebra/free_tensor_multiplier.cpp
         include/libalgebra_lite/registry.h
-        src/basis/polynomial_basis.cpp
-        src/algebra/polynomial_ring.cpp
-        src/maps.cpp
-        src/basis/unpacked_tensor_word.cpp
         include/libalgebra_lite/unpacked_tensor_word.h
         include/libalgebra_lite/shuffle_tensor.h
         include/libalgebra_lite/operators.h
-        include/libalgebra_lite/detail/notnull.h
         include/libalgebra_lite/basis.h
-        include/libalgebra_lite/vector_base.h)
+        include/libalgebra_lite/vector_base.h
+        include/libalgebra_lite/detail/notnull.h
+        )
 
 add_library(Libalgebra_lite::Libalgebra_lite ALIAS Libalgebra_lite)
 generate_export_header(Libalgebra_lite)
@@ -80,31 +83,31 @@ configure_file(cmake/rationals.h.in rationals.h NO_SOURCE_PERMISSIONS @ONLY)
 install(TARGETS Libalgebra_lite
         EXPORT Libalgebra_liteTargets
         PUBLIC_HEADER DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}/libalgebra_lite"
-            COMPONENT Development
-            EXCLUDE_FROM_ALL
+        COMPONENT Development
+        EXCLUDE_FROM_ALL
         RUNTIME DESTINATION "${CMAKE_INSTALL_BINDIR}"
         LIBRARY DESTINATION "${CMAKE_INSTALL_LIBDIR}"
         ARCHIVE DESTINATION "${CMAKE_INSTALL_LIBDIR}"
-            COMPONENT Development
-            EXCLUDE_FROM_ALL
+        COMPONENT Development
+        EXCLUDE_FROM_ALL
         )
 install(DIRECTORY ${CMAKE_CURRENT_LIST_DIR}/include/libalgebra_lite
         DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
-            COMPONENT Development
-            EXCLUDE_FROM_ALL
+        COMPONENT Development
+        EXCLUDE_FROM_ALL
         )
 install(FILES ${CMAKE_CURRENT_BINARY_DIR}/config.h
         ${CMAKE_CURRENT_BINARY_DIR}/rationals.h
         ${CMAKE_CURRENT_BINARY_DIR}/libalgebra_lite_export.h
         DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/libalgebra_lite
-            COMPONENT Development
-            EXCLUDE_FROM_ALL
+        COMPONENT Development
+        EXCLUDE_FROM_ALL
         )
 install(EXPORT Libalgebra_liteTargets
         DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/Libalgebra_lite
         NAMESPACE Libalgebra_lite::
-            COMPONENT Development
-            EXCLUDE_FROM_ALL
+        COMPONENT Development
+        EXCLUDE_FROM_ALL
         )
 
 include(CMakePackageConfigHelpers)
@@ -123,8 +126,8 @@ install(FILES
         ${CMAKE_CURRENT_BINARY_DIR}/Libalgebra_liteConfig.cmake
         ${CMAKE_CURRENT_BINARY_DIR}/Libalgebra_liteVersion.cmake
         DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/Libalgebra_lite
-            COMPONENT Development
-            EXCLUDE_FROM_ALL
+        COMPONENT Development
+        EXCLUDE_FROM_ALL
         )
 
 enable_testing()

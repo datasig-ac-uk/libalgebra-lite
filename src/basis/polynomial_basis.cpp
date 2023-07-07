@@ -54,11 +54,7 @@ monomial operator*(const monomial& lhs, const monomial& rhs)
     return result;
 }
 
-deg_t monomial::degree() const noexcept
-{
-    return std::accumulate(m_data.begin(), m_data.end(), 0,
-            [](const auto& curr, const auto& key) { return curr + key.second; });
-}
+
 std::ostream& polynomial_basis::print_key(std::ostream& os, const polynomial_basis::key_type& key) const
 {
     return os << key;

@@ -3,17 +3,24 @@
 //
 
 
-#include "include/libalgebra_lite/polynomial_basis.h"
-
+#include <libalgebra_lite/polynomial_basis.h>
+#include <libalgebra_lite/packed_integer.h>
 
 using namespace lal;
 
+template class dtl::packed_integer<dimn_t, char>;
 
-deg_t lal::monomial::degree() const noexcept
-{
-    deg_t result{0};
-    for (const auto& item : m_data) {
-        result += item.second;
+deg_t lal::monomial::operator[](letter_type let) const noexcept {
+    auto found = m_data.find(let);
+    if (found != m_data.end()) {
+        return found->second;
     }
-    return result;
+    return 0;
+}
+deg_t monomial::degree() const noexcept
+{
+    return std::accumulate(
+            m_data.begin(), m_data.end(), 0,
+            [](const auto& curr, const auto& key) { return curr + key.second; }
+    );
 }
