@@ -93,6 +93,11 @@ public:
     constexpr bool operator>=(const packed_integer& arg) const noexcept
     { return m_data >= arg.m_data; }
 
+    friend std::size_t hash_value(const packed_integer& value) noexcept {
+        std::hash<Int> hasher;
+        return hasher(value.m_data);
+    }
+
 };
 
 

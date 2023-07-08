@@ -13,6 +13,7 @@
 
 #include <boost/container/small_vector.hpp>
 #include <boost/container/flat_map.hpp>
+#include <boost/container_hash/hash.hpp>
 
 #include "libalgebra_lite_export.h"
 #include "packed_integer.h"
@@ -105,6 +106,12 @@ public:
     }
 
     monomial& operator*=(const monomial& rhs);
+
+    friend std::size_t hash_value(const monomial& mon) noexcept
+    {
+        boost::hash<map_type> hasher;
+        return hasher(mon.m_data);
+    }
 
 };
 
