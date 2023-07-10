@@ -617,7 +617,8 @@ public:
 
     friend free_tensor antipode(const free_tensor& arg) {
         // TODO: replace with implementation of antipode.
-        return inverse(arg);
+//        return inverse(arg);
+        return arg;
     }
 
 };
