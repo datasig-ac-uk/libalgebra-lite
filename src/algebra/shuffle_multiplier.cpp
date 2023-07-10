@@ -20,7 +20,7 @@ shuffle_tensor_multiplier::operator()(
         typename base_type::key_type lhs,
         typename base_type::key_type rhs) const
 {
-    if (static_cast<deg_t>(lhs.degree() + rhs.degree()) >= basis.depth()) {
+    if (static_cast<deg_t>(lhs.degree() + rhs.degree()) > basis.depth()) {
         return {};
     }
 
