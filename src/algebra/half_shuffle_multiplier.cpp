@@ -85,7 +85,7 @@ left_half_shuffle_tensor_multiplier::operator()(
 {
     static const boost::container::small_vector<typename base_type::pair_type, 0> null;
 
-    if (static_cast<deg_t>(lhs.degree() + rhs.degree()) >= basis.depth()) {
+    if (static_cast<deg_t>(lhs.degree() + rhs.degree()) > basis.depth()) {
         return null;
     }
 
@@ -175,7 +175,7 @@ right_half_shuffle_tensor_multiplier::operator()(
 {
     static const boost::container::small_vector<typename base_type::pair_type, 0> null;
 
-    if (lhs.degree() + rhs.degree() >= static_cast<dimn_t>(basis.depth())) {
+    if (lhs.degree() + rhs.degree() > static_cast<dimn_t>(basis.depth())) {
         return null;
     }
 
