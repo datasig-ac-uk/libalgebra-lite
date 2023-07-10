@@ -220,7 +220,7 @@ public:
     value_reference value() const noexcept
     {
         assert(base::p_vector != nullptr);
-        return value_reference(*base::p_map, base::m_it);
+        return value_reference(*base::p_vector, base::m_it);
     }
 };
 
