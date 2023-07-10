@@ -292,7 +292,7 @@ public:
         if (degree > max_degree) {
             return iterable(right_buffer.end(), right_buffer.end());
         }
-        return iterable(degree_ranges[degree], degree_ranges[degree + 1]);
+        return iterable(right_buffer.begin(), degree_ranges[degree + 1]);
     }
 
 };
