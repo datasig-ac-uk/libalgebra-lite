@@ -450,7 +450,9 @@ public:
                 }
             } else {
                 assert(rit->second != zero);
-                insert_new_value(rit->first, rit->second);
+                scalar_type new_val = zero;
+                op(new_val, rit->second);
+                insert_new_value(rit->first, new_val);
             }
         }
 
