@@ -48,7 +48,7 @@ using let_t = std::size_t;
 #endif
 
 
-#if WIN32
+#ifdef _WIN32
 #ifdef Libalgebra_Lite_EXPORTS
 #define LAL_EXPORT_TEMPLATE_CLASS(TMPL, ...) \
     extern template class TMPL<__VA_ARGS__>;
