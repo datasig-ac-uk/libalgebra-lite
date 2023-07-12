@@ -25,6 +25,8 @@ add_library(Libalgebra_lite SHARED
         src/algebra/shuffle_multiplier.cpp
         src/algebra/polynomial_ring.cpp
         src/maps.cpp
+        include/libalgebra_lite/detail/macros.h
+        include/libalgebra_lite/detail/traits.h
         include/libalgebra_lite/free_tensor.h
         include/libalgebra_lite/lie.h
         include/libalgebra_lite/maps.h
