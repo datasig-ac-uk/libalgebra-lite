@@ -8,9 +8,9 @@
 #include <cstddef>
 #include <cstdint>
 
-#include <boost/predef.h>
 
 #include "config.h"
+#include "detail/macros.h"
 
 #ifdef LAL_USE_LIBAGEBRA
 #include <libalgebra/libalgebra.h>
@@ -29,23 +29,6 @@ using let_t = std::size_t;
 
 } // namespace lal
 
-
-#if BOOST_COMP_MSVC
-#define LAL_INLINE_ALWAYS
-#define LAL_INLINE_NEVER
-#define LAL_RESTRICT
-#define LAL_UNUSED
-#elif BOOST_COMP_GNUC
-#define LAL_INLINE_ALWAYS __attribute__((always_inline))
-#define LAL_INLINE_NEVER __attribute__((noinline))
-#define LAL_RESTRICT __restrict
-#define LAL_UNUSED __attribute__((unused))
-#else
-#define LAL_INLINE_ALWAYS
-#define LAL_INLINE_NEVER
-#define LAL_RESTRICT
-#define LAL_UNUSED
-#endif
 
 
 #ifdef _WIN32
