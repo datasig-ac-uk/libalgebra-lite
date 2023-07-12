@@ -50,7 +50,7 @@
 #endif
 
 #ifdef __has_feature
-#  define LAL_HAS_FEATURE(x) __has_feature(x)
+#  define LAL_HAS_FEATURE(x) (__has_feature(x))
 #else
 #  define LAL_HAS_FEATURE(x) 0
 #endif
@@ -65,6 +65,12 @@
 #  define LAL_HAS_ATTRIBUTE(x) __has_attribute(x)
 #else
 #  define LAL_HAS_ATTRIBUTE(x) 0
+#endif
+
+#ifdef __has_extension
+#  define LAL_HAS_EXTENSION(x) __has_extension(x)
+#else
+#  define LAL_HAS_EXTENSION(x) LAL_HAS_FEATURE(x)
 #endif
 
 #if defined(_DEBUG) || !defined(NDEBUG)                                        \
@@ -117,7 +123,6 @@
 #else
 #  define LAL_NO_RETURN
 #endif
-
 
 
 

@@ -7,6 +7,7 @@
 
 #include <cstddef>
 #include <cstdint>
+#include <utility>
 
 
 #include "config.h"
@@ -25,6 +26,7 @@ using deg_t = std::int32_t;
 
 using let_t = std::size_t;
 
+using std::pair;
 
 
 } // namespace lal
