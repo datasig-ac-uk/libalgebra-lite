@@ -3,11 +3,11 @@
 //
 
 
-#include "include/libalgebra_lite/coefficients/coefficient_ring.h"
+#include "libalgebra_lite/coefficients.h"
 
 namespace lal {
 
-template class coefficient_field<float>;
-template class coefficient_field<double>;
+template struct coefficient_field<float>;
+template struct coefficient_field<double>;
 
 }

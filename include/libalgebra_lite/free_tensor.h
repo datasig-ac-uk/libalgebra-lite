@@ -684,7 +684,7 @@ void antipode_helper<Coefficients>::handle_antipode(
 {
     for (auto&& term : arg) {
         auto key = p_basis->reverse_key(term.key());
-        if (do_signing && !is_even(term.degree())) {
+        if (do_signing && !is_even(key.degree())) {
             result[key] = -term.value();
         } else {
             result[key] = term.value();
@@ -702,7 +702,7 @@ void antipode_helper<Coefficients>::handle_antipode(
     auto* optr = result.as_mut_ptr();
     const auto* iptr = arg.as_ptr();
     const auto max_degree = arg.degree();
-    result.set_degree(max_degree);
+    result.update_degree(max_degree);
     deg_t deg = 0;
 
     const auto untiled_levels = (tile_letters == 0)
@@ -882,7 +882,7 @@ public:
 
     friend free_tensor antipode(const free_tensor& arg)
     {
-        dtl::antipode_helper<Coefficients> helper(arg.basis());
+        dtl::antipode_helper<Coefficients> helper(arg.get_basis());
         return helper(arg);
     }
 };
