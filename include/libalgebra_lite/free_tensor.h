@@ -531,7 +531,7 @@ class antipode_helper
     deg_t tile_letters;
     dimn_t tile_width;
     dimn_t tile_size;
-    bool do_signing;
+    bool do_signing = true;
 
     void read_tile(const_pointer src, dimn_t stride) const
     {
@@ -604,12 +604,13 @@ class antipode_helper
 
         for (dimn_t i = 0; i < p_basis->powers()[middle_degree]; ++i, ++word) {
             auto ridx = word.to_reverse_index();
+//            auto ridx = p_basis->reverse_idx(middle_degree, i);
 
-            read_tile(src + i, stride);
+            read_tile(src + i*tile_width, stride);
             if (do_signing && !is_even(degree)) { sign_tile(); }
             permute_tile();
 
-            write_tile(dst + ridx, stride);
+            write_tile(dst + ridx*tile_width, stride);
         }
     }
 
@@ -638,7 +639,7 @@ public:
 #  else
         constexpr deg_t max_letters = 3;
 #  endif
-        tile_letters = std::max(max_letters, p_basis->depth() / 2);
+        tile_letters = std::min(max_letters, p_basis->depth() / 2);
         tile_width = p_basis->powers()[tile_letters];
 #endif
         tile_size = tile_width * tile_width;
@@ -649,12 +650,15 @@ public:
 
             for (dimn_t i = 0; i < tile_width; ++i) {
                 auto ri = p_basis->reverse_idx(tile_letters, i);
-                if (ri == i) { continue; }
-
-                if (seen.find(i) == seen.end()) {
-                    seen.insert(i);
-                    seen.insert(ri);
-                    permute.push_back({i, ri});
+                for (dimn_t j=0; j<tile_width; ++j) {
+                    auto rj = p_basis->reverse_idx(tile_letters, j);
+                    auto idx = i*tile_width + j;
+                    auto ridx = rj * tile_width + ri;
+                    if (ridx != idx && seen.find(idx) == seen.end()) {
+                        seen.insert(idx);
+                        seen.insert(ridx);
+                        permute.push_back({idx, ridx});
+                    }
                 }
             }
         } else {
@@ -705,9 +709,9 @@ void antipode_helper<Coefficients>::handle_antipode(
     result.update_degree(max_degree);
     deg_t deg = 0;
 
-    const auto untiled_levels = (tile_letters == 0)
-            ? max_degree
-            : std::min(max_degree, 2 * tile_letters - 1);
+    const auto untiled_levels = (tile_letters > 0)
+            ?  std::min(max_degree, 2 * tile_letters - 1)
+            : max_degree;
 
     for (; deg <= untiled_levels; ++deg) {
         handle_dense_untiled_level(optr, iptr, deg);

@@ -52,21 +52,21 @@ unpacked_tensor_word::unpacked_tensor_word(deg_t width, deg_t depth)
 
 void unpacked_tensor_word::advance(deg_t number)
 {
+    const auto degree = m_data.size();
+    if (degree == 0) { return; }
     assert(number < std::numeric_limits<letter_type>::max());
     dimn_t position = 0;
     do {
-        auto& let = m_data[position++];
+        auto& let = m_data[position];
         let += number;
+        number = 0;
         if (let >= m_width) {
-            number = let - m_width;
-            let = 0;
-            if (position == m_data.size()) {
-                m_data.push_back(0);
-            }
+            number = let / m_width;
+            let = let - number*m_width;
+            ++position;
         }
-
     }
-    while (number > 0);
+    while (number > 0 && position < degree);
 }
 
 
