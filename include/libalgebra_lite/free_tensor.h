@@ -12,6 +12,7 @@
 #include <memory>
 #include <mutex>
 #include <unordered_map>
+#include <unordered_set>
 #include <utility>
 #include <vector>
 
@@ -22,8 +23,10 @@
 #include "basis_traits.h"
 #include "coefficients.h"
 #include "dense_vector.h"
+#include "detail/integer_maths.h"
 #include "registry.h"
 #include "tensor_basis.h"
+#include "unpacked_tensor_word.h"
 #include "vector_traits.h"
 
 namespace lal {
@@ -517,10 +520,98 @@ namespace dtl {
 template <typename Coefficients>
 class antipode_helper
 {
+    using scalar_type = typename Coefficients::scalar_type;
+    using pointer = scalar_type*;
+    using const_pointer = const scalar_type*;
+
+    std::vector<pair<dimn_t, dimn_t>> permute;
+    pointer tile;
+
     lal::basis_pointer<tensor_basis> p_basis;
     deg_t tile_letters;
     dimn_t tile_width;
     dimn_t tile_size;
+    bool do_signing;
+
+    void read_tile(const_pointer src, dimn_t stride) const
+    {
+        for (dimn_t i = 0; i < tile_width; ++i) {
+            for (dimn_t j = 0; j < tile_width; ++j) {
+                tile[i * tile_width + j] = src[i * stride + j];
+            }
+        }
+    }
+
+    void write_tile(pointer dst, dimn_t stride) const
+    {
+        for (dimn_t i = 0; i < tile_width; ++i) {
+            for (dimn_t j = 0; j < tile_width; ++j) {
+                dst[i * stride + j] = move(tile[i * tile_width + j]);
+            }
+        }
+    }
+
+    void handle_dense_untiled_level(
+            pointer LAL_RESTRICT dst, const_pointer LAL_RESTRICT src,
+            deg_t degree
+    ) const
+    {
+        if (degree == 0) {
+            // Degree 0 is easy, just copy the data from src to dst.
+            *dst = *src;
+        } else if (degree == 1) {
+            // Degree 1 is like degree 0, no permutation is needed so we only
+            // need to worry about signing
+            for (dimn_t i = 0; i < p_basis->width(); ++i) {
+                if (do_signing) {
+                    dst[i] = -src[i];
+                } else {
+                    dst[i] = src[i];
+                }
+            }
+        } else {
+            for (dimn_t i = 0; i < p_basis->powers()[degree]; ++i) {
+                auto ri = p_basis->reverse_idx(degree, i);
+                if (do_signing && !is_even(degree)) {
+                    dst[ri] = -src[i];
+                } else {
+                    dst[ri] = src[i];
+                }
+            }
+        }
+    }
+
+    void permute_tile() const
+    {
+        for (const auto& pids : permute) {
+            std::swap(tile[pids.first], tile[pids.second]);
+        }
+    }
+
+    void sign_tile() const
+    {
+        for (dimn_t i = 0; i < tile_size; ++i) { tile[i] = -tile[i]; }
+    }
+
+    void handle_dense_tiled_level(
+            pointer LAL_RESTRICT dst, const_pointer LAL_RESTRICT src,
+            deg_t degree
+    ) const
+    {
+        auto middle_degree = degree - 2 * tile_letters;
+        auto stride = p_basis->powers()[degree - tile_letters];
+        unpacked_tensor_word word(p_basis->width(), middle_degree);
+
+        for (dimn_t i = 0; i < p_basis->powers()[middle_degree]; ++i, ++word) {
+            auto ridx = word.to_reverse_index();
+
+            read_tile(src + i, stride);
+            if (do_signing && !is_even(degree)) { sign_tile(); }
+            permute_tile();
+
+            write_tile(dst + ridx, stride);
+        }
+    }
 
     template <template <typename, typename> class VectorType>
     void handle_antipode(
@@ -531,9 +622,8 @@ class antipode_helper
     template <template <typename, typename...> class Storage>
     void handle_antipode(
             dense_vector_base<tensor_basis, Coefficients, Storage>& result,
-            const dense_vector_base<tensor_basis, Coefficients,
-                                         Storage>& arg
-            ) const;
+            const dense_vector_base<tensor_basis, Coefficients, Storage>& arg
+    ) const;
 
 public:
     explicit antipode_helper(lal::basis_pointer<tensor_basis> basis)
@@ -552,22 +642,88 @@ public:
         tile_width = p_basis->powers()[tile_letters];
 #endif
         tile_size = tile_width * tile_width;
+        if (tile_size > 0) {
+            tile = new scalar_type[tile_size]{};
+
+            std::unordered_set<dimn_t> seen;
+
+            for (dimn_t i = 0; i < tile_width; ++i) {
+                auto ri = p_basis->reverse_idx(tile_letters, i);
+                if (ri == i) { continue; }
+
+                if (seen.find(i) == seen.end()) {
+                    seen.insert(i);
+                    seen.insert(ri);
+                    permute.push_back({i, ri});
+                }
+            }
+        } else {
+            tile = nullptr;
+        }
     }
+    ~antipode_helper() { delete[] tile; }
 
     template <typename Tensor>
     enable_if_t<
             is_same<Coefficients, typename Tensor::coefficient_ring>::value,
             Tensor>
-    operator()(const Tensor& arg) const {
+    operator()(const Tensor& arg) const
+    {
         Tensor result(p_basis, arg.multiplication());
         handle_antipode(result.base_vector(), arg.base_vector());
         return result;
     }
 };
 
+template <typename Coefficients>
+template <template <typename, typename> class VectorType>
+void antipode_helper<Coefficients>::handle_antipode(
+        VectorType<tensor_basis, Coefficients>& result,
+        const VectorType<tensor_basis, Coefficients>& arg
+) const
+{
+    for (auto&& term : arg) {
+        auto key = p_basis->reverse_key(term.key());
+        if (do_signing && !is_even(term.degree())) {
+            result[key] = -term.value();
+        } else {
+            result[key] = term.value();
+        }
+    }
+}
+template <typename Coefficients>
+template <template <typename, typename...> class Storage>
+void antipode_helper<Coefficients>::handle_antipode(
+        dense_vector_base<tensor_basis, Coefficients, Storage>& result,
+        const dense_vector_base<tensor_basis, Coefficients, Storage>& arg
+) const
+{
+    result.resize_exact(arg.dimension());
+    auto* optr = result.as_mut_ptr();
+    const auto* iptr = arg.as_ptr();
+    const auto max_degree = arg.degree();
+    result.set_degree(max_degree);
+    deg_t deg = 0;
 
+    const auto untiled_levels = (tile_letters == 0)
+            ? max_degree
+            : std::min(max_degree, 2 * tile_letters - 1);
 
+    for (; deg <= untiled_levels; ++deg) {
+        handle_dense_untiled_level(optr, iptr, deg);
+        optr += p_basis->powers()[deg];
+        iptr += p_basis->powers()[deg];
+    }
 
+    // Handle the higher levels with tiling.
+    // Note this loop will do nothing if all the levels have already been done
+    for (; deg <= max_degree; ++deg) {
+        handle_dense_tiled_level(optr, iptr, deg);
+        optr += p_basis->powers()[deg];
+        iptr += p_basis->powers()[deg];
+    }
+
+}
 
 }// namespace dtl
 

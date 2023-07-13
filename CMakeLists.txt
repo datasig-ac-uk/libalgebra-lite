@@ -12,11 +12,6 @@ include(GNUInstallDirs)
 find_package(Boost REQUIRED)
 
 add_library(Libalgebra_lite SHARED
-        src/basis/hall_set.cpp
-        src/basis/tensor_basis.cpp
-        src/basis/monomial.cpp
-        src/basis/polynomial_basis.cpp
-        src/basis/unpacked_tensor_word.cpp
         src/algebra/lie_multiplier.cpp
         src/algebra/polynomial_multiplier.cpp
         src/algebra/polynomial.cpp
@@ -24,23 +19,43 @@ add_library(Libalgebra_lite SHARED
         src/algebra/free_tensor_multiplier.cpp
         src/algebra/shuffle_multiplier.cpp
         src/algebra/polynomial_ring.cpp
+        src/basis/hall_set.cpp
+        src/basis/tensor_basis.cpp
+        src/basis/monomial.cpp
+        src/basis/polynomial_basis.cpp
+        src/basis/unpacked_tensor_word.cpp
+        src/coefficients/floating_fields.cpp
+        src/coefficients/rational_field.cpp
         src/maps.cpp
+        include/libalgebra_lite/detail/integer_maths.h
         include/libalgebra_lite/detail/macros.h
+        include/libalgebra_lite/detail/notnull.h
         include/libalgebra_lite/detail/traits.h
+        include/libalgebra_lite/algebra.h
+        include/libalgebra_lite/basis.h
+        include/libalgebra_lite/basis_traits.h
+        include/libalgebra_lite/coefficients.h
+        include/libalgebra_lite/dense_vector.h
         include/libalgebra_lite/free_tensor.h
+        include/libalgebra_lite/hall_set.h
+        include/libalgebra_lite/implementation_types.h
+        include/libalgebra_lite/index_key.h
+        include/libalgebra_lite/key_range.h
         include/libalgebra_lite/lie.h
         include/libalgebra_lite/maps.h
-        include/libalgebra_lite/vector_bundle.h
-        include/libalgebra_lite/packed_integer.h
-        include/libalgebra_lite/polynomial_basis.h
-        include/libalgebra_lite/polynomial.h
-        include/libalgebra_lite/registry.h
-        include/libalgebra_lite/unpacked_tensor_word.h
-        include/libalgebra_lite/shuffle_tensor.h
         include/libalgebra_lite/operators.h
-        include/libalgebra_lite/basis.h
+        include/libalgebra_lite/packed_integer.h
+        include/libalgebra_lite/polynomial.h
+        include/libalgebra_lite/polynomial_basis.h
+        include/libalgebra_lite/registry.h
+        include/libalgebra_lite/shuffle_tensor.h
+        include/libalgebra_lite/sparse_vector.h
+        include/libalgebra_lite/tensor_basis.h
+        include/libalgebra_lite/unpacked_tensor_word.h
+        include/libalgebra_lite/vector.h
         include/libalgebra_lite/vector_base.h
-        include/libalgebra_lite/detail/notnull.h
+        include/libalgebra_lite/vector_bundle.h
+        include/libalgebra_lite/vector_traits.h
         )
 
 add_library(Libalgebra_lite::Libalgebra_lite ALIAS Libalgebra_lite)

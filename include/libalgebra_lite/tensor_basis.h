@@ -97,6 +97,23 @@ public:
 
     void advance_key(key_type& key) const noexcept;
 
+    dimn_t reverse_idx(deg_t degree, dimn_t idx) const noexcept {
+        dimn_t result = 0;
+        for (deg_t i = 0; i < degree; ++i) {
+            result *= m_width;
+            auto tmp = idx;
+            idx /= m_width;
+            result += tmp - idx * m_width;
+        }
+        return result;
+    }
+
+    key_type reverse_key(key_type arg) const noexcept {
+        auto degree = arg.degree();
+        auto idx = arg.index();
+        auto result_idx = reverse_idx(degree, idx);
+        return key_type{degree, result_idx};
+    }
 
 };
 
