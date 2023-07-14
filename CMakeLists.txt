@@ -8,6 +8,7 @@ set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 include(GenerateExportHeader)
 include(GNUInstallDirs)
 
+option(LIBALGEBRA_LITE_BUILD_TESTS OFF "Build tests for libalgebra lite")
 
 find_package(Boost REQUIRED)
 
@@ -147,5 +148,7 @@ install(FILES
         EXCLUDE_FROM_ALL
         )
 
-enable_testing()
-add_subdirectory(tests)
+if(CMAKE_IS_TOP_LEVEL OR LIBALGEBRA_LITE_BUILD_TESTS)
+    enable_testing()
+    add_subdirectory(tests)
+endif()
