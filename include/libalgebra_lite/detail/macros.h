@@ -33,7 +33,7 @@
 
 #if defined(__linux__)
 #  define LAL_PLATFORM_LINUX 1
-#elif defined(__APPLE__) && deifned(__MACH__)
+#elif defined(__APPLE__) && defined(__MACH__)
 #  define LAL_PLATFORM_OSX 1
 #elif defined(_WIN32) || defined(WIN32) || defined(__CYGWIN__)
 #  define LAL_PLATFORM_WINDOWS 1
