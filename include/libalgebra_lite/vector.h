@@ -260,38 +260,39 @@ private:
 
 public:
 
-    template <typename Iter, typename C>
-    std::enable_if_t<
-        has_iterator_inplace_binop<
-            vector_type,
-            decltype(coefficient_ring::template add_inplace<>),
-            Iter
-        >::value,
-        vector &>
-    add_inplace(Iter begin, Iter end) {
-        return base_type::instance()
-            .inplace_binop(begin, end, coefficient_ring::add_inplace);
-    }
+//    template <typename Iter, typename C>
+//    std::enable_if_t<
+//        has_iterator_inplace_binop<
+//            vector_type,
+//            decltype(coefficient_ring::template add_inplace<>),
+//            Iter
+//        >::value,
+//        vector &>
+//    add_inplace(Iter begin, Iter end) {
+//        return base_type::instance()
+//            .inplace_binop(begin, end, coefficient_ring::add_inplace);
+//    }
+//
+//    template <typename Iter>
+//    std::enable_if_t<
+//        has_iterator_inplace_binop<
+//            vector_type,
+//            decltype(coefficient_ring::template add_inplace<>),
+//            Iter>::value,
+//        vector &>
+//    sub_inplace(Iter begin, Iter end) {
+//        return base_type::instance()
+//            .inplace_binop(begin, end, coefficient_ring::sub_inplace);
+//    }
 
     template <typename Iter>
-    std::enable_if_t<
-        has_iterator_inplace_binop<
-            vector_type,
-            decltype(coefficient_ring::template add_inplace<>),
-            Iter>::value,
-        vector &>
-    sub_inplace(Iter begin, Iter end) {
-        return base_type::instance()
-            .inplace_binop(begin, end, coefficient_ring::sub_inplace);
-    }
-
-    template <typename Iter>
-    std::enable_if_t<
-        !has_iterator_inplace_binop<
-            vector_type,
-            decltype(coefficient_ring::template add_inplace<>),
-            Iter>::value,
-        vector &>
+//    std::enable_if_t<
+//        !has_iterator_inplace_binop<
+//            vector_type,
+//            decltype(coefficient_ring::template add_inplace<>),
+//            Iter>::value,
+//        vector &>
+    vector&
     add_inplace(Iter begin, Iter end) {
         const auto &self = base_type::instance();
         for (auto it = begin; it != end; ++it) {
@@ -301,12 +302,13 @@ public:
     }
 
     template <typename Iter>
-    std::enable_if_t<
-        !has_iterator_inplace_binop<
-            vector_type,
-            decltype(coefficient_ring::template sub_inplace<>),
-            Iter>::value,
-        vector &>
+//    std::enable_if_t<
+//        !has_iterator_inplace_binop<
+//            vector_type,
+//            decltype(coefficient_ring::template sub_inplace<>),
+//            Iter>::value,
+//        vector &>
+    vector&
     sub_inplace(Iter begin, Iter end) {
         const auto &self = base_type::instance();
         for (auto it = begin; it != end; ++it) {

@@ -905,7 +905,7 @@ enable_if_t<dtl::is_algebra<Algebra>::value, Algebra>
 commutator(const Algebra& lhs, const Algebra& rhs)
 {
     using traits = multiplication_traits<typename Algebra::multiplication_type>;
-    using cring = typename Algebra::coefficient_ring;
+    using scalar_type = typename Algebra::scalar_type;
 
     auto multiplication = lhs.multiplication();
     if (!multiplication) { multiplication = rhs.multiplication(); }
@@ -914,7 +914,9 @@ commutator(const Algebra& lhs, const Algebra& rhs)
     if (multiplication && !lhs.empty() && !rhs.empty()) {
         traits::multiply_and_add(*multiplication, result, lhs, rhs);
         traits::multiply_and_add(
-                *multiplication, result, rhs, lhs, cring::uminus
+                *multiplication, result, rhs, lhs, [](const scalar_type& arg) {
+                    return -arg;
+                }
         );
     }
     return result;
