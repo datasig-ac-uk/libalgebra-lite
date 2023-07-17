@@ -901,9 +901,185 @@ inline LTensor free_tensor_multiply(const LTensor& left, const RTensor& right)
     return multiply(*ftm, left, right);
 }
 
+namespace dtl {
+inline namespace unstable {
 
+template <typename Tensor>
+class left_ftm_adjoint
+{
+    const Tensor* multiplier;
 
+    using coefficient_ring = typename Tensor::coefficient_ring;
+    using s_t = typename coefficient_ring::scalar_type;
 
+public:
+    explicit left_ftm_adjoint(const Tensor& arg) : multiplier(&arg) {}
+
+    template <typename Shuffle>
+    enable_if_t<
+            is_same<typename Tensor::coefficient_ring,
+                    typename Shuffle::coefficient_ring>::value,
+            Shuffle>
+    operator()(const Shuffle& arg) const
+    {
+        Shuffle result(arg.get_basis(), arg.multiplication());
+        eval(result.base_vector(), arg.base_vector(),
+             multiplier->base_vector());
+        return result;
+    }
+
+private:
+    template <
+            template <typename, typename> class VT,
+            template <typename, typename> class BT>
+    void
+    eval(VT<tensor_basis, coefficient_ring>& result,
+         const VT<tensor_basis, coefficient_ring>& arg,
+         const BT<tensor_basis, coefficient_ring>& mul) const
+    {
+        using s_t = typename coefficient_ring::scalar_type;
+        for (auto&& pr : mul) {
+            const auto& val = pr.value();
+            result.inplace_binary_op(
+                    shift_down(arg, pr.key()),
+                    [&val](const s_t& l, const s_t& r) { return l + val * r; }
+            );
+        }
+    }
+
+    template <
+            template <typename, typename...> class VSM,
+            template <typename, typename> class BT>
+    void
+    eval(dense_vector_base<tensor_basis, coefficient_ring, VSM>& result,
+         const dense_vector_base<tensor_basis, coefficient_ring, VSM>& arg,
+         const BT<tensor_basis, coefficient_ring>& mul) const
+    {
+        const auto& basis = result.basis();
+        const auto& powers = basis.powers();
+
+        const auto arg_deg = arg.degree();
+        const auto param_deg = mul.degree();
+        result.resize_exact(basis.size(arg_deg));
+
+        for (auto&& pr : mul) {
+            const auto key = pr.key();
+            const auto prefix_degree = key.degree();
+            const auto index = key.index();
+            const auto& value = pr.value();
+
+            for (deg_t degree = prefix_degree; degree <= arg_deg; ++degree) {
+                auto suffix_degree = degree - prefix_degree;
+                auto* optr = result.as_mut_ptr()
+                        + basis.start_of_degree(suffix_degree);
+                const auto* iptr = arg.as_ptr() + index * powers[suffix_degree];
+
+                for (dimn_t i = 0; i < powers[suffix_degree]; ++i) {
+                    optr[i] += value * iptr[i];
+                }
+            }
+        }
+    }
+
+    template <
+            template <typename, typename...> class VSM,
+            template <typename, typename...> class BSM>
+    void
+    eval(dense_vector_base<tensor_basis, coefficient_ring, VSM>& result,
+         const dense_vector_base<tensor_basis, coefficient_ring, VSM>& arg,
+         const dense_vector_base<tensor_basis, coefficient_ring, BSM>& mul
+    ) const
+    {
+        const auto& basis = result.basis();
+        const auto* sizes = basis.sizes().data();
+        const auto* powers = basis.powers().data();
+
+        const auto arg_deg = arg.degree();
+        const auto param_deg = mul.degree();
+        const auto target_deg = std::min(arg_deg, param_deg);
+        result.resize_exact(sizes[arg_deg]);
+
+        auto* optr = result.as_mut_ptr();
+        const auto* aptr = arg.as_ptr();
+        const auto* pptr = mul.as_ptr();
+
+        const auto& param_unit = *pptr;
+
+        if (param_unit != coefficient_ring::zero()) {
+            for (dimn_t i = 0; i < arg.dimension(); ++i) {
+                optr[i] = param_unit * aptr[i];
+            }
+        }
+
+        aptr += 1;
+        pptr += 1;
+        for (deg_t prefix_deg = 1; prefix_deg <= target_deg; ++prefix_deg) {
+
+            eval_single_dense(
+                    optr, aptr, pptr, powers, sizes, prefix_deg, arg_deg
+            );
+            aptr += powers[prefix_deg];
+            pptr += powers[prefix_deg];
+        }
+    }
+
+    template <typename Arg>
+    static Arg shift_down(const Arg& arg, typename tensor_basis::key_type word)
+    {
+        const auto& basis = arg.basis();
+        Arg result(arg);
+        Arg working(arg.get_basis());
+
+        while (word.degree() > 0) {
+            auto parents = basis.parents(word);
+            word = parents.second;
+
+            for (auto&& pr : result) {
+                auto key = pr.key();
+                auto prparents = basis.parents(key);
+                if (key.degree() > 0 && prparents.first == parents.first) {
+                    working[prparents.second] = result[key];
+                }
+            }
+            result.swap(working);
+            working.clear();
+        }
+        return result;
+    }
+
+    static void eval_single_dense(
+            s_t* LAL_RESTRICT optr, const s_t* LAL_RESTRICT aptr,
+            const s_t* LAL_RESTRICT pptr, const dimn_t* powers,
+            const dimn_t* sizes, deg_t param_deg, deg_t arg_deg
+    )
+    {
+        const auto* src = aptr;
+        for (deg_t degree = param_deg; degree <= arg_deg; ++degree) {
+            auto result_deg = degree - param_deg;
+            auto* dst = optr + sizes[result_deg - 1];
+
+            for (dimn_t pidx = 0; pidx < powers[param_deg]; ++pidx) {
+                src += powers[result_deg];
+                const auto& val = pptr[pidx];
+
+                for (dimn_t aidx = 0; aidx < powers[result_deg]; ++aidx) {
+                    dst[aidx] += val * src[aidx];
+                }
+            }
+        }
+    }
+};
+
+}// namespace unstable
+}// namespace dtl
+
+template <typename Tensor, typename Shuffle>
+Shuffle
+left_free_tensor_multiply_adjoint(const Tensor& param, const Shuffle& arg)
+{
+    dtl::left_ftm_adjoint<Tensor> op(param);
+    return op(arg);
+}
 
 }// namespace lal
 
