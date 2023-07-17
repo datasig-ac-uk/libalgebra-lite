@@ -562,7 +562,7 @@ class antipode_helper
         } else if (degree == 1) {
             // Degree 1 is like degree 0, no permutation is needed so we only
             // need to worry about signing
-            for (dimn_t i = 0; i < p_basis->width(); ++i) {
+            for (dimn_t i = 0; i < static_cast<dimn_t>(p_basis->width()); ++i) {
                 if (do_signing) {
                     dst[i] = -src[i];
                 } else {
@@ -865,9 +865,9 @@ public:
 
     friend free_tensor inverse(const free_tensor& arg)
     {
-
-        const auto& a = arg[key_type(0, 0)];
-        assert(a != Coefficients::zero());
+        const auto& unit = arg[key_type(0, 0)];
+        assert(coefficient_ring::is_invertible(unit));
+        const auto& a = coefficient_ring::as_rational(arg[key_type(0, 0)]);
         auto x = arg;
         x[key_type(0, 0)] = Coefficients::zero();
 
