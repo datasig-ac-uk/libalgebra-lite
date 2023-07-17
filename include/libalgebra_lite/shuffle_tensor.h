@@ -20,8 +20,12 @@ class left_half_shuffle_tensor_multiplier;
 
 class right_half_shuffle_tensor_multiplier;
 
-LAL_EXPORT_TEMPLATE_CLASS(base_multiplier, left_half_shuffle_tensor_multiplier, tensor_basis)
-LAL_EXPORT_TEMPLATE_CLASS(base_multiplier, right_half_shuffle_tensor_multiplier, tensor_basis)
+LAL_EXPORT_TEMPLATE_CLASS(
+        base_multiplier, left_half_shuffle_tensor_multiplier, tensor_basis
+)
+LAL_EXPORT_TEMPLATE_CLASS(
+        base_multiplier, right_half_shuffle_tensor_multiplier, tensor_basis
+)
 
 #if 0
 class free_tensor_multiplication
@@ -261,10 +265,10 @@ public:
 #endif
 
 class LIBALGEBRA_LITE_EXPORT left_half_shuffle_tensor_multiplier
-    : public base_multiplier<left_half_shuffle_tensor_multiplier,
-                             tensor_basis> {
-    using base_type =
-        base_multiplier<left_half_shuffle_tensor_multiplier, tensor_basis>;
+    : public base_multiplier<left_half_shuffle_tensor_multiplier, tensor_basis>
+{
+    using base_type = base_multiplier<
+            left_half_shuffle_tensor_multiplier, tensor_basis>;
 
     using typename base_type::key_type;
     using typename base_type::product_type;
@@ -272,35 +276,35 @@ class LIBALGEBRA_LITE_EXPORT left_half_shuffle_tensor_multiplier
 
     using parent_type = std::pair<key_type, key_type>;
 
-    mutable std::unordered_map<parent_type, product_type,
-                               boost::hash<parent_type>>
-        m_cache;
+    mutable std::unordered_map<
+            parent_type, product_type, boost::hash<parent_type>>
+            m_cache;
     mutable std::recursive_mutex m_lock;
 
-    product_type key_prod_impl(const tensor_basis &basis, key_type lhs,
-                               key_type rhs) const;
+    product_type
+    key_prod_impl(const tensor_basis& basis, key_type lhs, key_type rhs) const;
 
     deg_t m_width;
 
 protected:
-    product_type shuffle(const tensor_basis &basis, key_type lhs,
-                         key_type rhs) const;
+    product_type
+    shuffle(const tensor_basis& basis, key_type lhs, key_type rhs) const;
 
 public:
     using basis_type = tensor_basis;
 
-    explicit left_half_shuffle_tensor_multiplier(deg_t width)
-        : m_width(width) {}
+    explicit left_half_shuffle_tensor_multiplier(deg_t width) : m_width(width)
+    {}
 
-    reference operator()(const tensor_basis &basis, key_type lhs,
-                         key_type rhs) const;
+    reference
+    operator()(const tensor_basis& basis, key_type lhs, key_type rhs) const;
 };
 
 class LIBALGEBRA_LITE_EXPORT right_half_shuffle_tensor_multiplier
-    : public base_multiplier<right_half_shuffle_tensor_multiplier,
-                             tensor_basis> {
-    using base_type =
-        base_multiplier<right_half_shuffle_tensor_multiplier, tensor_basis>;
+    : public base_multiplier<right_half_shuffle_tensor_multiplier, tensor_basis>
+{
+    using base_type = base_multiplier<
+            right_half_shuffle_tensor_multiplier, tensor_basis>;
 
     using typename base_type::key_type;
     using typename base_type::product_type;
@@ -308,39 +312,41 @@ class LIBALGEBRA_LITE_EXPORT right_half_shuffle_tensor_multiplier
 
     using parent_type = std::pair<key_type, key_type>;
 
-    mutable std::unordered_map<parent_type, product_type,
-                               boost::hash<parent_type>>
-        m_cache;
+    mutable std::unordered_map<
+            parent_type, product_type, boost::hash<parent_type>>
+            m_cache;
     mutable std::recursive_mutex m_lock;
 
-    product_type key_prod_impl(const tensor_basis &basis, key_type lhs,
-                               key_type rhs) const;
+    product_type
+    key_prod_impl(const tensor_basis& basis, key_type lhs, key_type rhs) const;
 
-    parent_type split_at_right(const tensor_basis &basis,
-                               key_type key) const noexcept;
+    parent_type
+    split_at_right(const tensor_basis& basis, key_type key) const noexcept;
 
     deg_t m_width;
 
 protected:
-    product_type shuffle(const tensor_basis &basis, key_type lhs,
-                         key_type rhs) const;
+    product_type
+    shuffle(const tensor_basis& basis, key_type lhs, key_type rhs) const;
 
 public:
     using basis_type = tensor_basis;
 
-    explicit right_half_shuffle_tensor_multiplier(deg_t width)
-        : m_width(width) {}
+    explicit right_half_shuffle_tensor_multiplier(deg_t width) : m_width(width)
+    {}
 
-    reference operator()(const tensor_basis &basis, key_type lhs,
-                         key_type rhs) const;
+    reference
+    operator()(const tensor_basis& basis, key_type lhs, key_type rhs) const;
 };
 
-using half_shuffle_tensor_multiplier LAL_UNUSED = left_half_shuffle_tensor_multiplier;
+using half_shuffle_tensor_multiplier LAL_UNUSED
+        = left_half_shuffle_tensor_multiplier;
 
 class LIBALGEBRA_LITE_EXPORT shuffle_tensor_multiplier
-    : protected left_half_shuffle_tensor_multiplier {
-    using base_type =
-        base_multiplier<left_half_shuffle_tensor_multiplier, tensor_basis>;
+    : protected left_half_shuffle_tensor_multiplier
+{
+    using base_type = base_multiplier<
+            left_half_shuffle_tensor_multiplier, tensor_basis>;
     using half_type = left_half_shuffle_tensor_multiplier;
 
 public:
@@ -348,40 +354,88 @@ public:
 
     using half_type::half_type;
 
-    typename base_type::product_type
-    operator()(const tensor_basis &basis, typename base_type::key_type lhs,
-               typename base_type::key_type rhs) const;
+    typename base_type::product_type operator()(
+            const tensor_basis& basis, typename base_type::key_type lhs,
+            typename base_type::key_type rhs
+    ) const;
 };
 
-using left_half_shuffle_multiplication =
-    base_multiplication<left_half_shuffle_tensor_multiplier>;
+using left_half_shuffle_multiplication
+        = base_multiplication<left_half_shuffle_tensor_multiplier>;
 using half_shuffle_multiplication LAL_UNUSED = left_half_shuffle_multiplication;
-using right_half_shuffle_multiplication =
-    base_multiplication<right_half_shuffle_tensor_multiplier>;
-using shuffle_tensor_multiplication =
-    base_multiplication<shuffle_tensor_multiplier>;
+using right_half_shuffle_multiplication
+        = base_multiplication<right_half_shuffle_tensor_multiplier>;
+using shuffle_tensor_multiplication
+        = base_multiplication<shuffle_tensor_multiplier>;
 
-LAL_EXPORT_TEMPLATE_CLASS(multiplication_registry, left_half_shuffle_multiplication)
-LAL_EXPORT_TEMPLATE_CLASS(multiplication_registry, right_half_shuffle_multiplication)
-LAL_EXPORT_TEMPLATE_CLASS(multiplication_registry, shuffle_tensor_multiplication)
+LAL_EXPORT_TEMPLATE_CLASS(
+        multiplication_registry, left_half_shuffle_multiplication
+)
+LAL_EXPORT_TEMPLATE_CLASS(
+        multiplication_registry, right_half_shuffle_multiplication
+)
+LAL_EXPORT_TEMPLATE_CLASS(
+        multiplication_registry, shuffle_tensor_multiplication
+)
 
-
-template <typename Coefficients, template <typename, typename> class VectorType,
-    template <typename> class StorageModel>
-class shuffle_tensor : public unital_algebra<tensor_basis, Coefficients, shuffle_tensor_multiplication,
-                                      VectorType, StorageModel> {
-    using algebra_type = unital_algebra<tensor_basis, Coefficients, shuffle_tensor_multiplication,
-                                 VectorType, StorageModel>;
+template <
+        typename Coefficients, template <typename, typename> class VectorType,
+        template <typename> class StorageModel>
+class shuffle_tensor
+    : public unital_algebra<
+              tensor_basis, Coefficients, shuffle_tensor_multiplication,
+              VectorType, StorageModel>
+{
+    using algebra_type = unital_algebra<
+            tensor_basis, Coefficients, shuffle_tensor_multiplication,
+            VectorType, StorageModel>;
 
 public:
-
     using algebra_type::algebra_type;
-
 };
 
-} // namespace lal
+template <typename LTensor, typename RTensor>
+inline LTensor left_half_shuffle_multiply(const LTensor& left, const RTensor&
+                                                                       right)
+{
+    return multiply(
+            multiplication_registry<left_half_shuffle_multiplication>::get
+            (left.basis()),
+            left, right
+            );
+}
+
+template <typename LTensor, typename RTensor>
+inline LTensor right_half_shuffle_multiply(const LTensor& left, const RTensor&
+                                                                       right)
+{
+    return multiply(
+            multiplication_registry<right_half_shuffle_multiplication>::get
+            (left.basis()),
+            left, right
+            );
+}
+
+template <typename LTensor, typename RTensor>
+inline LTensor half_shuffle_multiply(const LTensor& left, const RTensor& right)
+{
+    return left_half_shuffle_multiplication(left, right);
+}
 
 
 
 
-#endif //LIBALGEBRA_LITE_INCLUDE_LIBALGEBRA_LITE_SHUFFLE_TENSOR_H
+template <typename LTensor, typename RTensor>
+inline LTensor shuffle_multiply(const LTensor& left, const RTensor& right)
+{
+    return multiply(
+            multiplication_registry<shuffle_tensor_multiplication>::get(
+                    left.basis()
+            ),
+            left, right
+    );
+}
+
+}// namespace lal
+
+#endif// LIBALGEBRA_LITE_INCLUDE_LIBALGEBRA_LITE_SHUFFLE_TENSOR_H
