@@ -395,25 +395,25 @@ public:
 };
 
 template <typename LTensor, typename RTensor>
-inline LTensor left_half_shuffle_multiply(const LTensor& left, const RTensor&
-                                                                       right)
+inline LTensor
+left_half_shuffle_multiply(const LTensor& left, const RTensor& right)
 {
-    return multiply(
-            multiplication_registry<left_half_shuffle_multiplication>::get
-            (left.basis()),
-            left, right
+
+    const auto lhsm
+            = multiplication_registry<left_half_shuffle_multiplication>::get(
+                    left.basis()
             );
+    return multiply(*lhsm, left, right);
 }
 
 template <typename LTensor, typename RTensor>
-inline LTensor right_half_shuffle_multiply(const LTensor& left, const RTensor&
-                                                                       right)
+inline LTensor
+right_half_shuffle_multiply(const LTensor& left, const RTensor& right)
 {
-    return multiply(
-            multiplication_registry<right_half_shuffle_multiplication>::get
-            (left.basis()),
-            left, right
-            );
+    auto rhsm = multiplication_registry<right_half_shuffle_multiplication>::get(
+            left.basis()
+    );
+    return multiply(*rhsm, left, right);
 }
 
 template <typename LTensor, typename RTensor>
@@ -422,18 +422,13 @@ inline LTensor half_shuffle_multiply(const LTensor& left, const RTensor& right)
     return left_half_shuffle_multiplication(left, right);
 }
 
-
-
-
 template <typename LTensor, typename RTensor>
 inline LTensor shuffle_multiply(const LTensor& left, const RTensor& right)
 {
-    return multiply(
-            multiplication_registry<shuffle_tensor_multiplication>::get(
-                    left.basis()
-            ),
-            left, right
+    const auto sm = multiplication_registry<shuffle_tensor_multiplication>::get(
+            left.basis()
     );
+    return multiply(*sm, left, right);
 }
 
 }// namespace lal

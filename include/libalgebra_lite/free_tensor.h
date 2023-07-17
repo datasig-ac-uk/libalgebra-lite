@@ -604,13 +604,13 @@ class antipode_helper
 
         for (dimn_t i = 0; i < p_basis->powers()[middle_degree]; ++i, ++word) {
             auto ridx = word.to_reverse_index();
-//            auto ridx = p_basis->reverse_idx(middle_degree, i);
+            //            auto ridx = p_basis->reverse_idx(middle_degree, i);
 
-            read_tile(src + i*tile_width, stride);
+            read_tile(src + i * tile_width, stride);
             if (do_signing && !is_even(degree)) { sign_tile(); }
             permute_tile();
 
-            write_tile(dst + ridx*tile_width, stride);
+            write_tile(dst + ridx * tile_width, stride);
         }
     }
 
@@ -650,9 +650,9 @@ public:
 
             for (dimn_t i = 0; i < tile_width; ++i) {
                 auto ri = p_basis->reverse_idx(tile_letters, i);
-                for (dimn_t j=0; j<tile_width; ++j) {
+                for (dimn_t j = 0; j < tile_width; ++j) {
                     auto rj = p_basis->reverse_idx(tile_letters, j);
-                    auto idx = i*tile_width + j;
+                    auto idx = i * tile_width + j;
                     auto ridx = rj * tile_width + ri;
                     if (ridx != idx && seen.find(idx) == seen.end()) {
                         seen.insert(idx);
@@ -710,7 +710,7 @@ void antipode_helper<Coefficients>::handle_antipode(
     deg_t deg = 0;
 
     const auto untiled_levels = (tile_letters > 0)
-            ?  std::min(max_degree, 2 * tile_letters - 1)
+            ? std::min(max_degree, 2 * tile_letters - 1)
             : max_degree;
 
     for (; deg <= untiled_levels; ++deg) {
@@ -726,7 +726,6 @@ void antipode_helper<Coefficients>::handle_antipode(
         optr += p_basis->powers()[deg];
         iptr += p_basis->powers()[deg];
     }
-
 }
 
 }// namespace dtl
@@ -892,6 +891,19 @@ public:
 };
 
 LAL_EXPORT_TEMPLATE_CLASS(multiplication_registry, free_tensor_multiplication)
+
+template <typename LTensor, typename RTensor>
+inline LTensor free_tensor_multiply(const LTensor& left, const RTensor& right)
+{
+    const auto ftm = multiplication_registry<free_tensor_multiplication>::get(
+            left.basis()
+    );
+    return multiply(*ftm, left, right);
+}
+
+
+
+
 
 }// namespace lal
 
