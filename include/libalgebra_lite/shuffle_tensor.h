@@ -392,6 +392,10 @@ class shuffle_tensor
 
 public:
     using algebra_type::algebra_type;
+
+    shuffle_tensor create_alike() const {
+        return shuffle_tensor(this->get_basis(), this->multiplicatino());
+    }
 };
 
 template <typename LTensor, typename RTensor>
@@ -419,7 +423,10 @@ right_half_shuffle_multiply(const LTensor& left, const RTensor& right)
 template <typename LTensor, typename RTensor>
 inline LTensor half_shuffle_multiply(const LTensor& left, const RTensor& right)
 {
-    return left_half_shuffle_multiplication(left, right);
+    const auto hsm = multiplication_registry<half_shuffle_multiplication>::get(
+            left.basis()
+            );
+    return multiply(*hsm, left, right);
 }
 
 template <typename LTensor, typename RTensor>

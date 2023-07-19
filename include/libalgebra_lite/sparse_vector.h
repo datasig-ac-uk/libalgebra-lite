@@ -316,6 +316,12 @@ public:
 
     explicit sparse_vector(basis_pointer basis) : vec_base(basis) {}
 
+    void swap(sparse_vector& right) {
+        std::swap(m_data, right.m_data);
+        std::swap(m_degree, right.m_degree);
+        vec_base::swap(*this, right);
+    }
+
     constexpr dimn_t size() const noexcept { return m_data.size(); }
     constexpr bool empty() const noexcept { return m_data.empty(); }
     constexpr dimn_t dimension() const noexcept { return size(); }

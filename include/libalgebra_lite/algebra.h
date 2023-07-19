@@ -712,6 +712,10 @@ public:
         return p_mult;
     }
 
+    algebra create_alike() const {
+        return algebra(this->get_basis(), p_mult);
+    }
+
     algebra& add_mul(const algebra& lhs, const algebra& rhs)
     {
         using traits = multiplication_traits<Multiplication>;
@@ -922,32 +926,18 @@ commutator(const Algebra& lhs, const Algebra& rhs)
     return result;
 }
 
-template <
-        typename Multiplication, typename Coefficients, typename LBasis,
-        template <typename, typename> class LVectorType,
-        template <typename> class LStorageModel, typename RBasis,
-        template <typename, typename> class RVectorType,
-        template <typename> class RStorageModel>
-enable_if_t<
-        multiplication_traits<Multiplication>::template compatible_with<
-                LBasis>::value
-                && multiplication_traits<Multiplication>::
-                        template compatible_with<RBasis>::value,
-        vector<LBasis, Coefficients, LVectorType, LStorageModel>>
-multiply(
-        const Multiplication& multiplication,
-        const vector<LBasis, Coefficients, LVectorType, LStorageModel>& lhs,
-        const vector<RBasis, Coefficients, RVectorType, RStorageModel>& rhs
-)
-{
+
+
+template <typename Multiplication, typename LVector, typename RVector>
+LVector multiply(const Multiplication& multiplication, const LVector& left,
+                 const
+                 RVector& right) {
     using traits = multiplication_traits<Multiplication>;
-    vector<LBasis, Coefficients, LVectorType, LStorageModel> result(lhs.basis()
-    );
-
-    traits::multiply_and_add(multiplication, result, lhs, rhs);
-
+    LVector result = left.create_alike();
+    traits::multiply_and_add(multiplication, result, left, right);
     return result;
 }
+
 
 }// namespace lal
 

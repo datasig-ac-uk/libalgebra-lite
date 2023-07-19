@@ -184,9 +184,10 @@ public:
     vector(basis_pointer basis, std::initializer_list<scalar_type> args)
         : base_type(vector_type(basis, args)) {}
 
-    vector(basis_pointer basis, const vector_type &arg)
+    explicit vector(const vector_type &arg)
         : base_type(vector_type(arg)) {
     }
+
 
     vector& operator=(const vector&) = default;
     vector& operator=(vector&&) noexcept = default;
@@ -195,6 +196,8 @@ public:
     vector clone() const {
         return vector(*this);
     }
+
+    vector create_alike() const { return vector(get_basis()); }
 
     vector_type &base_vector() noexcept { return base_type::instance(); }
     const vector_type &base_vector() const noexcept { return base_type::instance(); }

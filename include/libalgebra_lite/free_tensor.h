@@ -789,6 +789,11 @@ public:
         : algebra_type(basis, key_type(0, 0), std::move(arg))
     {}
 
+
+    free_tensor create_alike() const {
+            return free_tensor(this->get_basis(), this->multiplication());
+    }
+
     free_tensor& fmexp_inplace(const free_tensor& exp_arg)
     {
         free_tensor original(*this), x(exp_arg);

@@ -38,6 +38,11 @@ public:
 
     basis_pointer get_basis() const noexcept { return p_basis; }
     const Basis& basis() const noexcept { return *p_basis; }
+
+    void swap(vector_base& other) {
+        std::swap(p_basis, other.p_basis);
+    }
+
 };
 
 
