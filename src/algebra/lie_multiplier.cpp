@@ -17,6 +17,8 @@ template class base_multiplier<lie_multiplier, hall_basis, 2>;
 lie_multiplier::product_type
 lie_multiplier::key_prod_impl(const hall_basis& basis, key_type lhs, key_type rhs) const
 {
+    assert(basis.width() == m_width);
+
     if (lhs>rhs) {
         return lie_multiplier::uminus(operator()(basis, rhs, lhs));
     }
