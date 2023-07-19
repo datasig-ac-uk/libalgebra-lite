@@ -394,7 +394,7 @@ public:
     using algebra_type::algebra_type;
 
     shuffle_tensor create_alike() const {
-        return shuffle_tensor(this->get_basis(), this->multiplicatino());
+        return shuffle_tensor(this->get_basis(), this->multiplication());
     }
 };
 

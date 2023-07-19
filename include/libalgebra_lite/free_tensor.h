@@ -789,9 +789,9 @@ public:
         : algebra_type(basis, key_type(0, 0), std::move(arg))
     {}
 
-
-    free_tensor create_alike() const {
-            return free_tensor(this->get_basis(), this->multiplication());
+    free_tensor create_alike() const
+    {
+        return free_tensor(this->get_basis(), this->multiplication());
     }
 
     free_tensor& fmexp_inplace(const free_tensor& exp_arg)
@@ -923,7 +923,9 @@ public:
     template <typename Shuffle>
     enable_if_t<
             is_same<typename Tensor::coefficient_ring,
-                    typename Shuffle::coefficient_ring>::value,
+                    typename Shuffle::coefficient_ring>::value
+                    && is_same<
+                            typename Shuffle::basis_type, tensor_basis>::value,
             Shuffle>
     operator()(const Shuffle& arg) const
     {
@@ -934,13 +936,9 @@ public:
     }
 
 private:
-    template <
-            template <typename, typename> class VT,
-            template <typename, typename> class BT>
-    void
-    eval(VT<tensor_basis, coefficient_ring>& result,
-         const VT<tensor_basis, coefficient_ring>& arg,
-         const BT<tensor_basis, coefficient_ring>& mul) const
+    template <typename V, typename B>
+    enable_if_t<is_same<typename V::basis_type, tensor_basis>::value>
+    eval(V& result, const V& arg, const B& mul) const
     {
         using s_t = typename coefficient_ring::scalar_type;
         for (auto&& pr : mul) {
@@ -964,7 +962,6 @@ private:
         const auto& powers = basis.powers();
 
         const auto arg_deg = arg.degree();
-        const auto param_deg = mul.degree();
         result.resize_exact(basis.size(arg_deg));
 
         for (auto&& pr : mul) {
@@ -1043,7 +1040,8 @@ private:
                 auto key = pr.key();
                 auto prparents = basis.parents(key);
                 if (key.degree() > 0 && prparents.first == parents.first) {
-                    working[prparents.second] = result[key];
+                    working[prparents.second]
+                            = static_cast<const Arg&>(result)[key];
                 }
             }
             result.swap(working);

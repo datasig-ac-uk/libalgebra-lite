@@ -319,7 +319,7 @@ public:
     void swap(sparse_vector& right) {
         std::swap(m_data, right.m_data);
         std::swap(m_degree, right.m_degree);
-        vec_base::swap(*this, right);
+        vec_base::swap(right);
     }
 
     constexpr dimn_t size() const noexcept { return m_data.size(); }
