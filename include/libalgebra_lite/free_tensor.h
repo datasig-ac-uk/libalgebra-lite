@@ -1015,7 +1015,7 @@ private:
 
         aptr += 1;
         pptr += 1;
-        for (deg_t prefix_deg = 1; prefix_deg <= target_deg; ++prefix_deg) {
+        for (deg_t prefix_deg = 1; prefix_deg < target_deg; ++prefix_deg) {
 
             eval_single_dense(
                     optr, aptr, pptr, powers, sizes, prefix_deg, arg_deg
@@ -1056,6 +1056,15 @@ private:
             const dimn_t* sizes, deg_t param_deg, deg_t arg_deg
     )
     {
+        if (param_deg < arg_deg) {
+            auto& unit = optr[0];
+            for (dimn_t i=0; i<powers[param_deg]; ++i) {
+                unit += pptr[i]*aptr[i];
+            }
+            return;
+        }
+
+
         const auto* src = aptr;
         for (deg_t degree = param_deg; degree <= arg_deg; ++degree) {
             auto result_deg = degree - param_deg;
