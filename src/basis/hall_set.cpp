@@ -149,12 +149,13 @@ const hall_set::key_type &hall_set::operator[](const hall_set::parent_type &pare
 }
 dimn_t hall_set::index_of_key(hall_set::key_type arg) const noexcept
 {
+    assert(arg.degree() > 0);
     return arg.index() + size(deg_t(arg.degree())-1);
 }
 hall_set::key_type hall_set::key_of_index(hall_set::size_type index) const noexcept
 {
     auto found = std::lower_bound(
-            m_sizes.begin(),
+            ++m_sizes.begin(),
             m_sizes.end(),
             index,
             std::less_equal<>()
