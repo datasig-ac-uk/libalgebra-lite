@@ -1013,15 +1013,15 @@ private:
             }
         }
 
-        aptr += 1;
-        pptr += 1;
-        for (deg_t prefix_deg = 1; prefix_deg < target_deg; ++prefix_deg) {
-
+//        aptr += 1;
+//        pptr += 1;
+        for (deg_t prefix_deg = 1; prefix_deg <= target_deg; ++prefix_deg) {
+            aptr += powers[prefix_deg-1];
+            pptr += powers[prefix_deg-1];
             eval_single_dense(
                     optr, aptr, pptr, powers, sizes, prefix_deg, arg_deg
             );
-            aptr += powers[prefix_deg];
-            pptr += powers[prefix_deg];
+
         }
     }
 
@@ -1056,7 +1056,8 @@ private:
             const dimn_t* sizes, deg_t param_deg, deg_t arg_deg
     )
     {
-        if (param_deg < arg_deg) {
+        assert(param_deg <= arg_deg);
+        if (param_deg == arg_deg) {
             auto& unit = optr[0];
             for (dimn_t i=0; i<powers[param_deg]; ++i) {
                 unit += pptr[i]*aptr[i];
@@ -1065,19 +1066,21 @@ private:
         }
 
 
-        const auto* src = aptr;
+        auto* dst = optr;
         for (deg_t degree = param_deg; degree <= arg_deg; ++degree) {
             auto result_deg = degree - param_deg;
-            auto* dst = optr + sizes[result_deg - 1];
 
             for (dimn_t pidx = 0; pidx < powers[param_deg]; ++pidx) {
-                src += powers[result_deg];
+                const auto* src = aptr + pidx*powers[result_deg];
                 const auto& val = pptr[pidx];
 
                 for (dimn_t aidx = 0; aidx < powers[result_deg]; ++aidx) {
                     dst[aidx] += val * src[aidx];
                 }
             }
+
+            aptr += powers[degree];
+            dst += powers[result_deg];
         }
     }
 };
