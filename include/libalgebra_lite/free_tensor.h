@@ -1044,7 +1044,7 @@ private:
                             = static_cast<const Arg&>(result)[key];
                 }
             }
-            result.swap(working);
+            result.swap(working, ScalarPointer(), 0);
             working.clear();
         }
         return result;
