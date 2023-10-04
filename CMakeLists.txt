@@ -1,6 +1,9 @@
 cmake_minimum_required(VERSION 3.22)
 project(Libalgebra_lite)
 
+
+list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_LIST_DIR}/cmake/Modules)
+
 #set(CMAKE_CXX_STANDARD 14)
 #set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)
@@ -62,7 +65,7 @@ add_library(Libalgebra_lite SHARED
 add_library(Libalgebra_lite::Libalgebra_lite ALIAS Libalgebra_lite)
 generate_export_header(Libalgebra_lite)
 
-find_package(Bignum QUIET)
+find_package(Bignum REQUIRED)
 if (NOT TARGET Bignum::Bignum)
     set(LAL_NO_USE_GMP ON)
 else ()
