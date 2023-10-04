@@ -75,6 +75,10 @@ public:
     {
         return let_t(lparent(arg).index() + 1);
     }
+    let_t to_letter(const key_type& arg) const noexcept {
+        assert(arg.degree() == 1);
+        return let_t(arg.index() + 1);
+    }
     static bool letter(const key_type& arg) noexcept
     {
         return arg.degree() == 1;
