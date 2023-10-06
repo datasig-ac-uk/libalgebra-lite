@@ -1,3 +1,30 @@
+// Copyright (c) 2023 the RoughPy Developers. All rights reserved.
+//
+// Redistribution and use in source and binary forms, with or without modification,
+// are permitted provided that the following conditions are met:
+//
+// 1. Redistributions of source code must retain the above copyright notice,
+// this list of conditions and the following disclaimer.
+//
+// 2. Redistributions in binary form must reproduce the above copyright notice,
+// this list of conditions and the following disclaimer in the documentation
+// and/or other materials provided with the distribution.
+//
+// 3. Neither the name of the copyright holder nor the names of its contributors
+// may be used to endorse or promote products derived from this software without
+// specific prior written permission.
+//
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+// DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+// SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+// CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
+// OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE
+// USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
 //
 // Created by user on 26/07/22.
 //
@@ -437,8 +464,8 @@ class base_multiplication
     //    const
     //    {
     //        using scalar_type = scal_t<OutVector>;
-    //        scalar_type s(forward<Sca>(scalar));
-    //        out.inplace_binary_op(forward<KeyProd>(key_prod), [s](scalar_type&
+    //        scalar_type s(std::forward<Sca>(scalar));
+    //        out.inplace_binary_op(std::forward<KeyProd>(key_prod), [s](scalar_type&
     //        lhs, const scalar_type& rhs) {
     //            return lhs += (rhs*s);
     //        });
@@ -450,7 +477,7 @@ class base_multiplication
     void asp_helper(OutVector& out, ProductType&& key_prod, PSca&& scalar) const
     {
         using scalar_type = scal_t<OutVector>;
-        scalar_type s(forward<PSca>(scalar));
+        scalar_type s(std::forward<PSca>(scalar));
 
         for (const auto& kv_pair : key_prod) {
             out[kv_pair.first] += scalar_type(kv_pair.second) * s;
@@ -471,7 +498,7 @@ public:
             typename
             = enable_if_t<is_constructible<Multiplier, Args...>::value>>
     explicit base_multiplication(Args&&... args)
-        : m_mult(forward<Args>(args)...)
+        : m_mult(std::forward<Args>(args)...)
     {}
 
     template <typename Basis, typename Key>
@@ -554,7 +581,7 @@ public:
         if (!left.empty() && !right.empty()) {
             LeftVector tmp(left.get_basis());
             caster::cast(*this).fma(tmp, left, right, op);
-            left = move(tmp);
+            left = std::move(tmp);
         } else {
             left.clear();
         }
@@ -569,7 +596,7 @@ public:
             tmp.update_degree(std::min(left.degree() + right.degree(), max_deg)
             );
             caster::cast(*this).fma(tmp, left, right, op, max_deg);
-            left = move(tmp);
+            left = std::move(tmp);
         } else {
             left.clear();
         }
@@ -624,14 +651,14 @@ public:
     {}
 
     explicit algebra(basis_pointer basis)
-        : vector_type(move(basis)),
+        : vector_type(std::move(basis)),
           p_mult(multiplication_registry<Multiplication>::get(
                   vector_type::basis()
           ))
     {}
 
     explicit algebra(vector_type&& arg)
-        : vector_type(move(arg)),
+        : vector_type(std::move(arg)),
           p_mult(multiplication_registry<Multiplication>::get(
                   vector_type::basis()
           ))
@@ -640,15 +667,15 @@ public:
     template <typename Scalar>
     algebra(basis_pointer basis, std::shared_ptr<const Multiplication> mul,
             std::initializer_list<Scalar> args)
-        : vector_type(move(basis), args), p_mult(move(mul))
+        : vector_type(std::move(basis), args), p_mult(std::move(mul))
     {}
 
     algebra(basis_pointer basis, std::shared_ptr<const Multiplication> mult)
-        : vector_type(basis), p_mult(move(mult))
+        : vector_type(basis), p_mult(std::move(mult))
     {}
 
     algebra(const vector_type& base, std::shared_ptr<const Multiplication> mult)
-        : vector_type(base), p_mult(move(mult))
+        : vector_type(base), p_mult(std::move(mult))
     {}
 
     template <
@@ -656,7 +683,7 @@ public:
             typename
             = enable_if_t<is_constructible<vector_type, Args...>::value>>
     explicit algebra(basis_pointer basis, Args... args)
-        : vector_type(move(basis), forward<Args>(args)...),
+        : vector_type(std::move(basis), std::forward<Args>(args)...),
           p_mult(multiplication_registry<Multiplication>::get(
                   vector_type::basis()
           ))
@@ -670,7 +697,7 @@ public:
             basis_pointer basis, std::shared_ptr<const Multiplication> mul,
             Args&&... args
     )
-        : vector_type(move(basis), forward<Args>(args)...), p_mult(move(mul))
+        : vector_type(std::move(basis), std::forward<Args>(args)...), p_mult(std::move(mul))
     {}
 
     template <
@@ -686,7 +713,7 @@ public:
 
     algebra(algebra&& other) noexcept
         : vector_type(static_cast<vector_type&&>(other)),
-          p_mult(move(other.p_mult))
+          p_mult(std::move(other.p_mult))
     {}
 
     algebra& operator=(const algebra& other)
@@ -701,7 +728,7 @@ public:
     algebra& operator=(algebra&& other) noexcept
     {
         if (&other != this) {
-            p_mult = move(other.p_mult);
+            p_mult = std::move(other.p_mult);
             vector_type::operator=(static_cast<vector_type&&>(other));
         }
         return *this;
@@ -795,7 +822,7 @@ public:
             = enable_if_t<is_constructible<scalar_type, Scalar>::value>>
     explicit unital_algebra(basis_pointer basis, Scalar val)
         : algebra_base(
-                move(basis),
+                std::move(basis),
                 basis_trait<Basis>::first_key(*algebra_base::p_basis),
                 scalar_type(val)
         )

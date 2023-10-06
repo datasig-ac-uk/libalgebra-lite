@@ -1,3 +1,30 @@
+// Copyright (c) 2023 the RoughPy Developers. All rights reserved.
+//
+// Redistribution and use in source and binary forms, with or without modification,
+// are permitted provided that the following conditions are met:
+//
+// 1. Redistributions of source code must retain the above copyright notice,
+// this list of conditions and the following disclaimer.
+//
+// 2. Redistributions in binary form must reproduce the above copyright notice,
+// this list of conditions and the following disclaimer in the documentation
+// and/or other materials provided with the distribution.
+//
+// 3. Neither the name of the copyright holder nor the names of its contributors
+// may be used to endorse or promote products derived from this software without
+// specific prior written permission.
+//
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+// DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+// SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+// CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
+// OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE
+// USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
 //
 // Created by user on 26/07/22.
 //
@@ -225,7 +252,7 @@ struct pre_multiply {
     template <
             typename _M,
             typename = enable_if_t<!is_same<_M, pre_multiply>::value>>
-    explicit pre_multiply(_M&& arg) : multiplier(forward<_M>(arg))
+    explicit pre_multiply(_M&& arg) : multiplier(std::forward<_M>(arg))
     {}
 
     template <typename S=M>
@@ -242,7 +269,7 @@ struct post_multiply {
     template <
             typename _M,
             typename = enable_if_t<!is_same<_M, post_multiply>::value>>
-    explicit post_multiply(_M&& arg) : multiplier(forward<_M>(arg))
+    explicit post_multiply(_M&& arg) : multiplier(std::forward<_M>(arg))
     {}
 
     template <typename S=M>
@@ -259,7 +286,7 @@ struct post_divide {
     template <
             typename _D,
             typename = enable_if_t<!is_same<_D, post_divide>::value>>
-    explicit post_divide(_D&& arg) : divisor(forward<_D>(arg))
+    explicit post_divide(_D&& arg) : divisor(std::forward<_D>(arg))
     {}
 
     template <typename S>
@@ -276,7 +303,7 @@ struct post_multiply_inplace {
     template <
             typename _M,
             typename = enable_if_t<!is_same<_M, post_multiply_inplace>::value>>
-    explicit post_multiply_inplace(_M&& arg) : multiplier(forward<_M>(arg))
+    explicit post_multiply_inplace(_M&& arg) : multiplier(std::forward<_M>(arg))
     {}
 
     template <typename S>
@@ -293,7 +320,7 @@ struct post_divide_inplace {
     template <
             typename _D,
             typename = enable_if_t<!is_same<_D, post_divide_inplace>::value>>
-    explicit post_divide_inplace(_D&& arg) : divisor(forward<_D>(arg))
+    explicit post_divide_inplace(_D&& arg) : divisor(std::forward<_D>(arg))
     {}
 
     template <typename S>
@@ -311,7 +338,7 @@ struct add_pre_multiply_inplace {
             typename _M,
             typename
             = enable_if_t<!is_same<_M, add_pre_multiply_inplace>::value>>
-    explicit add_pre_multiply_inplace(_M&& m) : multiplier(forward<_M>(m))
+    explicit add_pre_multiply_inplace(_M&& m) : multiplier(std::forward<_M>(m))
     {}
 
     template <typename S, typename R = S>
@@ -328,7 +355,7 @@ struct add_post_multiply_inplace {
             typename _M,
             typename
             = enable_if_t<!is_same<_M, add_post_multiply_inplace>::value>>
-    explicit add_post_multiply_inplace(_M&& m) : multiplier(forward<_M>(m))
+    explicit add_post_multiply_inplace(_M&& m) : multiplier(std::forward<_M>(m))
     {}
 
     template <typename S, typename R = S>
@@ -346,7 +373,7 @@ struct add_post_divide_inplace {
             typename _D,
             typename
             = enable_if_t<!is_same<_D, add_post_divide_inplace>::value>>
-    explicit add_post_divide_inplace(_D&& d) : divisor(forward<_D>(d))
+    explicit add_post_divide_inplace(_D&& d) : divisor(std::forward<_D>(d))
     {}
 
     template <typename S, typename R = S>
@@ -364,7 +391,7 @@ struct sub_pre_multiply_inplace {
             typename _M,
             typename
             = enable_if_t<!is_same<_M, sub_pre_multiply_inplace>::value>>
-    explicit sub_pre_multiply_inplace(_M&& m) : multiplier(forward<_M>(m))
+    explicit sub_pre_multiply_inplace(_M&& m) : multiplier(std::forward<_M>(m))
     {}
 
     template <typename S, typename R = S>
@@ -381,7 +408,7 @@ struct sub_post_multiply_inplace {
             typename _M,
             typename
             = enable_if_t<!is_same<_M, sub_post_multiply_inplace>::value>>
-    explicit sub_post_multiply_inplace(_M&& m) : multiplier(forward<_M>(m))
+    explicit sub_post_multiply_inplace(_M&& m) : multiplier(std::forward<_M>(m))
     {}
 
     template <typename S, typename R = S>
@@ -399,7 +426,7 @@ struct sub_post_divide_inplace {
             typename _D,
             typename
             = enable_if_t<!is_same<_D, sub_post_divide_inplace>::value>>
-    explicit sub_post_divide_inplace(_D&& d) : divisor(forward<_D>(d))
+    explicit sub_post_divide_inplace(_D&& d) : divisor(std::forward<_D>(d))
     {}
 
     template <typename S, typename R = S>
