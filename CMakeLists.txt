@@ -88,9 +88,11 @@ target_link_libraries(Libalgebra_lite PUBLIC Boost::boost)
 #    target_link_libraries(Libalgebra_lite PUBLIC Libalgebra::Libalgebra)
 #endif ()
 
+set(CMAKE_MACOSX_RPATH ON)
+if (NOT APPLE)
 set_target_properties(Libalgebra_lite PROPERTIES
         INSTALL_RPATH $ORIGIN)
-
+endif ()
 
 if (NOT DEFINED LAL_GMP_ALTERNATIVE_HEADER)
     set(LAL_GMP_ALTERNATIVE_HEADER cpp_int.hpp)
