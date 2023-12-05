@@ -105,6 +105,7 @@ configure_file(cmake/rationals.h.in rationals.h NO_SOURCE_PERMISSIONS @ONLY)
 
 install(TARGETS Libalgebra_lite
         EXPORT Libalgebra_liteTargets
+        RUNTIME_DEPENDENCIES
         PUBLIC_HEADER DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}/libalgebra_lite"
         RUNTIME DESTINATION "${CMAKE_INSTALL_BINDIR}"
         LIBRARY DESTINATION "${CMAKE_INSTALL_LIBDIR}"
