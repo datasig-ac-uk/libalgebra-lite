@@ -40,4 +40,8 @@ if (Bignum_FOUND AND NOT TARGET Bignum::Bignum)
 
     # MSVC requires this for some reason?
     set_property(TARGET Bignum::Bignum PROPERTY IMPORTED_IMPLIB "${Bignum_LIBRARY}")
+
+    if (APPLE)
+        set_property(TARGET Bignum::Bignum PROPERTY IMPORTED_NO_SONAME ON)
+    endif ()
 endif()
