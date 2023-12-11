@@ -34,11 +34,15 @@
 
 #include "implementation_types.h"
 #include "libalgebra_lite_export.h"
+#include "config.h"
 
 #include <memory>
 
 #include "detail/traits.h"
+
+#ifdef LAL_ENABLE_RATIONAL_COEFFS
 #include "rationals.h"
+#endif
 
 namespace lal {
 
@@ -119,8 +123,10 @@ LAL_EXPORT_TEMPLATE_STRUCT(coefficient_field, float)
 using double_field = coefficient_field<double>;
 using float_field = coefficient_field<float>;
 
+#ifdef LAL_ENABLE_RATIONAL_COEFFS
 LAL_EXPORT_TEMPLATE_STRUCT(coefficient_field, dtl::rational_scalar_type)
 using rational_field = coefficient_field<dtl::rational_scalar_type>;
+#endif
 
 template <>
 struct coefficient_trait<float> {
@@ -136,12 +142,14 @@ struct coefficient_trait<double> {
     using rational_type = double;
 };
 
+#ifdef LAL_ENABLE_RATIONAL_COEFFS
 template <>
 struct coefficient_trait<dtl::rational_scalar_type> {
     using coefficient_ring = rational_field;
     using scalar_type = dtl::rational_scalar_type;
     using rational_type = dtl::rational_scalar_type;
 };
+#endif
 
 namespace ops {
 

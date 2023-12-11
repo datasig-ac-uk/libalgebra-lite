@@ -12,6 +12,7 @@ include(GenerateExportHeader)
 include(GNUInstallDirs)
 
 option(LIBALGEBRA_LITE_BUILD_TESTS OFF "Build tests for libalgebra lite")
+option(LIBALGEBRA_LITE_RATIONAL_COEFFS ON "Build with support for rational coefficients")
 
 find_package(Boost REQUIRED)
 
@@ -29,7 +30,6 @@ add_library(Libalgebra_lite SHARED
         src/basis/polynomial_basis.cpp
         src/basis/unpacked_tensor_word.cpp
         src/coefficients/floating_fields.cpp
-        src/coefficients/rational_field.cpp
         src/maps.cpp
         include/libalgebra_lite/detail/integer_maths.h
         include/libalgebra_lite/detail/macros.h
@@ -65,13 +65,27 @@ add_library(Libalgebra_lite SHARED
 add_library(Libalgebra_lite::Libalgebra_lite ALIAS Libalgebra_lite)
 generate_export_header(Libalgebra_lite)
 
-find_package(Bignum REQUIRED)
-if (NOT TARGET Bignum::Bignum)
-    set(LAL_NO_USE_GMP ON)
-else ()
-    target_link_libraries(Libalgebra_lite PUBLIC Bignum::Bignum)
-    set(LAL_NO_USE_GMP OFF)
-endif ()
+if (LIBALGEBRA_LITE_RATIONAL_COEFFS)
+    set(LAL_ENABLE_RATIONAL_COEFFS ON)
+    find_package(Bignum REQUIRED)
+    if (NOT TARGET Bignum::Bignum)
+        set(LAL_NO_USE_GMP ON)
+    else ()
+        target_link_libraries(Libalgebra_lite PUBLIC Bignum::Bignum)
+        set(LAL_NO_USE_GMP OFF)
+    endif ()
+
+    if (NOT DEFINED LAL_GMP_ALTERNATIVE_HEADER)
+        set(LAL_GMP_ALTERNATIVE_HEADER cpp_int.hpp)
+        set(LAL_GMP_ALTERNATIVE_TYPE cpp_rational)
+    endif ()
+
+    configure_file(cmake/rationals.h.in rationals.h NO_SOURCE_PERMISSIONS @ONLY)
+    target_sources(Libalgebra_lite PRIVATE src/coefficients/rational_field.cpp)
+
+else()
+    set(LAL_ENABLE_RATIONAL_COEFFS OFF)
+endif()
 
 target_include_directories(Libalgebra_lite PRIVATE
         ${CMAKE_CURRENT_LIST_DIR}
@@ -94,13 +108,9 @@ set_target_properties(Libalgebra_lite PROPERTIES
         INSTALL_RPATH $ORIGIN)
 endif ()
 
-if (NOT DEFINED LAL_GMP_ALTERNATIVE_HEADER)
-    set(LAL_GMP_ALTERNATIVE_HEADER cpp_int.hpp)
-    set(LAL_GMP_ALTERNATIVE_TYPE cpp_rational)
-endif ()
 
 configure_file(cmake/config.h.in config.h NO_SOURCE_PERMISSIONS @ONLY)
-configure_file(cmake/rationals.h.in rationals.h NO_SOURCE_PERMISSIONS @ONLY)
+
 
 
 install(TARGETS Libalgebra_lite
@@ -117,12 +127,20 @@ install(DIRECTORY ${CMAKE_CURRENT_LIST_DIR}/include/libalgebra_lite
         EXCLUDE_FROM_ALL
         )
 install(FILES ${CMAKE_CURRENT_BINARY_DIR}/config.h
-        ${CMAKE_CURRENT_BINARY_DIR}/rationals.h
         ${CMAKE_CURRENT_BINARY_DIR}/libalgebra_lite_export.h
         DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/libalgebra_lite
         COMPONENT Development
         EXCLUDE_FROM_ALL
         )
+
+if(LIBALGEBRA_LITE_RATIONAL_COEFFS)
+    install(FILES ${CMAKE_CURRENT_BINARY_DIR}/rationals.h
+            DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/libalgebra_lite
+            COMPONENT Development
+            EXCLUDE_FROM_ALL
+    )
+endif()
+
 install(EXPORT Libalgebra_liteTargets
         DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/Libalgebra_lite
         NAMESPACE Libalgebra_lite::

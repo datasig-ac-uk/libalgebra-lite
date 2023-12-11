@@ -98,11 +98,16 @@ public:
 
 LAL_EXPORT_TEMPLATE_CLASS(polynomial, double_field)
 LAL_EXPORT_TEMPLATE_CLASS(polynomial, float_field)
-LAL_EXPORT_TEMPLATE_CLASS(polynomial, rational_field)
-
 using double_poly = polynomial<double_field>;
 using float_poly = polynomial<float_field>;
+
+#ifdef LAL_ENABLE_RATIONAL_COEFFS
+LAL_EXPORT_TEMPLATE_CLASS(polynomial, rational_field)
 using rational_poly = polynomial<rational_field>;
+#endif
+
+
+
 
 template <typename Field>
 struct coefficient_ring<polynomial<Field>, typename Field::rational_type>
@@ -140,12 +145,15 @@ struct coefficient_ring<polynomial<Field>, typename Field::rational_type>
 
 LAL_EXPORT_TEMPLATE_STRUCT(coefficient_ring, double_poly, double)
 LAL_EXPORT_TEMPLATE_STRUCT(coefficient_ring, float_poly, float)
+
+#ifdef LAL_ENABLE_RATIONAL_COEFFS
 LAL_EXPORT_TEMPLATE_STRUCT(
         coefficient_ring, rational_poly, typename rational_field::scalar_type
 )
 
 using polynomial_ring = coefficient_ring<
         polynomial<rational_field>, typename rational_field::scalar_type>;
+#endif
 
 }// namespace lal
 

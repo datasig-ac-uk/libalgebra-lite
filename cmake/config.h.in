@@ -6,6 +6,7 @@
 #define LIBALGEBRA_LITE_CONFIG_H_IN_H
 
 #cmakedefine LAL_USE_LIBALGEBRA
+#cmakedefine LAL_ENABLE_RATIONAL_COEFFS
 
 #ifndef LAL_NO_USE_GMP
 #cmakedefine LAL_NO_USE_GMP
