@@ -14,7 +14,12 @@ cmake_minimum_required(VERSION 3.19)
 
 
 include(CMakeFindDependencyMacro)
-find_dependency(Boost CONFIG COMPONENTS headers)
+find_dependency(Boost REQUIRED COMPONENTS headers)
+
+if (@LIBALGEBRA_LITE_RATIONAL_COEFFS@)
+    list(PREPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/Modules")
+    find_dependency(Bignum REQUIRED)
+endif()
 
 
 include(${CMAKE_CURRENT_LIST_DIR}/Libalgebra_liteTargets.cmake)

@@ -8,6 +8,8 @@ namespace lal {
 
 template class polynomial<double_field>;
 template class polynomial<float_field>;
-template class polynomial<rational_field>;
 
+#ifdef LAL_ENABLE_RATIONAL_COEFFS
+template class polynomial<rational_field>;
+#endif
 }

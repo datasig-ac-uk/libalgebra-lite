@@ -124,20 +124,21 @@ install(TARGETS Libalgebra_lite
 install(DIRECTORY ${CMAKE_CURRENT_LIST_DIR}/include/libalgebra_lite
         DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
         COMPONENT Development
-        EXCLUDE_FROM_ALL
         )
 install(FILES ${CMAKE_CURRENT_BINARY_DIR}/config.h
         ${CMAKE_CURRENT_BINARY_DIR}/libalgebra_lite_export.h
         DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/libalgebra_lite
         COMPONENT Development
-        EXCLUDE_FROM_ALL
         )
 
 if(LIBALGEBRA_LITE_RATIONAL_COEFFS)
     install(FILES ${CMAKE_CURRENT_BINARY_DIR}/rationals.h
             DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/libalgebra_lite
             COMPONENT Development
-            EXCLUDE_FROM_ALL
+    )
+    install(FILES "${CMAKE_CURRENT_LIST_DIR}/cmake/Modules/FindBignum.cmake"
+            DESTINATION "${CMAKE_INSTALL_LIBDIR}/cmake/Modules"
+            COMPONENT Development
     )
 endif()
 
@@ -145,7 +146,6 @@ install(EXPORT Libalgebra_liteTargets
         DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/Libalgebra_lite
         NAMESPACE Libalgebra_lite::
         COMPONENT Development
-        EXCLUDE_FROM_ALL
         )
 
 include(CMakePackageConfigHelpers)
@@ -165,7 +165,6 @@ install(FILES
         ${CMAKE_CURRENT_BINARY_DIR}/Libalgebra_liteVersion.cmake
         DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/Libalgebra_lite
         COMPONENT Development
-        EXCLUDE_FROM_ALL
         )
 
 if(CMAKE_IS_TOP_LEVEL OR LIBALGEBRA_LITE_BUILD_TESTS)
