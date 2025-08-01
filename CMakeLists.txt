@@ -14,7 +14,7 @@ include(GNUInstallDirs)
 option(LIBALGEBRA_LITE_BUILD_TESTS OFF "Build tests for libalgebra lite")
 option(LIBALGEBRA_LITE_RATIONAL_COEFFS ON "Build with support for rational coefficients")
 
-find_package(Boost REQUIRED)
+find_package(Boost CONFIG REQUIRED)
 
 add_library(Libalgebra_lite SHARED
         src/algebra/lie_multiplier.cpp
